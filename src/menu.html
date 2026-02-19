@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Test</title>
+
+    <style>
+        body {
+            background-color: black;
+            margin:0;
+            color: white;
+            text-align: center;
+        }
+
+        .slide {
+            position: fixed;
+            top: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            opacity: 0.5;
+            z-index: 5;
+
+            animation: slideDown 10s linear forwards;
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            margin: auto;
+        }
+
+        #anim {
+            position: absolute;
+            top:0;
+            left:0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            object-fit: contain;
+        }
+
+        #animNoiseMenu {
+            position:absolute;
+            top:0;
+            left:0;
+            width: 100%;
+            height:100%;
+            z-index:2;
+            object-fit: contain;
+        }
+
+        #animWhiteMenu {
+            position:absolute;
+            top:0;
+            left:0;
+            width: 100%;
+            height:100%;
+            z-index:3;
+            object-fit: contain;
+        }
+
+        /* overlay */
+        .overlay-img {
+            position: absolute;
+            top: 5%;
+            left: 80px;
+            width: 20%;
+            pointer-events: none;
+            z-index:10;
+            object-fit: contain;
+        }
+
+        @keyframes slideDown {
+            from {
+                bottom: 100%;
+            }
+            to {
+                top: 90%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+    <img id="anim" src="../assets/menu/1.png">
+    <img id="animNoiseMenu" src="../assets/menu/noise1.png">
+    <img id="animWhiteMenu" src="../assets/menu/whiteNoise1.png">
+    <img class="slide" src="../assets/menu/452.png">
+    <img id="overlaytest" class="overlay-img" src="../assets/menu/444-trans.png">
+</div>
+
+<script src="./animations.js"></script>
+
+<script src="./player.js"></script>
+<script>
+    playAnimation(document.getElementById("anim"), FreddyMenu);
+    playAnimation(document.getElementById("animNoiseMenu"), noiseMenu, 0.4);
+    playAnimation(document.getElementById("animWhiteMenu"), whiteMenu, 0.4);
+
+    const slide = document.querySelector(".slide");
+
+    slide.addEventListener("animationend", () => {
+        slide.style.animation = "none";
+        void slide.offsetWidth;
+        slide.style.animation = "slideDown 10s linear forwards";
+    });
+</script>
+
+</body>
+</html>
