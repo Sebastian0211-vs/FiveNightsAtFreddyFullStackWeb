@@ -30,21 +30,22 @@
 
 <body>
 
-<h1>Animation avec images</h1>
-
+<!--<h1>Animation avec images</h1>
+<!-->
 <img id="anim" src="../assets/FNaF 1/284.png">
 
 <br>
 
-<button onclick="start()">Start</button>
+<!--<button onclick="start()">Start</button>
 <button onclick="stop()">Stop</button>
-
+<!-->
 <script>
     const frames = [
         //"../assets/FNaF 1/284.png",
         //"../assets/FNaF 1/285.png",
         //"../assets/FNaF 1/286.png",
         //"../assets/FNaF 1/287.png",
+        /*
         "../assets/FNaF 1/307.png",
         "../assets/FNaF 1/348.png",
         "../assets/FNaF 1/308.png",
@@ -65,9 +66,62 @@
         "../assets/FNaF 1/323.png",
         "../assets/FNaF 1/324.png",
         "../assets/FNaF 1/325.png",
+         */
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/4.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/4.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/3.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+        "../assets/menu/1.png",
+
+
+
+
+
     ];
 
-    const sound = new Audio("../assets/FNaf 1 Audio/XSCREAM.wav");
+    const sound = new Audio("../assets/FNaf 1 Audio/run.wav");
 
     print(frames)
 
@@ -90,6 +144,9 @@
         clearInterval(interval);
         interval = null;
     }
+
+    window.onload = start;
+
 </script>
 
 </body>
