@@ -2,14 +2,15 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Test</title>
+    <title>FNAF 1</title>
 
     <style>
         body {
-            background-color: black;
-            margin:0;
-            color: white;
-            text-align: center;
+            background-color:black;
+            margin: 0;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
         }
 
         .slide {
@@ -27,8 +28,12 @@
         .container {
             position: relative;
             width: 100%;
-            height: 100vh;
+            aspect-ratio: 16/9;
             margin: auto;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
         #anim {
@@ -62,15 +67,46 @@
         }
 
         /* overlay */
-        .overlay-img {
+        .FNAFtitle {
             position: absolute;
-            top: 5%;
-            left: 80px;
-            width: 20%;
+            top: 10%;
+            left: 10%;
+            width: 15%;
             pointer-events: none;
             z-index:10;
             object-fit: contain;
         }
+
+        .menu-buttons {
+            position: absolute;
+            top: 50%;
+            left: 10%;
+            width:15%;
+            height:12%;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            gap: 60%;
+        }
+
+        #selector {
+            position:absolute;
+            left: -25%;
+            width:20%;
+            transition:top 0.1s;
+            pointer-events:none;
+        }
+
+        .menu-btn {
+            width:100%;
+            cursor:pointer;
+            display:block;
+        }
+
+        .menu-btn:hover {
+            opacity: 0.7;
+        }
+
 
         @keyframes slideDown {
             from {
@@ -90,12 +126,53 @@
     <img id="animNoiseMenu" src="../assets/menu/noise1.png">
     <img id="animWhiteMenu" src="../assets/menu/whiteNoise1.png">
     <img class="slide" src="../assets/menu/452.png">
-    <img id="overlaytest" class="overlay-img" src="../assets/menu/444-trans.png">
+    <img id="title" class="FNAFtitle" src="../assets/menu/444-trans.png">
+    <div class="menu-buttons">
+        <img id="selector" src="../assets/menu/arrow_trans.png">
+        <img class="menu-btn" src="../assets/menu/new_game_trans.png" onclick="onNewGame()">
+        <img class="menu-btn" src="../assets/menu/continue_trans.png" onclick="onContinue()">
+    </div>
 </div>
 
-<script src="./animations.js"></script>
 
+<script>
+    function onNewGame(){
+        console.log("New Game clicked");
+    }
+
+    function onContinue() {
+        console.log("Continue clicked")
+    }
+
+</script>
+
+<script src="./animations.js"></script>
 <script src="./player.js"></script>
+
+<script>
+    const buttons = document.querySelectorAll(".menu-btn");
+    const selector = document.getElementById("selector");
+    let selectedIndex = 0;
+
+    function moveSelector(index) {
+        selectedIndex = index;
+        const btn = buttons[index];
+        selector.style.top = btn.offsetTop + btn.offsetHeight / 2 - selector.offsetHeight / 2 + "px";
+    }
+
+    buttons.forEach((btn, i) => {
+        btn.addEventListener("mouseenter", () => moveSelector(i));
+    });
+
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown") moveSelector((selectedIndex + 1) % buttons.length);
+        if (e.key === "ArrowUp") moveSelector((selectedIndex - 1 + buttons.length) % buttons.length);
+        if (e.key === "Enter") buttons[selectedIndex].click();
+    });
+
+    moveSelector(0);
+</script>
+
 <script>
     playAnimation(document.getElementById("anim"), FreddyMenu);
     playAnimation(document.getElementById("animNoiseMenu"), noiseMenu, 0.4);
