@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FNAF Viewer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      cursor: grab;
+      user-select: none;
+    }
+    body.dragging { cursor: grabbing; }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<script>
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
+
+  let W, H;
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const bg = new Image();
+  bg.src = '../assets/Main Room/519.png';
+
+  const fanFrames = [new Image(), new Image(), new Image()];
+  fanFrames[0].src = '../assets/ventilateur/57.png';
+  fanFrames[1].src = '../assets/ventilateur/59.png';
+  fanFrames[2].src = '../assets/ventilateur/60.png';
+
+  let fanIndex = 0;
+  let totalLoaded = 0;
+
+  function onLoad() {
+    totalLoaded++;
+    if (totalLoaded === 1) requestAnimationFrame(animate);
+    if (totalLoaded === 4) {
+      setInterval(() => { fanIndex = (fanIndex + 1) % 3; }, 1000 / 12);
+    }
+  }
+  bg.onload = onLoad;
+  fanFrames.forEach(f => { f.onload = onLoad; });
+
+  let scroll = 0.5;
+  let targetScroll = 0.5;
+  let isDragging = false;
+  let lastX = 0;
+  let velocity = 0;
+
+  const fanImgX = 778;
+  const fanImgY = 303;
+  const fanScale = 1.00;
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  const FOV_FACTOR = 0.35;
+
+  function drawStripLayer(img, imgW, imgH, scale, offsetX) {
+    for (let sx = 0; sx < W; sx++) {
+      const imgX = (offsetX + sx) / scale;
+      if (imgX < 0 || imgX >= imgW) continue;
+      const screenNorm = (sx / W - 0.5) * 2;
+      const dist = Math.sqrt(1 + (screenNorm * FOV_FACTOR) ** 2);
+      const stripH = H / dist;
+      const yOff = (H - stripH) / 2;
+      ctx.drawImage(img, imgX, 0, 1, imgH, sx, yOff, 1, stripH);
+    }
+  }
+
+  function drawFan(img, scale, offsetX) {
+    if (!img.complete || !img.naturalWidth) return;
+    const screenX = fanImgX * scale - offsetX;
+    const screenY = fanImgY * scale;
+    const drawW = img.naturalWidth * scale * fanScale;
+    const drawH = img.naturalHeight * scale * fanScale;
+    ctx.drawImage(img, screenX, screenY, drawW, drawH);
+  }
+
+  function draw() {
+    if (!bg.complete || !bg.naturalWidth) return;
+
+    const imgW = bg.naturalWidth;
+    const imgH = bg.naturalHeight;
+    const scale = H / imgH;
+    const maxOffset = (imgW * scale) - W;
+    const offsetX = scroll * maxOffset;
+
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+
+    drawStripLayer(bg, imgW, imgH, scale, offsetX);
+
+    drawFan(fanFrames[fanIndex], scale, offsetX);
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    if (!isDragging) {
+      velocity *= 0.85;
+      targetScroll += velocity;
+    }
+    targetScroll = clamp(targetScroll, 0, 1);
+    scroll += (targetScroll - scroll) * 0.12;
+    draw();
+  }
+
+  canvas.addEventListener('mousedown', e => {
+    isDragging = true;
+    lastX = e.clientX;
+    velocity = 0;
+    document.body.classList.add('dragging');
+  });
+  window.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    const dx = e.clientX - lastX;
+    const scale = H / bg.naturalHeight;
+    const maxOffset = (bg.naturalWidth * scale) - W;
+    velocity = -(dx / maxOffset);
+    targetScroll += velocity;
+    lastX = e.clientX;
+  });
+  window.addEventListener('mouseup', () => {
+    isDragging = false;
+    document.body.classList.remove('dragging');
+  });
+
+  canvas.addEventListener('touchstart', e => {
+    isDragging = true;
+    lastX = e.touches[0].clientX;
+    velocity = 0;
+    e.preventDefault();
+  }, { passive: false });
+  window.addEventListener('touchmove', e => {
+    if (!isDragging) return;
+    const dx = e.touches[0].clientX - lastX;
+    const scale = H / bg.naturalHeight;
+    const maxOffset = (bg.naturalWidth * scale) - W;
+    velocity = -(dx / maxOffset);
+    targetScroll += velocity;
+    lastX = e.touches[0].clientX;
+    e.preventDefault();
+  }, { passive: false });
+  window.addEventListener('touchend', () => { isDragging = false; });
+
+  window.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft') velocity -= 0.005;
+    if (e.key === 'ArrowRight') velocity += 0.005;
+  });
+</script>
+</body>
+</html>
