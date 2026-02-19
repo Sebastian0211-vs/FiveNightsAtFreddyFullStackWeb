@@ -122,15 +122,15 @@
 <body>
 
 <div class="container">
-    <img id="anim" src="../assets/menu/1.png">
-    <img id="animNoiseMenu" src="../assets/menu/noise1.png">
-    <img id="animWhiteMenu" src="../assets/menu/whiteNoise1.png">
-    <img class="slide" src="../assets/menu/452.png">
-    <img id="title" class="FNAFtitle" src="../assets/menu/444-trans.png">
+    <img id="anim" src="../Assets/Menu/1.png">
+    <img id="animNoiseMenu" src="../Assets/Menu/noise1.png">
+    <img id="animWhiteMenu" src="../Assets/Menu/whiteNoise1.png">
+    <img class="slide" src="../Assets/Menu/452.png">
+    <img id="title" class="FNAFtitle" src="../Assets/Menu/444-trans.png">
     <div class="menu-buttons">
-        <img id="selector" src="../assets/menu/arrow_trans.png">
-        <img class="menu-btn" src="../assets/menu/new_game_trans.png" onclick="onNewGame()">
-        <img class="menu-btn" src="../assets/menu/continue_trans.png" onclick="onContinue()">
+        <img id="selector" src="../Assets/Menu/arrow_trans.png">
+        <img class="menu-btn" src="../Assets/Menu/new_game_trans.png" onclick="onNewGame()">
+        <img class="menu-btn" src="../Assets/Menu/continue_trans.png" onclick="onContinue()">
     </div>
 </div>
 
@@ -148,6 +148,15 @@
 
 <script src="./animations.js"></script>
 <script src="./player.js"></script>
+
+<script>
+    window.addEventListener('click', () => {
+        const a = new Audio('../Assets/FNaF 1 Audio/darkness music.wav');
+        a.play()
+            .then(() => console.log("✅ Audio playing!"))
+            .catch((e) => console.error("❌ Audio failed:", e));
+    }, { once: true });
+</script>
 
 <script>
     const buttons = document.querySelectorAll(".menu-btn");

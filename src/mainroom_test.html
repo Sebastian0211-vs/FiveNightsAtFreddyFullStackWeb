@@ -15,11 +15,117 @@
       user-select: none;
     }
     body.dragging { cursor: grabbing; }
-    canvas { display: block; }
+    canvas { display: block; position: absolute; top: 0; left: 0; }
+
+    /* Invisible click zones for buttons — positioned by JS */
+    .btn-zone {
+      position: absolute;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    #debug {
+      display: none;
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.88);
+      color: #0f0;
+      font: 11px monospace;
+      padding: 12px;
+      border: 1px solid #0f0;
+      z-index: 100;
+      width: 240px;
+    }
+    #debug label { display: block; margin-top: 6px; }
+    #debug input[type=range] { width: 100%; }
+    #debug .val { color: #ff0; float: right; }
+    #debug h3 { color: #0f0; margin-bottom: 2px; }
+    #debug h4 { color: #aaffaa; margin-top: 8px; margin-bottom: 2px; }
+    #debug .hint { color: #888; font-size: 10px; margin-top: 6px; }
+    #copy-btn { margin-top: 8px; width: 100%; background: #0a0; color: #fff; border: none; padding: 4px; cursor: pointer; font: 11px monospace; }
+
+    /* Tablet bar */
+    #tablet-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 40px;
+      background: #1a1a1a;
+      border-top: 2px solid #333;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    #tablet-bar img {
+      height: 30px;
+      opacity: 0.7;
+    }
+    #tablet-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: none;
+      background: #000;
+    }
+    #tablet-overlay canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: contain;
+    }
+    #tablet-cam {
+      position: fixed;
+      inset: 0;
+      z-index: 41;
+      display: none;
+      background: #000;
+    }
+    #tablet-cam img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
   </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="debug">
+  <h3>Debug [D to hide]</h3>
+  <h4>Left Button</h4>
+  <label>X: <span class="val" id="vlx">0</span>
+    <input type="range" id="slx" min="0" max="3000" value="0">
+  </label>
+  <label>Y: <span class="val" id="vly">261</span>
+    <input type="range" id="sly" min="0" max="1500" value="261">
+  </label>
+  <label>Scale: <span class="val" id="vlsc">1.00</span>
+    <input type="range" id="slsc" min="0.1" max="3" step="0.01" value="1">
+  </label>
+  <h4>Right Button</h4>
+  <label>X: <span class="val" id="vrx">1478</span>
+    <input type="range" id="srx" min="0" max="3000" value="1478">
+  </label>
+  <label>Y: <span class="val" id="vry">261</span>
+    <input type="range" id="sry" min="0" max="1500" value="261">
+  </label>
+  <label>Scale: <span class="val" id="vrsc">1.00</span>
+    <input type="range" id="srsc" min="0.1" max="3" step="0.01" value="1">
+  </label>
+  <div class="hint">Coords in source image pixels.</div>
+  <button id="copy-btn">Copy values</button>
+</div>
+
+<div id="tablet-bar">
+  <img src="../Assets/Tablette/open_tablette_icon.png" alt="tablet">
+</div>
+<canvas id="tablet-anim-canvas" style="display:none;position:fixed;inset:0;width:100%;height:100%;z-index:45;"></canvas>
+<div id="tablet-cam" style="display:none;position:fixed;inset:0;z-index:44;background:#000;">
+  <img src="../Assets/Cam_views/188.png" style="width:100%;height:100%;object-fit:contain;">
+</div>
 <script>
   const canvas = document.getElementById('c');
   const ctx = canvas.getContext('2d');
@@ -32,39 +138,124 @@
   resize();
   window.addEventListener('resize', resize);
 
+  // --- Audio ---
+  const audioBase = '../Assets/FNaF 1 Audio/';
+  const sfxFan = new Audio(audioBase + 'Buzz_Fan_Florescent2.wav');
+  sfxFan.loop = true; sfxFan.volume = 0.5;
+  const sfxPhone = new Audio(audioBase + 'voiceover1c.wav');
+  const ambienceSrcs = [audioBase + 'ambience2.wav', audioBase + 'EerieAmbienceLargeSca_MV005.wav'];
+  let audioStarted = false;
+
+  function startAudio() {
+    if (audioStarted) return;
+    audioStarted = true;
+    sfxFan.play().catch(() => {});
+    sfxPhone.play().catch(() => {});
+    function nextAmbience() {
+      const a = new Audio(ambienceSrcs[Math.floor(Math.random() * ambienceSrcs.length)]);
+      a.volume = 0.4;
+      a.play().catch(() => {});
+      a.addEventListener('ended', nextAmbience);
+    }
+    nextAmbience();
+  }
+  window.addEventListener('click', startAudio, { once: true });
+  window.addEventListener('keydown', startAudio, { once: true });
+
+  // --- Images ---
   const bg = new Image();
   bg.src = '../assets/Main Room/519.png';
+
+  const bgLit = {
+    left:  new Image(),
+    right: new Image(),
+    both:  new Image(),
+  };
+  bgLit.left.src  = '../Assets/Main Room/main_room_left_open_lit.png';
+  bgLit.right.src = '../Assets/Main Room/main_room_right_open_lit.png';
+
+  function getActiveBg() {
+    const leftLit  = state.left.light  === 'on';
+    const rightLit = state.right.light === 'on';
+    if (leftLit  && !rightLit) return bgLit.left.complete  && bgLit.left.naturalWidth  ? bgLit.left  : bg;
+    if (rightLit && !leftLit)  return bgLit.right.complete && bgLit.right.naturalWidth ? bgLit.right : bg;
+    return bg;
+  }
 
   const fanFrames = [new Image(), new Image(), new Image()];
   fanFrames[0].src = '../assets/ventilateur/57.png';
   fanFrames[1].src = '../assets/ventilateur/59.png';
   fanFrames[2].src = '../assets/ventilateur/60.png';
 
-  let fanIndex = 0;
-  let totalLoaded = 0;
-
-  function onLoad() {
-    totalLoaded++;
-    if (totalLoaded === 1) requestAnimationFrame(animate);
-    if (totalLoaded === 4) {
-      setInterval(() => { fanIndex = (fanIndex + 1) % 3; }, 1000 / 12);
-    }
+  // Button images: [door_closed/open][light_off/on] => 4 combos each side
+  // Naming: Button_{side}_light_{off|on}_{closed|open}.png
+  const btnBase = '../Assets/Door_Buttons/';
+  function loadBtn(side, light, door) {
+    const img = new Image();
+    img.src = `${btnBase}Button_${side}_light_${light}_${door}.png`;
+    return img;
   }
-  bg.onload = onLoad;
-  fanFrames.forEach(f => { f.onload = onLoad; });
 
+  const btnImgs = {
+    left: {
+      off_closed:  loadBtn('left',  'off', 'closed'),
+      off_open:    loadBtn('left',  'off', 'open'),
+      on_closed:   loadBtn('left',  'on',  'closed'),
+      on_open:     loadBtn('left',  'on',  'open'),
+    },
+    right: {
+      off_closed:  loadBtn('right', 'off', 'closed'),
+      off_open:    loadBtn('right', 'off', 'open'),
+      on_closed:   loadBtn('right', 'on',  'closed'),
+      on_open:     loadBtn('right', 'on',  'open'),
+    }
+  };
+
+  // Button states
+  const state = {
+    left:  { door: 'closed', light: 'off' },
+    right: { door: 'closed', light: 'off' },
+  };
+
+  function getBtnImg(side) {
+    const s = state[side];
+    return btnImgs[side][`${s.light}_${s.door}`];
+  }
+
+  let fanIndex = 0;
+
+  // Start render loop as soon as bg loads
+  bg.onload = () => requestAnimationFrame(animate);
+
+  // Fan animation starts when all fan frames loaded
+  let fanLoaded = 0;
+  fanFrames.forEach(f => {
+    f.onload = () => { fanLoaded++; if (fanLoaded === 3) setInterval(() => { fanIndex = (fanIndex + 1) % 3; }, 1000 / 12); };
+    f.onerror = () => { fanLoaded++; };
+  });
+
+  // Button images — onerror so missing files don't break anything
+  [...Object.values(btnImgs.left), ...Object.values(btnImgs.right)].forEach(img => {
+    img.onerror = () => { console.warn('Missing:', img.src); };
+  });
+
+  // --- Pan ---
   let scroll = 0.5;
   let targetScroll = 0.5;
   let isDragging = false;
   let lastX = 0;
   let velocity = 0;
 
-  const fanImgX = 778;
-  const fanImgY = 303;
-  const fanScale = 1.00;
+  // Fan (hardcoded)
+  const fanImgX = 778, fanImgY = 303, fanScale = 1.0;
+
+  // Button positions (image-space)
+  let btnPos = {
+    left:  { x: 0,    y: 261, scale: 1.0 },
+    right: { x: 1478, y: 261, scale: 1.0 },
+  };
 
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-
   const FOV_FACTOR = 0.35;
 
   function drawStripLayer(img, imgW, imgH, scale, offsetX) {
@@ -79,13 +270,64 @@
     }
   }
 
-  function drawFan(img, scale, offsetX) {
+  function drawSprite(img, imgSpace, scale, offsetX) {
     if (!img.complete || !img.naturalWidth) return;
-    const screenX = fanImgX * scale - offsetX;
-    const screenY = fanImgY * scale;
-    const drawW = img.naturalWidth * scale * fanScale;
-    const drawH = img.naturalHeight * scale * fanScale;
-    ctx.drawImage(img, screenX, screenY, drawW, drawH);
+    const sx = imgSpace.x * scale - offsetX;
+    const sy = imgSpace.y * scale;
+    const dw = img.naturalWidth * scale * imgSpace.scale;
+    const dh = img.naturalHeight * scale * imgSpace.scale;
+    ctx.drawImage(img, sx, sy, dw, dh);
+  }
+
+  // Screen rect of a button (for click detection)
+  function getBtnScreenRect(side) {
+    if (!bg || !bg.complete || !bg.naturalWidth) return null;
+    const scale = H / bg.naturalHeight;
+    const maxOffset = (bg.naturalWidth * scale) - W;
+    const offsetX = scroll * maxOffset;
+    const pos = btnPos[side];
+    const img = getBtnImg(side);
+    if (!img.complete || !img.naturalWidth) return null;
+    return {
+      x: pos.x * scale - offsetX,
+      y: pos.y * scale,
+      w: img.naturalWidth * scale * pos.scale,
+      h: img.naturalHeight * scale * pos.scale,
+    };
+  }
+
+  // Invisible HTML zones for button clicks (updated each frame)
+  function updateButtonZones() {
+    if (!bg || !bg.naturalWidth) return;
+    ['left', 'right'].forEach(side => {
+      let zone = document.getElementById('zone-' + side);
+      if (!zone) {
+        zone = document.createElement('div');
+        zone.id = 'zone-' + side;
+        zone.className = 'btn-zone';
+        document.body.appendChild(zone);
+
+        zone.addEventListener('click', e => {
+          startAudio();
+          const rect = zone.getBoundingClientRect();
+          const relY = e.clientY - rect.top;
+          // Top half = door toggle, bottom half = light toggle
+          if (relY < rect.height / 2) {
+            state[side].door = state[side].door === 'closed' ? 'open' : 'closed';
+          } else {
+            state[side].light = state[side].light === 'off' ? 'on' : 'off';
+          }
+        });
+      }
+
+      const r = getBtnScreenRect(side);
+      if (r) {
+        zone.style.left   = r.x + 'px';
+        zone.style.top    = r.y + 'px';
+        zone.style.width  = r.w + 'px';
+        zone.style.height = r.h + 'px';
+      }
+    });
   }
 
   function draw() {
@@ -100,9 +342,13 @@
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
 
-    drawStripLayer(bg, imgW, imgH, scale, offsetX);
+    const activeBg = getActiveBg();
+    drawStripLayer(activeBg, imgW, imgH, scale, offsetX);
+    drawSprite(fanFrames[fanIndex], { x: fanImgX, y: fanImgY, scale: fanScale }, scale, offsetX);
+    drawSprite(getBtnImg('left'),  btnPos.left,  scale, offsetX);
+    drawSprite(getBtnImg('right'), btnPos.right, scale, offsetX);
 
-    drawFan(fanFrames[fanIndex], scale, offsetX);
+    updateButtonZones();
   }
 
   function animate() {
@@ -116,11 +362,157 @@
     draw();
   }
 
+
+  // --- Debug ---
+  let debugVisible = false;
+  window.addEventListener('keydown', e => {
+    if (e.key === 'd' || e.key === 'D') {
+      debugVisible = !debugVisible;
+      document.getElementById('debug').style.display = debugVisible ? 'block' : 'none';
+    }
+  });
+
+  function bindSlider(id, valId, side, prop, isFloat) {
+    const el = document.getElementById(id);
+    el.addEventListener('input', function() {
+      btnPos[side][prop] = isFloat ? parseFloat(this.value) : +this.value;
+      document.getElementById(valId).textContent = isFloat ? parseFloat(this.value).toFixed(2) : this.value;
+    });
+  }
+  bindSlider('slx',  'vlx',  'left',  'x',     false);
+  bindSlider('sly',  'vly',  'left',  'y',     false);
+  bindSlider('slsc', 'vlsc', 'left',  'scale', true);
+  bindSlider('srx',  'vrx',  'right', 'x',     false);
+  bindSlider('sry',  'vry',  'right', 'y',     false);
+  bindSlider('srsc', 'vrsc', 'right', 'scale', true);
+
+  document.getElementById('copy-btn').addEventListener('click', () => {
+    const s = `left:  { x: ${btnPos.left.x},  y: ${btnPos.left.y},  scale: ${btnPos.left.scale.toFixed(2)} },\nright: { x: ${btnPos.right.x}, y: ${btnPos.right.y}, scale: ${btnPos.right.scale.toFixed(2)} }`;
+    navigator.clipboard?.writeText(s);
+    alert(s);
+  });
+
+
+  // --- Tablet ---
+  const sfxCamera = new Audio('../Assets/FNaF 1 Audio/CAMERA_VIDEO_LOA_60105303.wav');
+  sfxCamera.volume = 0.8;
+
+  const tabletFrames = [];
+  for (let i = 1; i <= 11; i++) {
+    const img = new Image();
+    img.src = `../Assets/Tablette/frame_${i}.png`;
+    tabletFrames.push(img);
+  }
+
+  const tabletBar    = document.getElementById('tablet-bar');
+  const tabletCanvas = document.getElementById('tablet-anim-canvas');
+  const tabletCtx    = tabletCanvas.getContext('2d');
+  const tabletCam    = document.getElementById('tablet-cam');
+
+  let tabletState    = 'closed'; // closed | opening | open | closing
+  let tabletFrame    = 0;
+  const FRAME_DELAY  = 50; // ms per frame
+  let lastFrameTime  = 0;
+
+  function resizeTabletCanvas() {
+    tabletCanvas.width  = window.innerWidth;
+    tabletCanvas.height = window.innerHeight;
+  }
+  resizeTabletCanvas();
+  window.addEventListener('resize', resizeTabletCanvas);
+
+  function drawTabletFrame(idx) {
+    const img = tabletFrames[idx];
+    if (!img.complete || !img.naturalWidth) return;
+    tabletCtx.clearRect(0, 0, tabletCanvas.width, tabletCanvas.height);
+    // Draw centered, cover
+    const scale = Math.max(tabletCanvas.width / img.naturalWidth, tabletCanvas.height / img.naturalHeight);
+    const dw = img.naturalWidth  * scale;
+    const dh = img.naturalHeight * scale;
+    const dx = (tabletCanvas.width  - dw) / 2;
+    const dy = (tabletCanvas.height - dh) / 2;
+    tabletCtx.drawImage(img, dx, dy, dw, dh);
+  }
+
+  function animateTablet(timestamp) {
+    if (tabletState !== 'opening' && tabletState !== 'closing') return;
+
+    if (timestamp - lastFrameTime > FRAME_DELAY) {
+      lastFrameTime = timestamp;
+
+      if (tabletState === 'opening') {
+        drawTabletFrame(tabletFrame);
+        tabletFrame++;
+        if (tabletFrame >= tabletFrames.length) {
+          // Last frame drawn — wait FRAME_DELAY so it's visible, then show cam
+          tabletState = 'waiting';
+          setTimeout(() => {
+            tabletCanvas.style.display = 'none';
+            tabletCam.style.display = 'block';
+            tabletBar.style.display = 'none';
+            tabletState = 'open';
+          }, FRAME_DELAY);
+          return;
+        }
+      } else if (tabletState === 'closing') {
+        tabletFrame--;
+        if (tabletFrame < 0) {
+          // Animation done — back to room
+          tabletCanvas.style.display = 'none';
+          tabletState = 'closed';
+          // Re-show room elements
+          canvas.style.display = 'block';
+          tabletBar.style.display = 'flex';
+          document.querySelectorAll('.btn-zone').forEach(z => z.style.display = 'block');
+          return;
+        }
+        drawTabletFrame(tabletFrame);
+      }
+    }
+    requestAnimationFrame(animateTablet);
+  }
+
+  function openTablet() {
+    if (tabletState !== 'closed') return;
+    sfxCamera.currentTime = 0;
+    sfxCamera.play().catch(() => {});
+    tabletState = 'opening';
+    tabletFrame = 0;
+    tabletCanvas.style.display = 'block';
+    tabletCanvas.width  = window.innerWidth;
+    tabletCanvas.height = window.innerHeight;
+    requestAnimationFrame(animateTablet);
+  }
+
+  function closeTablet() {
+    if (tabletState !== 'open') return;
+    sfxCamera.currentTime = 0;
+    sfxCamera.play().catch(() => {});
+    tabletState = 'closing';
+    tabletFrame = tabletFrames.length - 1;
+    tabletCam.style.display = 'none';
+    tabletCanvas.style.display = 'block';
+    drawTabletFrame(tabletFrame);
+    requestAnimationFrame(animateTablet);
+  }
+
+  // Trigger on hover near bottom edge (within 60px) or click the bar
+  tabletBar.addEventListener('click', openTablet);
+
+  // Mouse near bottom to open, near bottom again to close
+  window.addEventListener('mousemove', e => {
+    const fromBottom = window.innerHeight - e.clientY;
+    if (fromBottom < 60 && tabletState === 'closed') openTablet();
+    if (fromBottom < 60 && tabletState === 'open')   closeTablet();
+  });
+
+  // --- Mouse controls ---
   canvas.addEventListener('mousedown', e => {
     isDragging = true;
     lastX = e.clientX;
     velocity = 0;
     document.body.classList.add('dragging');
+    startAudio();
   });
   window.addEventListener('mousemove', e => {
     if (!isDragging) return;
@@ -153,11 +545,6 @@
     e.preventDefault();
   }, { passive: false });
   window.addEventListener('touchend', () => { isDragging = false; });
-
-  window.addEventListener('keydown', e => {
-    if (e.key === 'ArrowLeft') velocity -= 0.005;
-    if (e.key === 'ArrowRight') velocity += 0.005;
-  });
 </script>
 </body>
 </html>
