@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Animation Frames</title>
+
+    <style>
+        body {
+            background: #222;
+            color: white;
+            font-family: Arial;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        img {
+            width: 1600px;
+            height: 720px;
+            border: 3px solid white;
+        }
+
+        button {
+            margin: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+
+<h1>Animation avec images</h1>
+
+<img id="anim" src="../assets/FNaF 1/284.png">
+
+<br>
+
+<button onclick="start()">Start</button>
+<button onclick="stop()">Stop</button>
+
+<script>
+    const frames = [
+        //"../assets/FNaF 1/284.png",
+        //"../assets/FNaF 1/285.png",
+        //"../assets/FNaF 1/286.png",
+        //"../assets/FNaF 1/287.png",
+        "../assets/FNaF 1/307.png",
+        "../assets/FNaF 1/348.png",
+        "../assets/FNaF 1/308.png",
+        "../assets/FNaF 1/309.png",
+        "../assets/FNaF 1/310.png",
+        "../assets/FNaF 1/311.png",
+        "../assets/FNaF 1/312.png",
+        "../assets/FNaF 1/313.png",
+        "../assets/FNaF 1/314.png",
+        "../assets/FNaF 1/315.png",
+        "../assets/FNaF 1/316.png",
+        "../assets/FNaF 1/317.png",
+        "../assets/FNaF 1/318.png",
+        "../assets/FNaF 1/319.png",
+        "../assets/FNaF 1/320.png",
+        "../assets/FNaF 1/321.png",
+        "../assets/FNaF 1/322.png",
+        "../assets/FNaF 1/323.png",
+        "../assets/FNaF 1/324.png",
+        "../assets/FNaF 1/325.png",
+    ];
+
+    const sound = new Audio("../assets/FNaf 1 Audio/XSCREAM.wav");
+
+    print(frames)
+
+    let i = 0;
+    let interval = null;
+
+    function start() {
+        if (interval) return;
+
+        sound.currentTime = 0;
+        sound.play();
+
+        interval = setInterval(() => {
+            document.getElementById("anim").src = frames[i];
+            i = (i + 1) % frames.length;
+        }, 60);
+    }
+
+    function stop() {
+        clearInterval(interval);
+        interval = null;
+    }
+</script>
+
+</body>
+</html>
