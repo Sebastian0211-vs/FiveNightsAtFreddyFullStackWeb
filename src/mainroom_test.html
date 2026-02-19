@@ -1,111 +1,163 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>FNAF Pan Cylinder</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FNAF Viewer</title>
   <style>
-    html, body { margin:0; height:100%; background:#000; overflow:hidden; }
-    #app { width:100%; height:100%; }
-    .hint {
-      position:fixed; left:12px; bottom:12px; color:#fff; font:14px system-ui;
-      opacity:.7; user-select:none;
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #000;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      cursor: grab;
+      user-select: none;
     }
+    body.dragging { cursor: grabbing; }
+    canvas { display: block; }
   </style>
 </head>
 <body>
-<div id="app"></div>
-<div class="hint">Drag mouse/touch left-right · Wheel = zoom</div>
+<canvas id="c"></canvas>
+<script>
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
 
-<!-- Importmap (CDN) -->
-<script type="importmap">
-  {
-    "imports": {
-      "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-      "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  let W, H;
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  const bg = new Image();
+  bg.src = '../assets/Main Room/519.png';
+
+  const fanFrames = [new Image(), new Image(), new Image()];
+  fanFrames[0].src = '../assets/ventilateur/57.png';
+  fanFrames[1].src = '../assets/ventilateur/59.png';
+  fanFrames[2].src = '../assets/ventilateur/60.png';
+
+  let fanIndex = 0;
+  let totalLoaded = 0;
+
+  function onLoad() {
+    totalLoaded++;
+    if (totalLoaded === 1) requestAnimationFrame(animate);
+    if (totalLoaded === 4) {
+      setInterval(() => { fanIndex = (fanIndex + 1) % 3; }, 1000 / 12);
     }
   }
-</script>
+  bg.onload = onLoad;
+  fanFrames.forEach(f => { f.onload = onLoad; });
 
-<script type="module">
-  import * as THREE from "three";
-  import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+  let scroll = 0.5;
+  let targetScroll = 0.5;
+  let isDragging = false;
+  let lastX = 0;
+  let velocity = 0;
 
-  const container = document.getElementById("app");
-  const scene = new THREE.Scene();
+  const fanImgX = 778;
+  const fanImgY = 303;
+  const fanScale = 1.00;
 
-  const camera = new THREE.PerspectiveCamera(
-          55,
-          container.clientWidth / container.clientHeight,
-          0.01,
-          100
-  );
-  camera.position.set(0, 0, 0.001); // quasi au centre du cylindre
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
 
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.setSize(container.clientWidth, container.clientHeight);
-  container.appendChild(renderer.domElement);
+  const FOV_FACTOR = 0.35;
 
-  // Texture = ton screenshot (mets le bon chemin)
-  const tex = new THREE.TextureLoader().load("./office.png");
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.wrapS = THREE.RepeatWrapping;
-  tex.wrapT = THREE.ClampToEdgeWrapping;
-
-  // Cylindre autour de la caméra : on voit l'intérieur => side: BackSide
-  const radius = 5;
-  const height = 3;
-  const radialSegments = 128;
-
-  const geo = new THREE.CylinderGeometry(radius, radius, height, radialSegments, 1, true);
-  const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide });
-  const cyl = new THREE.Mesh(geo, mat);
-  scene.add(cyl);
-
-  // FNAF = léger vignettage / grain / noir → tu peux le faire en postprocess,
-  // mais déjà tu peux tricher avec un overlay CSS si tu veux.
-
-  // Controls : rotation Y uniquement (gauche/droite), pas de vertical
-  const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enablePan = false;
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.08;
-
-  controls.minPolarAngle = Math.PI / 2;
-  controls.maxPolarAngle = Math.PI / 2;
-
-  // Limite la rotation horizontale (ex: +/- 65° comme FNAF)
-  const yawLimit = THREE.MathUtils.degToRad(65);
-
-  function clampYaw() {
-    // OrbitControls utilise azimuthalAngle pour left/right autour de target
-    const a = controls.getAzimuthalAngle();
-    const clamped = THREE.MathUtils.clamp(a, -yawLimit, yawLimit);
-    if (a !== clamped) controls.rotateLeft(a - clamped);
+  function drawStripLayer(img, imgW, imgH, scale, offsetX) {
+    for (let sx = 0; sx < W; sx++) {
+      const imgX = (offsetX + sx) / scale;
+      if (imgX < 0 || imgX >= imgW) continue;
+      const screenNorm = (sx / W - 0.5) * 2;
+      const dist = Math.sqrt(1 + (screenNorm * FOV_FACTOR) ** 2);
+      const stripH = H / dist;
+      const yOff = (H - stripH) / 2;
+      ctx.drawImage(img, imgX, 0, 1, imgH, sx, yOff, 1, stripH);
+    }
   }
 
-  // Zoom limité (un peu)
-  controls.enableZoom = true;
-  controls.minDistance = 0.001;
-  controls.maxDistance = 0.6;
-  controls.target.set(0, 0, 0);
-  controls.update();
-
-  function onResize() {
-    camera.aspect = container.clientWidth / container.clientHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(container.clientWidth, container.clientHeight);
+  function drawFan(img, scale, offsetX) {
+    if (!img.complete || !img.naturalWidth) return;
+    const screenX = fanImgX * scale - offsetX;
+    const screenY = fanImgY * scale;
+    const drawW = img.naturalWidth * scale * fanScale;
+    const drawH = img.naturalHeight * scale * fanScale;
+    ctx.drawImage(img, screenX, screenY, drawW, drawH);
   }
-  window.addEventListener("resize", onResize);
+
+  function draw() {
+    if (!bg.complete || !bg.naturalWidth) return;
+
+    const imgW = bg.naturalWidth;
+    const imgH = bg.naturalHeight;
+    const scale = H / imgH;
+    const maxOffset = (imgW * scale) - W;
+    const offsetX = scroll * maxOffset;
+
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+
+    drawStripLayer(bg, imgW, imgH, scale, offsetX);
+
+    drawFan(fanFrames[fanIndex], scale, offsetX);
+  }
 
   function animate() {
     requestAnimationFrame(animate);
-    controls.update();
-    clampYaw();
-    renderer.render(scene, camera);
+    if (!isDragging) {
+      velocity *= 0.85;
+      targetScroll += velocity;
+    }
+    targetScroll = clamp(targetScroll, 0, 1);
+    scroll += (targetScroll - scroll) * 0.12;
+    draw();
   }
-  animate();
+
+  canvas.addEventListener('mousedown', e => {
+    isDragging = true;
+    lastX = e.clientX;
+    velocity = 0;
+    document.body.classList.add('dragging');
+  });
+  window.addEventListener('mousemove', e => {
+    if (!isDragging) return;
+    const dx = e.clientX - lastX;
+    const scale = H / bg.naturalHeight;
+    const maxOffset = (bg.naturalWidth * scale) - W;
+    velocity = -(dx / maxOffset);
+    targetScroll += velocity;
+    lastX = e.clientX;
+  });
+  window.addEventListener('mouseup', () => {
+    isDragging = false;
+    document.body.classList.remove('dragging');
+  });
+
+  canvas.addEventListener('touchstart', e => {
+    isDragging = true;
+    lastX = e.touches[0].clientX;
+    velocity = 0;
+    e.preventDefault();
+  }, { passive: false });
+  window.addEventListener('touchmove', e => {
+    if (!isDragging) return;
+    const dx = e.touches[0].clientX - lastX;
+    const scale = H / bg.naturalHeight;
+    const maxOffset = (bg.naturalWidth * scale) - W;
+    velocity = -(dx / maxOffset);
+    targetScroll += velocity;
+    lastX = e.touches[0].clientX;
+    e.preventDefault();
+  }, { passive: false });
+  window.addEventListener('touchend', () => { isDragging = false; });
+
+  window.addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft') velocity -= 0.005;
+    if (e.key === 'ArrowRight') velocity += 0.005;
+  });
 </script>
 </body>
 </html>
