@@ -6,7 +6,7 @@
 
     <style>
         body {
-            background-color:black;
+            background-color: black;
             margin: 0;
             height: 100vh;
             position: relative;
@@ -21,16 +21,13 @@
             width: 100%;
             opacity: 0.5;
             z-index: 5;
-
             animation: slideDown 10s linear forwards;
         }
 
         .container {
-            position: relative;
+            position: absolute;
             width: 100%;
             aspect-ratio: 16/9;
-            margin: auto;
-            position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -38,51 +35,41 @@
 
         #anim {
             position: absolute;
-            top:0;
-            left:0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             z-index: 1;
             object-fit: contain;
         }
 
         #animNoiseMenu {
-            position:absolute;
-            top:0;
-            left:0;
-            width: 100%;
-            height:100%;
-            z-index:2;
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 2;
             object-fit: contain;
         }
 
         #animWhiteMenu {
-            position:absolute;
-            top:0;
-            left:0;
-            width: 100%;
-            height:100%;
-            z-index:3;
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 3;
             object-fit: contain;
         }
 
-        /* overlay */
         .FNAFtitle {
             position: absolute;
-            top: 10%;
-            left: 10%;
+            top: 10%; left: 10%;
             width: 15%;
             pointer-events: none;
-            z-index:10;
+            z-index: 10;
             object-fit: contain;
         }
 
         .menu-buttons {
             position: absolute;
-            top: 50%;
-            left: 10%;
-            width:15%;
-            height:12%;
+            top: 50%; left: 10%;
+            width: 15%; height: 12%;
             z-index: 20;
             display: flex;
             flex-direction: column;
@@ -90,36 +77,66 @@
         }
 
         #selector {
-            position:absolute;
+            position: absolute;
             left: -25%;
-            width:20%;
-            transition:top 0.1s;
-            pointer-events:none;
+            width: 20%;
+            transition: top 0.1s;
+            pointer-events: none;
         }
 
         .menu-btn {
-            width:100%;
-            cursor:pointer;
-            display:block;
+            width: 100%;
+            cursor: pointer;
+            display: block;
         }
 
-        .menu-btn:hover {
-            opacity: 0.7;
-        }
-
+        .menu-btn:hover { opacity: 0.7; }
 
         @keyframes slideDown {
-            from {
-                bottom: 100%;
-            }
-            to {
-                top: 90%;
-            }
+            from { bottom: 100%; }
+            to   { top: 90%; }
+        }
+
+        /* ── Transition overlay ─────────────────────────────────── */
+        #transition-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: #000;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #transition-overlay.active {
+            pointer-events: all;
+        }
+
+        #transition-img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        /* ── Page fade-out on exit ──────────────────────────────── */
+        #page-fade {
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            background: #000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.6s ease;
         }
     </style>
 </head>
 
 <body>
+
+<div id="page-fade"></div>
 
 <div class="container">
     <img id="anim" src="../Assets/Menu/1.png">
@@ -134,16 +151,56 @@
     </div>
 </div>
 
+<!-- Full-screen transition overlay -->
+<div id="transition-overlay">
+    <img id="transition-img" src="../Assets/Menu/574.png">
+</div>
+
 
 <script>
-    function onNewGame(){
-        console.log("New Game clicked");
+    // ── Fade helper ──────────────────────────────────────────────
+    function fadeTo(el, from, to, duration) {
+        return new Promise(resolve => {
+            el.style.transition = `opacity ${duration}ms ease`;
+            el.style.opacity = from;
+            void el.offsetWidth; // force reflow so start value is painted
+            el.style.opacity = to;
+            setTimeout(resolve, duration);
+        });
+    }
+
+    function wait(ms) {
+        return new Promise(r => setTimeout(r, ms));
+    }
+
+    async function onNewGame() {
+        const overlay = document.getElementById('transition-overlay');
+        const img     = document.getElementById('transition-img');
+
+        overlay.classList.add('active');
+
+        // 1. Fade scene to black
+        await fadeTo(overlay, 0, 1, 700);
+
+        // 2. Fade in 574.png over the black
+        await fadeTo(img, 0, 1, 800);
+
+        // 3. Hold on 574.png
+        await wait(3500);
+
+        // 4. Fade 574.png back out to black
+        await fadeTo(img, 1, 0, 800);
+
+        // 5. Brief pause on black
+        await wait(500);
+
+        // 6. Navigate — mainroom will fade in on load
+        window.location.href = 'mainroom_test.html';
     }
 
     function onContinue() {
-        console.log("Continue clicked")
+        console.log("Continue clicked");
     }
-
 </script>
 
 <script src="./animations.js"></script>
@@ -175,8 +232,8 @@
 
     document.addEventListener("keydown", (e) => {
         if (e.key === "ArrowDown") moveSelector((selectedIndex + 1) % buttons.length);
-        if (e.key === "ArrowUp") moveSelector((selectedIndex - 1 + buttons.length) % buttons.length);
-        if (e.key === "Enter") buttons[selectedIndex].click();
+        if (e.key === "ArrowUp")   moveSelector((selectedIndex - 1 + buttons.length) % buttons.length);
+        if (e.key === "Enter")     buttons[selectedIndex].click();
     });
 
     moveSelector(0);
@@ -188,7 +245,6 @@
     playAnimation(document.getElementById("animWhiteMenu"), whiteMenu, 0.4);
 
     const slide = document.querySelector(".slide");
-
     slide.addEventListener("animationend", () => {
         slide.style.animation = "none";
         void slide.offsetWidth;

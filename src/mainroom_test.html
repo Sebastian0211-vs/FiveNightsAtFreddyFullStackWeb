@@ -6,6 +6,12 @@
   <title>FNAF Viewer</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    @font-face {
+      font-family: 'FNAF';
+      src: url('../Assets/Fonts/five-nights-at-freddys.otf') format('opentype');
+    }
+
     body {
       background: #000;
       overflow: hidden;
@@ -16,6 +22,74 @@
     }
     body.dragging { cursor: grabbing; }
     canvas { display: block; position: absolute; top: 0; left: 0; }
+
+    /* ── HUD ──────────────────────────────────────────────────── */
+    #hud {
+      position: fixed;
+      bottom: 52px; /* sit above tablet bar */
+      left: 20px;
+      z-index: 500;
+      pointer-events: none;
+      user-select: none;
+      font-family: 'FNAF', 'Courier New', monospace;
+      font-size: clamp(10px, 1.3vw, 17px);
+      color: #5dff5d;
+      text-shadow: 0 0 8px #00cc00;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    #hud-night {
+      font-size: clamp(12px, 1.6vw, 21px);
+      letter-spacing: 0.05em;
+    }
+
+    #hud-time {
+      font-size: clamp(11px, 1.5vw, 20px);
+      letter-spacing: 0.08em;
+    }
+
+    #hud-power-label {
+      margin-top: 6px;
+    }
+
+    #hud-power-bar-track {
+      width: clamp(80px, 10vw, 140px);
+      height: 8px;
+      background: #1a3d1a;
+      border: 1px solid #2a6a2a;
+      border-radius: 2px;
+      margin-top: 3px;
+      overflow: hidden;
+    }
+
+    #hud-power-bar-fill {
+      height: 100%;
+      background: #5dff5d;
+      box-shadow: 0 0 6px #00cc00;
+      transition: width 1s linear, background 1s;
+      border-radius: 2px;
+    }
+
+    #hud-power-bar-fill.low   { background: #ffaa00; box-shadow: 0 0 6px #cc8800; }
+    #hud-power-bar-fill.critical { background: #ff3333; box-shadow: 0 0 6px #cc0000; }
+
+    #hud-usage {
+      margin-top: 3px;
+      letter-spacing: 0.12em;
+    }
+
+    /* Page fade-in on load */
+    #page-fade {
+      position: fixed;
+      inset: 0;
+      z-index: 998;
+      background: #000;
+      opacity: 1;
+      pointer-events: none;
+      transition: opacity 0.9s ease;
+    }
 
     /* Invisible click zones for buttons — positioned by JS */
     .btn-zone {
@@ -34,7 +108,7 @@
       font: 11px monospace;
       padding: 12px;
       border: 1px solid #0f0;
-      z-index: 100;
+      z-index: 600;
       width: 240px;
     }
     #debug label { display: block; margin-top: 6px; }
@@ -54,7 +128,7 @@
       height: 40px;
       background: #1a1a1a;
       border-top: 2px solid #333;
-      z-index: 50;
+      z-index: 550;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -93,6 +167,18 @@
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="page-fade"></div>
+
+<!-- HUD -->
+<div id="hud">
+  <div id="hud-night">Night 1</div>
+  <div id="hud-time">12 AM</div>
+  <div id="hud-power-label">Power Left: <span id="hud-power-val">99%</span></div>
+  <div id="hud-power-bar-track">
+    <div id="hud-power-bar-fill" style="width:99%"></div>
+  </div>
+  <div id="hud-usage">Usage: <span id="hud-usage-val">█░░░░</span></div>
+</div>
 <div id="debug">
   <h3>Debug [D to hide]</h3>
   <h4>Left Button</h4>
@@ -518,7 +604,6 @@
 
   // --- Tablet (frame list built from tabletAnimation defined in animations.js) ---
   const sfxCamera = new Audio('../Assets/FNaF 1 Audio/CAMERA_VIDEO_LOA_60105303.wav');
-  const sfxCameraDown = new Audio('../Assets/FNaF 1 Audio/put down.wav')
   sfxCamera.volume = 0.8;
 
   const tabletFrames = [];
@@ -605,8 +690,8 @@
 
   function closeTablet() {
     if (tabletState !== 'open') return;
-    sfxCameraDown.currentTime = 0;
-    sfxCameraDown.play().catch(() => {});
+    sfxCamera.currentTime = 0;
+    sfxCamera.play().catch(() => {});
     tabletState = 'closing';
     tabletFrame = tabletFrames.length - 1;
     tabletCam.style.display    = 'none';
@@ -662,6 +747,120 @@
     e.preventDefault();
   }, { passive: false });
   window.addEventListener('touchend', () => { isDragging = false; });
+
+  // Fade in on page load
+  window.addEventListener('load', () => {
+    const fadeEl = document.getElementById('page-fade');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      fadeEl.style.opacity = '0';
+    }));
+  });
+
+  // ── GameState ──────────────────────────────────────────────
+  // Power pool: 999 raw units. Display = Math.round(raw / 10) / 10 → one decimal %.
+  // Usage drain: every second, subtract current usage from raw power.
+  // Passive drain: from night 2 onward, subtract 1 extra on a per-night interval.
+  // Night length: 8 min 55 sec = 535 seconds across 7 in-game hours (12 AM → 6 AM).
+
+  const HOURS        = ['12 AM','1 AM','2 AM','3 AM','4 AM','5 AM','6 AM'];
+  const NIGHT_SECS   = 535;
+  const SECS_PER_HOUR = NIGHT_SECS / 6; // ~89.2s per hour
+
+  // Passive drain interval in seconds per night (0 = no passive drain)
+  const PASSIVE_INTERVAL = { 1: 0, 2: 6, 3: 5, 4: 4, 5: 3, 6: 3, 7: 3 };
+
+  const GameState = {
+    night:        1,
+    rawPower:     999,   // the real value everything operates on
+    secondsElapsed: 0,
+    passiveAccum:   0,   // accumulator for passive drain seconds
+
+    // Active usage: 1 base + 1 per closed door + 1 per active light (max 5)
+    getUsage() {
+      let u = 1;
+      if (state.left.door   === 'closed') u++;
+      if (state.right.door  === 'closed') u++;
+      if (state.left.light  === 'on')     u++;
+      if (state.right.light === 'on')     u++;
+      return Math.min(u, 5);
+    },
+
+    tick() {
+      if (this.rawPower <= 0) {
+        this.rawPower = 0;
+        this.render();
+        this.onPowerOut();
+        return;
+      }
+
+      // 1. Usage drain (every second)
+      const usage = this.getUsage();
+      this.rawPower -= usage;
+
+      // 2. Passive drain (night 2+)
+      const interval = PASSIVE_INTERVAL[this.night] || 0;
+      if (interval > 0) {
+        this.passiveAccum++;
+        if (this.passiveAccum >= interval) {
+          this.passiveAccum = 0;
+          this.rawPower -= 1;
+        }
+      }
+
+      this.rawPower = Math.max(0, this.rawPower);
+
+      // 3. Advance clock
+      this.secondsElapsed++;
+      if (this.secondsElapsed >= NIGHT_SECS) {
+        this.on6AM();
+        return;
+      }
+
+      this.render();
+    },
+
+    // Displayed % = raw / 10, rounded to 1 decimal place
+    getDisplayPercent() {
+      return (Math.round(this.rawPower) / 10).toFixed(1);
+    },
+
+    getCurrentHour() {
+      return Math.min(6, Math.floor(this.secondsElapsed / SECS_PER_HOUR));
+    },
+
+    render() {
+      const usage   = this.getUsage();
+      const pct     = this.getDisplayPercent();
+      const fill    = document.getElementById('hud-power-bar-fill');
+      const rawPct  = this.rawPower / 999 * 100; // for the bar width
+
+      document.getElementById('hud-night').textContent     = `Night ${this.night}`;
+      document.getElementById('hud-time').textContent      = HOURS[this.getCurrentHour()];
+      document.getElementById('hud-power-val').textContent = `${pct}%`;
+      document.getElementById('hud-usage-val').textContent =
+              '█'.repeat(usage) + '░'.repeat(5 - usage);
+
+      fill.style.width = `${rawPct}%`;
+      fill.classList.remove('low', 'critical');
+      if      (rawPct <= 15) fill.classList.add('critical');
+      else if (rawPct <= 35) fill.classList.add('low');
+    },
+
+    onPowerOut() {
+      console.log('Power out — Freddy incoming');
+      // TODO: trigger Freddy / blackout sequence
+    },
+
+    on6AM() {
+      console.log('6 AM — night complete');
+      // TODO: trigger night complete sequence
+    },
+  };
+
+  // Tick every real second
+  setInterval(() => GameState.tick(), 1000);
+  GameState.render();
+
 </script>
 </body>
 </html>
