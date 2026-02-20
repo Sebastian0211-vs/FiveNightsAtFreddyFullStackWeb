@@ -58,6 +58,8 @@ const FreddyMenu = {
     fps: 15,
 };
 
+
+
 const noiseMenu = {
     frames : [
         "../assets/menu/staticNoise1.png",
@@ -175,7 +177,169 @@ const mainRoomDoorRight = {
     ],
 };
 
+const chicajumpscare = {
+    frames : [
 
+        "../assets/Chica/65.png",
+        "../assets/Chica/69.png",
+        "../assets/Chica/216.png",
+        "../assets/Chica/228.png",
+        "../assets/Chica/229.png",
+        "../assets/Chica/230.png",
+        "../assets/Chica/231.png",
+        "../assets/Chica/232.png",
+        "../assets/Chica/233.png",
+        "../assets/Chica/234.png",
+        "../assets/Chica/235.png",
+        "../assets/Chica/236.png",
+        "../assets/Chica/237.png",
+        "../assets/Chica/238.png",
+        "../assets/Chica/239.png",
+        "../assets/Chica/279.png",
+        "../assets/Chica/281.png",
+    ],
+    fps: 30,
+    scale: 1.0,
+    loop: false,   // don't loop the jumpscare animation
+}
+
+const bonnieJumpscare = {
+    frames: [
+        "../Assets/Bonnie/291.png",
+        "../Assets/Bonnie/293.png",
+        "../Assets/Bonnie/294.png",
+        "../Assets/Bonnie/295.png",
+        "../Assets/Bonnie/296.png",
+        "../Assets/Bonnie/297.png",
+        "../Assets/Bonnie/298.png",
+        "../Assets/Bonnie/299.png",
+        "../Assets/Bonnie/300.png",
+        "../Assets/Bonnie/301.png",
+        "../Assets/Bonnie/303.png",
+        ],
+    fps: 30,
+    // Position in source-image pixel space
+        scale: 1.0,
+        loop: false,   // don't loop the jumpscare animation
+}
+
+const foxyJumpscare = {
+    frames: [
+        "../AssetsFoxy/foxy jumpscare/242.png",
+        "../Assets/Foxy/foxy jumpscare/413.png",
+        "../Assets/Foxy/foxy jumpscare/415.png",
+        "../Assets/Foxy/foxy jumpscare/243.png",
+        "../Assets/Foxy/foxy jumpscare/396.png",
+        "../Assets/Foxy/foxy jumpscare/397.png",
+        "../Assets/Foxy/foxy jumpscare/398.png",
+        "../Assets/Foxy/foxy jumpscare/399.png",
+        "../Assets/Foxy/foxy jumpscare/400.png",
+        "../Assets/Foxy/foxy jumpscare/401.png",
+        "../Assets/Foxy/foxy jumpscare/402.png",
+        "../Assets/Foxy/foxy jumpscare/403.png",
+        "../Assets/Foxy/foxy jumpscare/404.png",
+        "../Assets/Foxy/foxy jumpscare/405.png",
+        "../Assets/Foxy/foxy jumpscare/406.png",
+        "../Assets/Foxy/foxy jumpscare/407.png",
+        "../Assets/Foxy/foxy jumpscare/408.png",
+        "../Assets/Foxy/foxy jumpscare/409.png",
+        "../Assets/Foxy/foxy jumpscare/410.png",
+        "../Assets/Foxy/foxy jumpscare/411.png",
+        "../Assets/Foxy/foxy jumpscare/412.png",
+        "../Assets/Foxy/foxy jumpscare/413.png"
+    ],
+    fps: 30,
+    // Position in source-image pixel space
+     scale: 1.0,
+     loop: false,   // don't loop the jumpscare animation
+
+}
+
+const goldenFreddyJumpscare = {
+    frames: [
+        "../Assets/Golden Freddy/548.png",
+        "../Assets/Golden Freddy/548.png",
+        "../Assets/Golden Freddy/548.png",
+        ],
+    fps: 30,
+    // Position in source-image pixel space
+     scale: 1.0,
+     loop: false,   // don't loop the jumpscare animation
+}
+
+// freddy jumpscare
+const freddyJumpscare = {
+    frames: [
+        "../Assets/Freddy/519.png",
+        "../Assets/Freddy/521.png",
+        "../Assets/Freddy/489.png",
+        "../Assets/Freddy/490.png",
+        "../Assets/Freddy/491.png",
+        "../Assets/Freddy/492.png",
+        "../Assets/Freddy/493.png",
+        "../Assets/Freddy/494.png",
+        "../Assets/Freddy/495.png",
+        "../Assets/Freddy/496.png",
+        "../Assets/Freddy/497.png",
+        "../Assets/Freddy/498.png",
+        "../Assets/Freddy/499.png",
+        "../Assets/Freddy/500.png",
+        "../Assets/Freddy/501.png",
+        "../Assets/Freddy/502.png",
+        "../Assets/Freddy/503.png",
+        "../Assets/Freddy/504.png",
+        "../Assets/Freddy/505.png",
+        "../Assets/Freddy/506.png",
+        "../Assets/Freddy/507.png",
+        "../Assets/Freddy/508.png",
+        "../Assets/Freddy/509.png",
+        "../Assets/Freddy/509.png",
+        "../Assets/Freddy/510.png",
+        "../Assets/Freddy/511.png",
+        "../Assets/Freddy/512.png",
+        "../Assets/Freddy/513.png",
+        "../Assets/Freddy/514.png",
+        "../Assets/Freddy/515.png",
+        "../Assets/Freddy/516.png",
+        "../Assets/Freddy/517.png",
+        "../Assets/Freddy/518.png",
+    ],
+    fps: 30,
+    // Position in source-image pixel space
+     scale: 1.0,
+     loop: false,   // don't loop the jumpscare animation
+}
+
+
+const freddyJumpscarePowerOut = {
+    frames: [
+        "../Assets/Freddy/326.png",
+        "../Assets/Freddy/348.png",
+        "../Assets/Freddy/307.png",
+        "../Assets/Freddy/308.png",
+        "../Assets/Freddy/309.png",
+        "../Assets/Freddy/310.png",
+        "../Assets/Freddy/311.png",
+        "../Assets/Freddy/312.png",
+        "../Assets/Freddy/313.png",
+        "../Assets/Freddy/314.png",
+        "../Assets/Freddy/315.png",
+        "../Assets/Freddy/316.png",
+        "../Assets/Freddy/317.png",
+        "../Assets/Freddy/318.png",
+        "../Assets/Freddy/319.png",
+        "../Assets/Freddy/320.png",
+        "../Assets/Freddy/321.png",
+        "../Assets/Freddy/322.png",
+        "../Assets/Freddy/323.png",
+        "../Assets/Freddy/324.png",
+        "../Assets/Freddy/325.png",
+    ],
+    fps: 30,
+    // Position in source-image pixel space
+     scale: 1.0,
+     loop: false,   // don't loop the jumpscare animation
+}
 // ── Fan animation ─────────────────────────────────────────────
 
 const fanAnimation = {
