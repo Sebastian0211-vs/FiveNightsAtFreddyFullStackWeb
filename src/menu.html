@@ -6,9 +6,11 @@
 
     <style>
         body {
-            background-color: black;
+            background-color:black;
             margin: 0;
             height: 100vh;
+            opacity: 0;
+            transition: opacity 1s;
             position: relative;
             overflow: hidden;
         }
@@ -25,9 +27,11 @@
         }
 
         .container {
-            position: absolute;
+            position: relative;
             width: 100%;
             aspect-ratio: 16/9;
+            margin: auto;
+            position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -35,41 +39,51 @@
 
         #anim {
             position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            top:0;
+            left:0;
+            width: 100%;
+            height: 100%;
             z-index: 1;
             object-fit: contain;
         }
 
         #animNoiseMenu {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 2;
+            position:absolute;
+            top:0;
+            left:0;
+            width: 100%;
+            height:100%;
+            z-index:2;
             object-fit: contain;
         }
 
         #animWhiteMenu {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            z-index: 3;
+            position:absolute;
+            top:0;
+            left:0;
+            width: 100%;
+            height:100%;
+            z-index:3;
             object-fit: contain;
         }
 
+        /* overlay */
         .FNAFtitle {
             position: absolute;
-            top: 10%; left: 10%;
+            top: 10%;
+            left: 10%;
             width: 15%;
             pointer-events: none;
-            z-index: 10;
+            z-index:10;
             object-fit: contain;
         }
 
         .menu-buttons {
             position: absolute;
-            top: 50%; left: 10%;
-            width: 15%; height: 12%;
+            top: 50%;
+            left: 10%;
+            width:15%;
+            height:12%;
             z-index: 20;
             display: flex;
             flex-direction: column;
@@ -77,38 +91,31 @@
         }
 
         #selector {
-            position: absolute;
+            position:absolute;
             left: -25%;
-            width: 20%;
-            transition: top 0.1s;
-            pointer-events: none;
+            width:20%;
+            transition:top 0.1s;
+            pointer-events:none;
         }
 
         .menu-btn {
-            width: 100%;
-            cursor: pointer;
-            display: block;
+            width:100%;
+            cursor:pointer;
+            display:block;
         }
 
-        .menu-btn:hover { opacity: 0.7; }
+        .menu-btn:hover {
+            opacity: 0.7;
+        }
+
 
         @keyframes slideDown {
-            from { bottom: 100%; }
-            to   { top: 90%; }
-        }
-
-        /* ── Transition overlay ─────────────────────────────────── */
-        #transition-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 1000;
-            background: #000;
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        #transition-overlay.active {
-            pointer-events: all;
+            from {
+                bottom: 100%;
+            }
+            to {
+                top: 90%;
+            }
         }
 
         #transition-img {
@@ -121,7 +128,16 @@
             transition: opacity 0.8s ease;
         }
 
-        /* ── Page fade-out on exit ──────────────────────────────── */
+        #transition-overlay {
+            pointer-events: none;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: black;        /* ← ça cache le menu */
+            opacity: 0;
+            transition: opacity 0.7s ease;
+        }
+
         #page-fade {
             position: fixed;
             inset: 0;
@@ -129,27 +145,28 @@
             background: #000;
             opacity: 0;
             pointer-events: none;
+            z-index:1;
             transition: opacity 0.6s ease;
         }
     </style>
 </head>
 
-<body>
+    <body>
 
-<div id="page-fade"></div>
+    <div id="page-fade"></div>
 
-<div class="container">
-    <img id="anim" src="../Assets/Menu/1.png">
-    <img id="animNoiseMenu" src="../Assets/Menu/noise1.png">
-    <img id="animWhiteMenu" src="../Assets/Menu/whiteNoise1.png">
-    <img class="slide" src="../Assets/Menu/452.png">
-    <img id="title" class="FNAFtitle" src="../Assets/Menu/444-trans.png">
-    <div class="menu-buttons">
-        <img id="selector" src="../Assets/Menu/arrow_trans.png">
-        <img class="menu-btn" src="../Assets/Menu/new_game_trans.png" onclick="onNewGame()">
-        <img class="menu-btn" src="../Assets/Menu/continue_trans.png" onclick="onContinue()">
+    <div class="container">
+        <img id="anim" src="../assets/menu/1.png">
+        <img id="animNoiseMenu" src="../assets/menu/noise1.png">
+        <img id="animWhiteMenu" src="../assets/menu/whiteNoise1.png">
+        <img class="slide" src="../assets/menu/452.png">
+        <img id="title" class="FNAFtitle" src="../assets/menu/444-trans.png">
+        <div class="menu-buttons">
+            <img id="selector" src="../assets/menu/arrow_trans.png">
+            <img class="menu-btn" src="../assets/menu/new_game_trans.png" onclick="onNewGame()">
+            <img class="menu-btn" src="../assets/menu/continue_trans.png" onclick="onContinue()">
+        </div>
     </div>
-</div>
 
 <!-- Full-screen transition overlay -->
 <div id="transition-overlay">
@@ -157,100 +174,110 @@
 </div>
 
 
-<script>
-    // ── Fade helper ──────────────────────────────────────────────
-    function fadeTo(el, from, to, duration) {
-        return new Promise(resolve => {
-            el.style.transition = `opacity ${duration}ms ease`;
-            el.style.opacity = from;
-            void el.offsetWidth; // force reflow so start value is painted
-            el.style.opacity = to;
-            setTimeout(resolve, duration);
-        });
-    }
+        <script>
 
-    function wait(ms) {
-        return new Promise(r => setTimeout(r, ms));
-    }
+            function fadeTo(el, from, to, duration) {
+                return new Promise(resolve => {
+                    el.style.transition = `opacity ${duration}ms ease`;
+                    el.style.opacity = from;
+                    void el.offsetWidth; // force reflow so start value is painted
+                    el.style.opacity = to;
+                    setTimeout(resolve, duration);
+                });
+            }
 
-    async function onNewGame() {
-        const overlay = document.getElementById('transition-overlay');
-        const img     = document.getElementById('transition-img');
+            function wait(ms) {
+                return new Promise(r => setTimeout(r, ms));
+            }
 
-        overlay.classList.add('active');
+            function goTo(url) {
+                document.body.style.transition = "opacity 2s";
+                document.body.style.opacity = "0";
+                setTimeout(() => {
+                    window.location.href = url;
+                }, 2000);
+            }
 
-        // 1. Fade scene to black
-        await fadeTo(overlay, 0, 1, 700);
+            async function onNewGame() {
+                const overlay = document.getElementById('transition-overlay');
+                const img     = document.getElementById('transition-img');
 
-        // 2. Fade in 574.png over the black
-        await fadeTo(img, 0, 1, 800);
+                overlay.classList.add('active');
 
-        // 3. Hold on 574.png
-        await wait(3500);
+                // 1. Fade scene to black
+                await fadeTo(overlay, 0, 1, 700);
 
-        // 4. Fade 574.png back out to black
-        await fadeTo(img, 1, 0, 800);
+                // 2. Fade in 574.png over the black
+                await fadeTo(img, 0, 1, 800);
 
-        // 5. Brief pause on black
-        await wait(500);
+                // 3. Hold on 574.png
+                await wait(3500);
 
-        // 6. Navigate — mainroom will fade in on load
-        window.location.href = 'mainroom_test.html';
-    }
+                // 4. Fade 574.png back out to black
+                await fadeTo(img, 1, 0, 800);
 
-    function onContinue() {
-        console.log("Continue clicked");
-    }
-</script>
+                // 5. Brief pause on black
+                await wait(500);
+
+                // 6. Navigate — mainroom will fade in on load
+                window.location.href = 'mainroom_test.html';
+            }
+            function onContinue(){
+                console.log("CONTINUE")
+            }
+        </script>
 
 <script src="./animations.js"></script>
 <script src="./player.js"></script>
 
-<script>
-    window.addEventListener('click', () => {
-        const a = new Audio('../Assets/FNaF 1 Audio/darkness music.wav');
-        a.play()
-            .then(() => console.log("✅ Audio playing!"))
-            .catch((e) => console.error("❌ Audio failed:", e));
-    }, { once: true });
-</script>
+        <script>
+            window.onload = () => {
+                document.body.style.opacity = "1";
+                const a = new Audio('../Assets/FNaF 1 Audio/darkness music.wav');
+                a.play()
+                    .then(() => console.log("Menu audio playing"))
+                    .catch((e) => console.error("Menu audio not found", e));
+            }
 
-<script>
-    const buttons = document.querySelectorAll(".menu-btn");
-    const selector = document.getElementById("selector");
-    let selectedIndex = 0;
+        </script>
 
-    function moveSelector(index) {
-        selectedIndex = index;
-        const btn = buttons[index];
-        selector.style.top = btn.offsetTop + btn.offsetHeight / 2 - selector.offsetHeight / 2 + "px";
-    }
+        <script>
+            const buttons = document.querySelectorAll(".menu-btn");
+            const selector = document.getElementById("selector");
+            let selectedIndex = 0;
 
-    buttons.forEach((btn, i) => {
-        btn.addEventListener("mouseenter", () => moveSelector(i));
-    });
+            function moveSelector(index) {
+                selectedIndex = index;
+                const btn = buttons[index];
+                selector.style.top = btn.offsetTop + btn.offsetHeight / 2 - selector.offsetHeight / 2 + "px";
+            }
 
-    document.addEventListener("keydown", (e) => {
-        if (e.key === "ArrowDown") moveSelector((selectedIndex + 1) % buttons.length);
-        if (e.key === "ArrowUp")   moveSelector((selectedIndex - 1 + buttons.length) % buttons.length);
-        if (e.key === "Enter")     buttons[selectedIndex].click();
-    });
+            buttons.forEach((btn, i) => {
+                btn.addEventListener("mouseenter", () => moveSelector(i));
+            });
 
-    moveSelector(0);
-</script>
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "ArrowDown") moveSelector((selectedIndex + 1) % buttons.length);
+                if (e.key === "ArrowUp") moveSelector((selectedIndex - 1 + buttons.length) % buttons.length);
+                if (e.key === "Enter") buttons[selectedIndex].click();
+            });
 
-<script>
-    playAnimation(document.getElementById("anim"), LettryMenu);
-    playAnimation(document.getElementById("animNoiseMenu"), noiseMenu, 0.4);
-    playAnimation(document.getElementById("animWhiteMenu"), whiteMenu, 0.4);
+            moveSelector(0);
+        </script>
 
-    const slide = document.querySelector(".slide");
-    slide.addEventListener("animationend", () => {
-        slide.style.animation = "none";
-        void slide.offsetWidth;
-        slide.style.animation = "slideDown 10s linear forwards";
-    });
-</script>
+        <script>
+            playAnimation(document.getElementById("anim"), FreddyMenu);
+            playAnimation(document.getElementById("animNoiseMenu"), noiseMenu, 0.4);
+            playAnimation(document.getElementById("animWhiteMenu"), whiteMenu, 0.4);
+
+            const slide = document.querySelector(".slide");
+
+            slide.addEventListener("animationend", () => {
+                slide.style.animation = "none";
+                void slide.offsetWidth;
+                slide.style.animation = "slideDown 10s linear forwards";
+            });
+        </script>
 
 </body>
 </html>

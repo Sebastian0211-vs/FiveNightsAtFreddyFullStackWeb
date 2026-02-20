@@ -1,4 +1,2 @@
 # FiveNightsAtFreddyFullStackWeb
-
-![shocked]https://github.com/Sebastian0211-vs/FiveNightsAtFreddyFullStackWeb/Assets/Freddy/shock.png)
-
+![shocked](https://raw.githubusercontent.com/Sebastian0211-vs/FiveNightsAtFreddyFullStackWeb/main/Assets/Freddy/shock.png)
