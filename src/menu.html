@@ -166,6 +166,19 @@
                 const buttons = document.querySelectorAll(".menu-btn");
                 const selector = document.getElementById("selector");
                 let selectedIndex = 0;
+<script>
+    window.addEventListener('click', () => {
+        const a = new Audio('../Assets/FNaF 1 Audio/darkness music.wav');
+        a.play()
+            .then(() => console.log("✅ Audio playing!"))
+            .catch((e) => console.error("❌ Audio failed:", e));
+    }, { once: true });
+</script>
+
+<script>
+    const buttons = document.querySelectorAll(".menu-btn");
+    const selector = document.getElementById("selector");
+    let selectedIndex = 0;
 
                 function moveSelector(index) {
                     selectedIndex = index;
