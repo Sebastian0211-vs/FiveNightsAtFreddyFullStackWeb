@@ -5,17 +5,55 @@
     <title>FNAF 1</title>
     <style>
         body {
+            background-color: black;
+            margin: 0;
+            height: 100vh;
+            position: relative;
+            overflow: hidden;
             opacity: 0;
-            transition: opacity 0.5s;
+            transition: opacity 1s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
         }
+
+        #warning-img {
+            width: 30%;
+            object-fit: contain;
+        }
+
+        .warning-text {
+            color: white;
+            font-family: monospace;
+            font-size: 1.2vw;
+            margin-top: 2%;
+            text-align: center;
+            opacity: 0.7;
+            gap:30%;
+        }
+
     </style>
 </head>
 
 <body>
-    <script>
-        window.onload = () => {
-            document.body.style.opacity = "1";
-        }
-    </script>
+<img id="warning-img" src="../assets/menu/warning_trans.png">
+<p id="warning" class="warning-text">Press F11 for better game experience.<br>Click anywhere to continue.</p>
+<p id="sound" class="warning-text">Better with sound on !</p>
+
+<script>
+    window.onload = () => {
+        document.body.style.opacity = "1";
+    }
+
+    document.body.addEventListener("click", () => {
+        document.body.style.transition = "opacity 1s";
+        document.body.style.opacity = "0";
+        setTimeout(() => {
+            window.location.href = "menu.html";
+        }, 2000);
+    });
+</script>
 </body>
 </html>

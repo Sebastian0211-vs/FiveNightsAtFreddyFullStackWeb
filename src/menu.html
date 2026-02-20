@@ -9,6 +9,8 @@
             background-color:black;
             margin: 0;
             height: 100vh;
+            opacity: 0;
+            transition: opacity 1s;
             position: relative;
             overflow: hidden;
         }
@@ -66,7 +68,6 @@
             object-fit: contain;
         }
 
-        /* overlay */
         .FNAFtitle {
             position: absolute;
             top: 10%;
@@ -138,65 +139,69 @@
         <script>
 
             function goTo(url) {
-                document.body.style.transition = "opacity 0.5s";
+                document.body.style.transition = "opacity 2s";
                 document.body.style.opacity = "0";
                 setTimeout(() => {
                     window.location.href = url;
-                }, 500);
+                }, 2000);
             }
 
             function onNewGame(){
                 console.log("New Game clicked");
-                goTo("warning.html")
+                goTo("mainroom_test.html")
 
             }
 
             function onContinue() {
                 console.log("Continue clicked")
             }
+        </script>
 
+        <script src="./animations.js"></script>
+        <script src="./player.js"></script>
 
+        <script>
+            window.onload = () => {
+                document.body.style.opacity = "1";
+                const a = new Audio('../Assets/FNaF 1 Audio/darkness music.wav');
+                a.play()
+                    .then(() => console.log("Menu audio playing"))
+                    .catch((e) => console.error("Menu audio not found", e));
+            }
+
+            /*
+            window.addEventListener('click', () => {
+                const a = new Audio('../Assets/FNaF 1 Audio/darkness music.wav');
+                a.play()
+                    .then(() => console.log("Menu audio playing"))
+                    .catch((e) => console.error("Menu audio not found", e));
+            }, { once: true });
+            */
 
         </script>
 
-            <script src="./animations.js"></script>
-            <script src="./player.js"></script>
+        <script>
+            const buttons = document.querySelectorAll(".menu-btn");
+            const selector = document.getElementById("selector");
+            let selectedIndex = 0;
 
-            <script>
-                const buttons = document.querySelectorAll(".menu-btn");
-                const selector = document.getElementById("selector");
-                let selectedIndex = 0;
-<script>
-    window.addEventListener('click', () => {
-        const a = new Audio('../Assets/FNaF 1 Audio/darkness music.wav');
-        a.play()
-            .then(() => console.log("✅ Audio playing!"))
-            .catch((e) => console.error("❌ Audio failed:", e));
-    }, { once: true });
-</script>
+            function moveSelector(index) {
+                selectedIndex = index;
+                const btn = buttons[index];
+                selector.style.top = btn.offsetTop + btn.offsetHeight / 2 - selector.offsetHeight / 2 + "px";
+            }
 
-<script>
-    const buttons = document.querySelectorAll(".menu-btn");
-    const selector = document.getElementById("selector");
-    let selectedIndex = 0;
+            buttons.forEach((btn, i) => {
+                btn.addEventListener("mouseenter", () => moveSelector(i));
+            });
 
-                function moveSelector(index) {
-                    selectedIndex = index;
-                    const btn = buttons[index];
-                    selector.style.top = btn.offsetTop + btn.offsetHeight / 2 - selector.offsetHeight / 2 + "px";
-                }
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "ArrowDown") moveSelector((selectedIndex + 1) % buttons.length);
+                if (e.key === "ArrowUp") moveSelector((selectedIndex - 1 + buttons.length) % buttons.length);
+                if (e.key === "Enter") buttons[selectedIndex].click();
+            });
 
-                buttons.forEach((btn, i) => {
-                    btn.addEventListener("mouseenter", () => moveSelector(i));
-                });
-
-                document.addEventListener("keydown", (e) => {
-                    if (e.key === "ArrowDown") moveSelector((selectedIndex + 1) % buttons.length);
-                    if (e.key === "ArrowUp") moveSelector((selectedIndex - 1 + buttons.length) % buttons.length);
-                    if (e.key === "Enter") buttons[selectedIndex].click();
-                });
-
-                moveSelector(0);
+            moveSelector(0);
         </script>
 
         <script>
