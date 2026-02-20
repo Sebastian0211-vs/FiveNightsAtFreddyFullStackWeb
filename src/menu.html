@@ -23,7 +23,6 @@
             width: 100%;
             opacity: 0.5;
             z-index: 5;
-
             animation: slideDown 10s linear forwards;
         }
 
@@ -68,6 +67,7 @@
             object-fit: contain;
         }
 
+        /* overlay */
         .FNAFtitle {
             position: absolute;
             top: 10%;
@@ -117,26 +117,72 @@
                 top: 90%;
             }
         }
+
+        #transition-img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+
+        #transition-overlay {
+            pointer-events: none;
+        }
+
+        #page-fade {
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            background: #000;
+            opacity: 0;
+            pointer-events: none;
+            z-index:1;
+            transition: opacity 0.6s ease;
+        }
     </style>
 </head>
 
     <body>
 
-        <div class="container">
-            <img id="anim" src="../assets/menu/1.png">
-            <img id="animNoiseMenu" src="../assets/menu/noise1.png">
-            <img id="animWhiteMenu" src="../assets/menu/whiteNoise1.png">
-            <img class="slide" src="../assets/menu/452.png">
-            <img id="title" class="FNAFtitle" src="../assets/menu/444-trans.png">
-            <div class="menu-buttons">
-                <img id="selector" src="../assets/menu/arrow_trans.png">
-                <img class="menu-btn" src="../assets/menu/new_game_trans.png" onclick="onNewGame()">
-                <img class="menu-btn" src="../assets/menu/continue_trans.png" onclick="onContinue()">
-            </div>
+    <div id="page-fade"></div>
+
+    <div class="container">
+        <img id="anim" src="../assets/menu/1.png">
+        <img id="animNoiseMenu" src="../assets/menu/noise1.png">
+        <img id="animWhiteMenu" src="../assets/menu/whiteNoise1.png">
+        <img class="slide" src="../assets/menu/452.png">
+        <img id="title" class="FNAFtitle" src="../assets/menu/444-trans.png">
+        <div class="menu-buttons">
+            <img id="selector" src="../assets/menu/arrow_trans.png">
+            <img class="menu-btn" src="../assets/menu/new_game_trans.png" onclick="onNewGame()">
+            <img class="menu-btn" src="../assets/menu/continue_trans.png" onclick="onContinue()">
         </div>
+    </div>
+
+<!-- Full-screen transition overlay -->
+<div id="transition-overlay">
+    <img id="transition-img" src="../Assets/Menu/574.png">
+</div>
 
 
         <script>
+
+            function fadeTo(el, from, to, duration) {
+                return new Promise(resolve => {
+                    el.style.transition = `opacity ${duration}ms ease`;
+                    el.style.opacity = from;
+                    void el.offsetWidth; // force reflow so start value is painted
+                    el.style.opacity = to;
+                    setTimeout(resolve, duration);
+                });
+            }
+
+            function wait(ms) {
+                return new Promise(r => setTimeout(r, ms));
+            }
 
             function goTo(url) {
                 document.body.style.transition = "opacity 2s";
@@ -146,19 +192,37 @@
                 }, 2000);
             }
 
-            function onNewGame(){
-                console.log("New Game clicked");
-                goTo("mainroom_test.html")
+            async function onNewGame() {
+                const overlay = document.getElementById('transition-overlay');
+                const img     = document.getElementById('transition-img');
 
+                overlay.classList.add('active');
+
+                // 1. Fade scene to black
+                await fadeTo(overlay, 0, 1, 700);
+
+                // 2. Fade in 574.png over the black
+                await fadeTo(img, 0, 1, 800);
+
+                // 3. Hold on 574.png
+                await wait(3500);
+
+                // 4. Fade 574.png back out to black
+                await fadeTo(img, 1, 0, 800);
+
+                // 5. Brief pause on black
+                await wait(500);
+
+                // 6. Navigate — mainroom will fade in on load
+                window.location.href = 'mainroom_test.html';
             }
-
-            function onContinue() {
-                console.log("Continue clicked")
+            function onContinue(){
+                console.log("CONTINUE")
             }
         </script>
 
-        <script src="./animations.js"></script>
-        <script src="./player.js"></script>
+<script src="./animations.js"></script>
+<script src="./player.js"></script>
 
         <script>
             window.onload = () => {
@@ -168,15 +232,6 @@
                     .then(() => console.log("Menu audio playing"))
                     .catch((e) => console.error("Menu audio not found", e));
             }
-
-            /*
-            window.addEventListener('click', () => {
-                const a = new Audio('../Assets/FNaF 1 Audio/darkness music.wav');
-                a.play()
-                    .then(() => console.log("Menu audio playing"))
-                    .catch((e) => console.error("Menu audio not found", e));
-            }, { once: true });
-            */
 
         </script>
 
@@ -218,5 +273,5 @@
             });
         </script>
 
-    </body>
+</body>
 </html>
