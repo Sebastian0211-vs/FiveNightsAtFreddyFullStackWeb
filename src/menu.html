@@ -130,6 +130,12 @@
 
         #transition-overlay {
             pointer-events: none;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: black;        /* ← ça cache le menu */
+            opacity: 0;
+            transition: opacity 0.7s ease;
         }
 
         #page-fade {
