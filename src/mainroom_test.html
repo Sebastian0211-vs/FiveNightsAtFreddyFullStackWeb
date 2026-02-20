@@ -115,6 +115,26 @@
   <label>Scale: <span class="val" id="vrsc">1.00</span>
     <input type="range" id="srsc" min="0.1" max="3" step="0.01" value="1">
   </label>
+  <h4>Left Door</h4>
+  <label>X: <span class="val" id="vldx">73</span>
+    <input type="range" id="sldx" min="-500" max="3000" value="73">
+  </label>
+  <label>Y: <span class="val" id="vldy">41</span>
+    <input type="range" id="sldy" min="-500" max="1500" value="41">
+  </label>
+  <label>Scale: <span class="val" id="vldsc">1.00</span>
+    <input type="range" id="sldsc" min="0.1" max="3" step="0.01" value="1">
+  </label>
+  <h4>Right Door</h4>
+  <label>X: <span class="val" id="vrdx">1263</span>
+    <input type="range" id="srdx" min="-500" max="3000" value="1263">
+  </label>
+  <label>Y: <span class="val" id="vrdy">31</span>
+    <input type="range" id="srdy" min="-500" max="1500" value="31">
+  </label>
+  <label>Scale: <span class="val" id="vrdsc">1.00</span>
+    <input type="range" id="srdsc" min="0.1" max="3" step="0.01" value="1">
+  </label>
   <div class="hint">Coords in source image pixels.</div>
   <button id="copy-btn">Copy values</button>
 </div>
@@ -126,6 +146,9 @@
 <div id="tablet-cam" style="display:none;position:fixed;inset:0;z-index:44;background:#000;">
   <img src="../Assets/Cam_views/188.png" style="width:100%;height:100%;object-fit:contain;">
 </div>
+
+<!-- Animation data must load before the main script -->
+<script src="animations.js"></script>
 <script>
   const canvas = document.getElementById('c');
   const ctx = canvas.getContext('2d');
@@ -162,14 +185,13 @@
   window.addEventListener('click', startAudio, { once: true });
   window.addEventListener('keydown', startAudio, { once: true });
 
-  // --- Images ---
+  // --- Background images ---
   const bg = new Image();
   bg.src = '../assets/Main Room/519.png';
 
   const bgLit = {
     left:  new Image(),
     right: new Image(),
-    both:  new Image(),
   };
   bgLit.left.src  = '../Assets/Main Room/main_room_left_open_lit.png';
   bgLit.right.src = '../Assets/Main Room/main_room_right_open_lit.png';
@@ -182,13 +204,84 @@
     return bg;
   }
 
-  const fanFrames = [new Image(), new Image(), new Image()];
-  fanFrames[0].src = '../assets/ventilateur/57.png';
-  fanFrames[1].src = '../assets/ventilateur/59.png';
-  fanFrames[2].src = '../assets/ventilateur/60.png';
+  // --- Fan (loaded from fanAnimation defined in animations.js) ---
+  const fanFrames = fanAnimation.frames.map(src => {
+    const img = new Image();
+    img.src = src;
+    return img;
+  });
+  let fanIndex  = 0;
+  let fanLoaded = 0;
+  fanFrames.forEach(f => {
+    f.onload  = () => { fanLoaded++; if (fanLoaded === fanFrames.length) setInterval(() => { fanIndex = (fanIndex + 1) % fanFrames.length; }, 1000 / fanAnimation.fps); };
+    f.onerror = () => { fanLoaded++; };
+  });
 
-  // Button images: [door_closed/open][light_off/on] => 4 combos each side
-  // Naming: Button_{side}_light_{off|on}_{closed|open}.png
+  // --- Doors (loaded from mainRoomDoorLeft/Right defined in animations.js) ---
+  const sfxDoor = new Audio('../Assets/FNaF 1 Audio/SFXBible_12478.wav');
+  sfxDoor.volume = 0.8;
+
+  function loadDoorFrames(animDef) {
+    return animDef.frames.map(src => {
+      const img = new Image();
+      img.src = src;
+      img.onerror = () => console.warn('Missing door frame:', src);
+      return img;
+    });
+  }
+
+  const doorFrames = {
+    left:  loadDoorFrames(mainRoomDoorLeft),
+    right: loadDoorFrames(mainRoomDoorRight),
+  };
+
+  // Per-door animation state
+  // frameIndex: 0 = door frame only (open), last = fully closed
+  // direction:  0 = idle, 1 = closing, -1 = opening
+  const doorAnim = {
+    left:  { frameIndex: 0, direction: 0, timer: null },
+    right: { frameIndex: 0, direction: 0, timer: null },
+  };
+
+  function stepDoor(side) {
+    const anim   = doorAnim[side];
+    const frames = doorFrames[side];
+    anim.frameIndex += anim.direction;
+
+    if (anim.frameIndex >= frames.length) {
+      anim.frameIndex = frames.length - 1;
+      anim.direction  = 0;
+      clearInterval(anim.timer); anim.timer = null;
+      state[side].door = 'closed';
+    } else if (anim.frameIndex <= 0) {
+      anim.frameIndex = 0;
+      anim.direction  = 0;
+      clearInterval(anim.timer); anim.timer = null;
+      state[side].door = 'open';
+    }
+  }
+
+  function startDoorAnim(side, direction) {
+    const anim = doorAnim[side];
+    const def  = side === 'left' ? mainRoomDoorLeft : mainRoomDoorRight;
+    if (anim.direction === direction) return;
+    anim.direction = direction;
+    if (anim.timer) { clearInterval(anim.timer); anim.timer = null; }
+    anim.timer = setInterval(() => stepDoor(side), 1000 / def.fps);
+  }
+
+  function toggleDoor(side) {
+    const anim = doorAnim[side];
+    sfxDoor.currentTime = 0;
+    sfxDoor.play().catch(() => {});
+    if (anim.direction === 1 || (anim.direction === 0 && anim.frameIndex === doorFrames[side].length - 1)) {
+      startDoorAnim(side, -1); // open
+    } else {
+      startDoorAnim(side, 1);  // close
+    }
+  }
+
+  // --- Button images ---
   const btnBase = '../Assets/Door_Buttons/';
   function loadBtn(side, light, door) {
     const img = new Image();
@@ -198,16 +291,16 @@
 
   const btnImgs = {
     left: {
-      off_closed:  loadBtn('left',  'off', 'closed'),
-      off_open:    loadBtn('left',  'off', 'open'),
-      on_closed:   loadBtn('left',  'on',  'closed'),
-      on_open:     loadBtn('left',  'on',  'open'),
+      off_closed: loadBtn('left',  'off', 'closed'),
+      off_open:   loadBtn('left',  'off', 'open'),
+      on_closed:  loadBtn('left',  'on',  'closed'),
+      on_open:    loadBtn('left',  'on',  'open'),
     },
     right: {
-      off_closed:  loadBtn('right', 'off', 'closed'),
-      off_open:    loadBtn('right', 'off', 'open'),
-      on_closed:   loadBtn('right', 'on',  'closed'),
-      on_open:     loadBtn('right', 'on',  'open'),
+      off_closed: loadBtn('right', 'off', 'closed'),
+      off_open:   loadBtn('right', 'off', 'open'),
+      on_closed:  loadBtn('right', 'on',  'closed'),
+      on_open:    loadBtn('right', 'on',  'open'),
     }
   };
 
@@ -222,22 +315,13 @@
     return btnImgs[side][`${s.light}_${s.door}`];
   }
 
-  let fanIndex = 0;
-
-  // Start render loop as soon as bg loads
-  bg.onload = () => requestAnimationFrame(animate);
-
-  // Fan animation starts when all fan frames loaded
-  let fanLoaded = 0;
-  fanFrames.forEach(f => {
-    f.onload = () => { fanLoaded++; if (fanLoaded === 3) setInterval(() => { fanIndex = (fanIndex + 1) % 3; }, 1000 / 12); };
-    f.onerror = () => { fanLoaded++; };
-  });
-
   // Button images — onerror so missing files don't break anything
   [...Object.values(btnImgs.left), ...Object.values(btnImgs.right)].forEach(img => {
     img.onerror = () => { console.warn('Missing:', img.src); };
   });
+
+  // Start render loop as soon as bg loads
+  bg.onload = () => requestAnimationFrame(animate);
 
   // --- Pan ---
   let scroll = 0.5;
@@ -246,13 +330,16 @@
   let lastX = 0;
   let velocity = 0;
 
-  // Fan (hardcoded)
-  const fanImgX = 778, fanImgY = 303, fanScale = 1.0;
-
   // Button positions (image-space)
   let btnPos = {
     left:  { x: 0,    y: 261, scale: 1.0 },
     right: { x: 1478, y: 261, scale: 1.0 },
+  };
+
+  // Door positions (image-space) — tune with debug sliders
+  let doorPos = {
+    left:  { x: mainRoomDoorLeft.imgX,  y: mainRoomDoorLeft.imgY,  scale: mainRoomDoorLeft.scale  },
+    right: { x: mainRoomDoorRight.imgX, y: mainRoomDoorRight.imgY, scale: mainRoomDoorRight.scale },
   };
 
   function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
@@ -274,7 +361,7 @@
     if (!img.complete || !img.naturalWidth) return;
     const sx = imgSpace.x * scale - offsetX;
     const sy = imgSpace.y * scale;
-    const dw = img.naturalWidth * scale * imgSpace.scale;
+    const dw = img.naturalWidth  * scale * imgSpace.scale;
     const dh = img.naturalHeight * scale * imgSpace.scale;
     ctx.drawImage(img, sx, sy, dw, dh);
   }
@@ -291,7 +378,7 @@
     return {
       x: pos.x * scale - offsetX,
       y: pos.y * scale,
-      w: img.naturalWidth * scale * pos.scale,
+      w: img.naturalWidth  * scale * pos.scale,
       h: img.naturalHeight * scale * pos.scale,
     };
   }
@@ -313,7 +400,7 @@
           const relY = e.clientY - rect.top;
           // Top half = door toggle, bottom half = light toggle
           if (relY < rect.height / 2) {
-            state[side].door = state[side].door === 'closed' ? 'open' : 'closed';
+            toggleDoor(side);
           } else {
             state[side].light = state[side].light === 'off' ? 'on' : 'off';
           }
@@ -344,7 +431,20 @@
 
     const activeBg = getActiveBg();
     drawStripLayer(activeBg, imgW, imgH, scale, offsetX);
-    drawSprite(fanFrames[fanIndex], { x: fanImgX, y: fanImgY, scale: fanScale }, scale, offsetX);
+    drawSprite(fanFrames[fanIndex], { x: fanAnimation.imgX, y: fanAnimation.imgY, scale: fanAnimation.scale }, scale, offsetX);
+
+    // Draw doors — frame 0 is always visible (door frame/surround).
+    // Frames 1+ are the closing panels that animate on top.
+    ['left', 'right'].forEach(side => {
+      const anim   = doorAnim[side];
+      const frames = doorFrames[side];
+      const pos    = doorPos[side];
+      drawSprite(frames[0], pos, scale, offsetX);
+      if (anim.frameIndex > 0) {
+        drawSprite(frames[anim.frameIndex], pos, scale, offsetX);
+      }
+    });
+
     drawSprite(getBtnImg('left'),  btnPos.left,  scale, offsetX);
     drawSprite(getBtnImg('right'), btnPos.right, scale, offsetX);
 
@@ -386,21 +486,45 @@
   bindSlider('sry',  'vry',  'right', 'y',     false);
   bindSlider('srsc', 'vrsc', 'right', 'scale', true);
 
+  // Door sliders — write into doorPos instead of btnPos
+  function bindDoorSlider(id, valId, side, prop, isFloat) {
+    const el = document.getElementById(id);
+    el.addEventListener('input', function() {
+      doorPos[side][prop] = isFloat ? parseFloat(this.value) : +this.value;
+      document.getElementById(valId).textContent = isFloat ? parseFloat(this.value).toFixed(2) : this.value;
+    });
+  }
+  bindDoorSlider('sldx',  'vldx',  'left',  'x',     false);
+  bindDoorSlider('sldy',  'vldy',  'left',  'y',     false);
+  bindDoorSlider('sldsc', 'vldsc', 'left',  'scale', true);
+  bindDoorSlider('srdx',  'vrdx',  'right', 'x',     false);
+  bindDoorSlider('srdy',  'vrdy',  'right', 'y',     false);
+  bindDoorSlider('srdsc', 'vrdsc', 'right', 'scale', true);
+
   document.getElementById('copy-btn').addEventListener('click', () => {
-    const s = `left:  { x: ${btnPos.left.x},  y: ${btnPos.left.y},  scale: ${btnPos.left.scale.toFixed(2)} },\nright: { x: ${btnPos.right.x}, y: ${btnPos.right.y}, scale: ${btnPos.right.scale.toFixed(2)} }`;
+    const s = [
+      `// Buttons`,
+      `left:  { x: ${btnPos.left.x},  y: ${btnPos.left.y},  scale: ${btnPos.left.scale.toFixed(2)} },`,
+      `right: { x: ${btnPos.right.x}, y: ${btnPos.right.y}, scale: ${btnPos.right.scale.toFixed(2)} }`,
+      ``,
+      `// Doors`,
+      `left:  { imgX: ${doorPos.left.x},  imgY: ${doorPos.left.y},  scale: ${doorPos.left.scale.toFixed(2)} },`,
+      `right: { imgX: ${doorPos.right.x}, imgY: ${doorPos.right.y}, scale: ${doorPos.right.scale.toFixed(2)} }`,
+    ].join('\n');
     navigator.clipboard?.writeText(s);
     alert(s);
   });
 
 
-  // --- Tablet ---
+  // --- Tablet (frame list built from tabletAnimation defined in animations.js) ---
   const sfxCamera = new Audio('../Assets/FNaF 1 Audio/CAMERA_VIDEO_LOA_60105303.wav');
+  const sfxCameraDown = new Audio('../Assets/FNaF 1 Audio/put down.wav')
   sfxCamera.volume = 0.8;
 
   const tabletFrames = [];
-  for (let i = 1; i <= 11; i++) {
+  for (let i = 1; i <= tabletAnimation.frameCount; i++) {
     const img = new Image();
-    img.src = `../Assets/Tablette/frame_${i}.png`;
+    img.src = `${tabletAnimation.basePath}${i}.png`;
     tabletFrames.push(img);
   }
 
@@ -409,10 +533,9 @@
   const tabletCtx    = tabletCanvas.getContext('2d');
   const tabletCam    = document.getElementById('tablet-cam');
 
-  let tabletState    = 'closed'; // closed | opening | open | closing
-  let tabletFrame    = 0;
-  const FRAME_DELAY  = 50; // ms per frame
-  let lastFrameTime  = 0;
+  let tabletState   = 'closed'; // closed | opening | waiting | open | closing
+  let tabletFrame   = 0;
+  let lastFrameTime = 0;
 
   function resizeTabletCanvas() {
     tabletCanvas.width  = window.innerWidth;
@@ -425,7 +548,6 @@
     const img = tabletFrames[idx];
     if (!img.complete || !img.naturalWidth) return;
     tabletCtx.clearRect(0, 0, tabletCanvas.width, tabletCanvas.height);
-    // Draw centered, cover
     const scale = Math.max(tabletCanvas.width / img.naturalWidth, tabletCanvas.height / img.naturalHeight);
     const dw = img.naturalWidth  * scale;
     const dh = img.naturalHeight * scale;
@@ -437,30 +559,27 @@
   function animateTablet(timestamp) {
     if (tabletState !== 'opening' && tabletState !== 'closing') return;
 
-    if (timestamp - lastFrameTime > FRAME_DELAY) {
+    if (timestamp - lastFrameTime > tabletAnimation.frameDelay) {
       lastFrameTime = timestamp;
 
       if (tabletState === 'opening') {
         drawTabletFrame(tabletFrame);
         tabletFrame++;
         if (tabletFrame >= tabletFrames.length) {
-          // Last frame drawn — wait FRAME_DELAY so it's visible, then show cam
           tabletState = 'waiting';
           setTimeout(() => {
             tabletCanvas.style.display = 'none';
-            tabletCam.style.display = 'block';
-            tabletBar.style.display = 'none';
+            tabletCam.style.display    = 'block';
+            tabletBar.style.display    = 'none';
             tabletState = 'open';
-          }, FRAME_DELAY);
+          }, tabletAnimation.frameDelay);
           return;
         }
       } else if (tabletState === 'closing') {
         tabletFrame--;
         if (tabletFrame < 0) {
-          // Animation done — back to room
           tabletCanvas.style.display = 'none';
           tabletState = 'closed';
-          // Re-show room elements
           canvas.style.display = 'block';
           tabletBar.style.display = 'flex';
           document.querySelectorAll('.btn-zone').forEach(z => z.style.display = 'block');
@@ -476,8 +595,8 @@
     if (tabletState !== 'closed') return;
     sfxCamera.currentTime = 0;
     sfxCamera.play().catch(() => {});
-    tabletState = 'opening';
-    tabletFrame = 0;
+    tabletState  = 'opening';
+    tabletFrame  = 0;
     tabletCanvas.style.display = 'block';
     tabletCanvas.width  = window.innerWidth;
     tabletCanvas.height = window.innerHeight;
@@ -486,27 +605,25 @@
 
   function closeTablet() {
     if (tabletState !== 'open') return;
-    sfxCamera.currentTime = 0;
-    sfxCamera.play().catch(() => {});
+    sfxCameraDown.currentTime = 0;
+    sfxCameraDown.play().catch(() => {});
     tabletState = 'closing';
     tabletFrame = tabletFrames.length - 1;
-    tabletCam.style.display = 'none';
+    tabletCam.style.display    = 'none';
     tabletCanvas.style.display = 'block';
     drawTabletFrame(tabletFrame);
     requestAnimationFrame(animateTablet);
   }
 
-  // Trigger on hover near bottom edge (within 60px) or click the bar
   tabletBar.addEventListener('click', openTablet);
 
-  // Mouse near bottom to open, near bottom again to close
   window.addEventListener('mousemove', e => {
     const fromBottom = window.innerHeight - e.clientY;
     if (fromBottom < 60 && tabletState === 'closed') openTablet();
     if (fromBottom < 60 && tabletState === 'open')   closeTablet();
   });
 
-  // --- Mouse controls ---
+  // --- Mouse / touch pan controls ---
   canvas.addEventListener('mousedown', e => {
     isDragging = true;
     lastX = e.clientX;
