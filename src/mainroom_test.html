@@ -273,7 +273,7 @@
 
   // --- Background images ---
   const bg = new Image();
-  bg.src = '../assets/Main Room/519.png';
+  bg.src = '../assets/Main Room/39.png';
 
   const bgLit = {
     left:  new Image(),
@@ -282,7 +282,21 @@
   bgLit.left.src  = '../Assets/Main Room/main_room_left_open_lit.png';
   bgLit.right.src = '../Assets/Main Room/main_room_right_open_lit.png';
 
+  const bgPoweredDown = new Image();
+  bgPoweredDown.src = '../Assets/Main Room/304.png';
+
+  const bgFreddyEyesImg = new Image();
+  bgFreddyEyesImg.src = '../Assets/Main Room/305.png';
+
   function getActiveBg() {
+    // Eye-sequence override
+    if (window._powerOutEyeFrame === '305') {
+      return bgFreddyEyesImg.complete && bgFreddyEyesImg.naturalWidth ? bgFreddyEyesImg : bgPoweredDown;
+    }
+    if (powerOut) {
+      return bgPoweredDown.complete && bgPoweredDown.naturalWidth ? bgPoweredDown : bg;
+    }
+
     const leftLit  = state.left.light  === 'on';
     const rightLit = state.right.light === 'on';
     if (leftLit  && !rightLit) return bgLit.left.complete  && bgLit.left.naturalWidth  ? bgLit.left  : bg;
@@ -503,6 +517,11 @@
     });
   }
 
+  // Set true the instant power hits 0 — removes fan & buttons immediately
+  let powerOut = false;
+  // Set true while jumpscare is playing — freezes the main render loop
+  let renderPaused = false;
+
   function draw() {
     if (!bg.complete || !bg.naturalWidth) return;
 
@@ -515,9 +534,17 @@
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
 
+    // During black-screen / jumpscare phases just stay black
+    const pof = window._powerOutEyeFrame;
+    if (pof === 'black' || pof === 'jumpscare') return;
+
     const activeBg = getActiveBg();
     drawStripLayer(activeBg, imgW, imgH, scale, offsetX);
-    drawSprite(fanFrames[fanIndex], { x: fanAnimation.imgX, y: fanAnimation.imgY, scale: fanAnimation.scale }, scale, offsetX);
+
+    // Fan and buttons vanish the moment power is out
+    if (!powerOut) {
+      drawSprite(fanFrames[fanIndex], { x: fanAnimation.imgX, y: fanAnimation.imgY, scale: fanAnimation.scale }, scale, offsetX);
+    }
 
     // Draw doors — frame 0 is always visible (door frame/surround).
     // Frames 1+ are the closing panels that animate on top.
@@ -531,14 +558,16 @@
       }
     });
 
-    drawSprite(getBtnImg('left'),  btnPos.left,  scale, offsetX);
-    drawSprite(getBtnImg('right'), btnPos.right, scale, offsetX);
-
-    updateButtonZones();
+    if (!powerOut) {
+      drawSprite(getBtnImg('left'),  btnPos.left,  scale, offsetX);
+      drawSprite(getBtnImg('right'), btnPos.right, scale, offsetX);
+      updateButtonZones();
+    }
   }
 
   function animate() {
     requestAnimationFrame(animate);
+    if (renderPaused) return;
     if (!isDragging) {
       velocity *= 0.85;
       targetScroll += velocity;
@@ -549,12 +578,91 @@
   }
 
 
+  // ── Shared jumpscare player ───────────────────────────────────
+  // Preloads all frames first so none are skipped, then plays them
+  // at the correct fps. After the last frame: fades to black, then
+  // either calls onDone (e.g. redirect) or resumes the game.
+  function playJumpscare(def, sfxSrc, onDone) {
+    if (!def) { console.warn('playJumpscare: missing animation def'); return; }
+    renderPaused = true;
+
+    new Audio(sfxSrc).play().catch(() => {});
+
+    const msPerFrame = 1000 / def.fps;
+    let loaded = 0;
+
+    const frames = def.frames.map(src => {
+      const img = new Image();
+      img.onload = img.onerror = () => { loaded++; if (loaded === frames.length) startPlaying(); };
+      img.src = src;
+      return img;
+    });
+
+    function startPlaying() {
+      let frameIdx = 0;
+
+      function nextFrame() {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+
+        const img = frames[frameIdx];
+        if (img.naturalWidth) {
+          const sc = Math.max(W / img.naturalWidth, H / img.naturalHeight);
+          const dw = img.naturalWidth  * sc;
+          const dh = img.naturalHeight * sc;
+          ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+        }
+
+        frameIdx++;
+        if (frameIdx < frames.length) {
+          setTimeout(nextFrame, msPerFrame);
+        } else {
+          // All frames done — hold briefly, go black, then finish
+          setTimeout(() => {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, W, H);
+            setTimeout(() => {
+              if (onDone) {
+                onDone();
+              } else {
+                renderPaused = false; // resume normal game
+              }
+            }, 500);
+          }, 400);
+        }
+      }
+
+      nextFrame();
+    }
+  }
+
+  // ── Individual jumpscare wrappers ─────────────────────────────
+  const SCREAM  = '../Assets/FNaF 1 Audio/XSCREAM.wav';
+  const SCREAM2 = '../Assets/FNaF 1 Audio/XSCREAM2.wav';
+  const NOISE = '../Assets/FNaF 1 Audio/COMPUTER_DIGITAL_L2076505.wav';
+
+  const GO_MENU = () => { ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H); setTimeout(() => { window.location.href = 'menu.html'; }, 1500); };
+  const GO_NOISE = () => { ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H); setTimeout(() => { playJumpscare(noiseMenu, NOISE, GO_MENU); }, 500); };
+  // NOTE: chicaJumpscare, foxxyJumpscare, bonnieJumpscare, goldenFreddyJumpscare
+  // must be defined in animations.js for these to work.
+  function playChicaJumpscare()       { playJumpscare(chicajumpscare,          SCREAM,  null); }
+  function playFoxyJumpscare()        { playJumpscare(foxyJumpscare,           SCREAM,  null); }
+  function playBonnieJumpscare()      { playJumpscare(bonnieJumpscare,         SCREAM,  null); }
+  function playFreddyJumpscare()      { playJumpscare(freddyJumpscare,         SCREAM,  null); }
+  function playGoldenFreddyJumpscare(){ playJumpscare(goldenFreddyJumpscare,   SCREAM2, null); }
+  function playPowerOutJumpscare()    { playJumpscare(freddyJumpscarePowerOut, SCREAM,  GO_NOISE); }
+  function playnoiseMenu()            { playJumpscare(noiseMenu,               NOISE,  GO_MENU); }
+
   // --- Debug ---
   let debugVisible = false;
   window.addEventListener('keydown', e => {
     if (e.key === 'd' || e.key === 'D') {
       debugVisible = !debugVisible;
       document.getElementById('debug').style.display = debugVisible ? 'block' : 'none';
+    }
+    if (e.key === 'j' || e.key === 'J') {
+      const picks = [playChicaJumpscare, playBonnieJumpscare, playFoxyJumpscare, playFreddyJumpscare, playGoldenFreddyJumpscare, playnoiseMenu];
+      picks[Math.floor(Math.random() * picks.length)]();
     }
   });
 
@@ -678,6 +786,7 @@
 
   function openTablet() {
     if (tabletState !== 'closed') return;
+    if (GameState.rawPower <= 0) return;
     sfxCamera.currentTime = 0;
     sfxCamera.play().catch(() => {});
     tabletState  = 'opening';
@@ -847,13 +956,104 @@
     },
 
     onPowerOut() {
-      console.log('Power out — Freddy incoming');
-      // TODO: trigger Freddy / blackout sequence
+      if (this._powerOutTriggered) return;
+      this._powerOutTriggered = true;
+
+      // ── Immediately kill fan, buttons, HUD ───────────────────
+      powerOut = true;
+      window._powerOutEyeFrame = '304';
+      document.getElementById('hud').style.display        = 'none';
+      document.getElementById('tablet-bar').style.display = 'none';
+      document.querySelectorAll('.btn-zone').forEach(z => z.style.display = 'none');
+
+      // ── Cut all audio ────────────────────────────────────────
+      [sfxFan, sfxPhone].forEach(a => { a.pause(); a.currentTime = 0; });
+
+      // ── Force doors open, lights off ─────────────────────────
+      ['left', 'right'].forEach(side => {
+        state[side].door  = 'open';
+        state[side].light = 'off';
+        startDoorAnim(side, -1);
+      });
+
+      // ── Play power-down SFX ──────────────────────────────────
+      const powerOutsfx = new Audio('../Assets/FNaF 1 Audio/powerdown.wav');
+      powerOutsfx.play().catch(() => {});
+
+      // ── After powerdown sfx → footsteps → eye blink sequence ─
+      powerOutsfx.addEventListener('ended', () => {
+        const steps1 = new Audio('../Assets/FNaF 1 Audio/deep steps.wav');
+        steps1.play().catch(() => {});
+
+        steps1.addEventListener('ended', () => {
+          // ── Eye blink sequence for the full ~61s of the music box ──
+          // Phase 1 (0–2s): rapid flicker — eyes "powering on"
+          // Phase 2 (2s–59s): eyes mostly ON (305), occasional slow blinks to 304
+          // Phase 3 (59s+): eyes locked ON until music ends
+
+          const musicBox = new Audio('../Assets/FNaF 1 Audio/music box.wav');
+          window._powerOutEyeFrame = '304';
+
+          const schedule = [];
+
+          // Phase 1: rapid power-on flicker
+          const flickerPattern = [
+            { img: '305', t: 0    },
+            { img: '304', t: 120  },
+            { img: '305', t: 280  },
+            { img: '304', t: 420  },
+            { img: '305', t: 620  },
+            { img: '304', t: 800  },
+            { img: '305', t: 1050 },
+            { img: '304', t: 1300 },
+            { img: '305', t: 1600 }, // eyes fully ON
+          ];
+          flickerPattern.forEach(e => schedule.push(e));
+
+          // Phase 2: slow random blinks from 2s up to 59s
+          // Use a seeded-ish deterministic spread so blinks feel natural but aren't random each load
+          const blinkTimes = [
+            4200, 8800, 13500, 17100, 21600, 25300,
+            29800, 34200, 38700, 42100, 46500, 50900, 55300,
+          ];
+          blinkTimes.forEach(t => {
+            if (t < 59000) {
+              const dur = 250 + (t % 7) * 50; // 250–550ms dark, deterministic
+              schedule.push({ img: '304', t });
+              schedule.push({ img: '305', t: t + dur });
+            }
+          });
+
+          schedule.sort((a, b) => a.t - b.t);
+
+          // Fire all scheduled events
+          schedule.forEach(({ img, t }) => {
+            setTimeout(() => { window._powerOutEyeFrame = img; }, t);
+          });
+
+          // Music box plays from the very start (first flicker at t=0)
+          musicBox.play().catch(() => {});
+
+          // When musicbox ends → black → footsteps → jumpscare
+          musicBox.addEventListener('ended', () => {
+            window._powerOutEyeFrame = 'black';
+
+            setTimeout(() => {
+              const steps2 = new Audio('../Assets/FNaF 1 Audio/deep steps.wav');
+              steps2.play().catch(() => {});
+              steps2.addEventListener('ended', () => {
+                window._powerOutEyeFrame = 'jumpscare';
+                playPowerOutJumpscare();
+              });
+            }, 500);
+          });
+        });
+      });
     },
 
     on6AM() {
       console.log('6 AM — night complete');
-      // TODO: trigger night complete sequence
+
     },
   };
 
