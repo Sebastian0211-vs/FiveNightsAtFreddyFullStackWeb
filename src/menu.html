@@ -119,73 +119,86 @@
     </style>
 </head>
 
-<body>
+    <body>
 
-<div class="container">
-    <img id="anim" src="../assets/menu/1.png">
-    <img id="animNoiseMenu" src="../assets/menu/noise1.png">
-    <img id="animWhiteMenu" src="../assets/menu/whiteNoise1.png">
-    <img class="slide" src="../assets/menu/452.png">
-    <img id="title" class="FNAFtitle" src="../assets/menu/444-trans.png">
-    <div class="menu-buttons">
-        <img id="selector" src="../assets/menu/arrow_trans.png">
-        <img class="menu-btn" src="../assets/menu/new_game_trans.png" onclick="onNewGame()">
-        <img class="menu-btn" src="../assets/menu/continue_trans.png" onclick="onContinue()">
-    </div>
-</div>
+        <div class="container">
+            <img id="anim" src="../assets/menu/1.png">
+            <img id="animNoiseMenu" src="../assets/menu/noise1.png">
+            <img id="animWhiteMenu" src="../assets/menu/whiteNoise1.png">
+            <img class="slide" src="../assets/menu/452.png">
+            <img id="title" class="FNAFtitle" src="../assets/menu/444-trans.png">
+            <div class="menu-buttons">
+                <img id="selector" src="../assets/menu/arrow_trans.png">
+                <img class="menu-btn" src="../assets/menu/new_game_trans.png" onclick="onNewGame()">
+                <img class="menu-btn" src="../assets/menu/continue_trans.png" onclick="onContinue()">
+            </div>
+        </div>
 
 
-<script>
-    function onNewGame(){
-        console.log("New Game clicked");
-    }
+        <script>
 
-    function onContinue() {
-        console.log("Continue clicked")
-    }
+            function goTo(url) {
+                document.body.style.transition = "opacity 0.5s";
+                document.body.style.opacity = "0";
+                setTimeout(() => {
+                    window.location.href = url;
+                }, 500);
+            }
 
-</script>
+            function onNewGame(){
+                console.log("New Game clicked");
+                goTo("warning.html")
 
-<script src="./animations.js"></script>
-<script src="./player.js"></script>
+            }
 
-<script>
-    const buttons = document.querySelectorAll(".menu-btn");
-    const selector = document.getElementById("selector");
-    let selectedIndex = 0;
+            function onContinue() {
+                console.log("Continue clicked")
+            }
 
-    function moveSelector(index) {
-        selectedIndex = index;
-        const btn = buttons[index];
-        selector.style.top = btn.offsetTop + btn.offsetHeight / 2 - selector.offsetHeight / 2 + "px";
-    }
 
-    buttons.forEach((btn, i) => {
-        btn.addEventListener("mouseenter", () => moveSelector(i));
-    });
 
-    document.addEventListener("keydown", (e) => {
-        if (e.key === "ArrowDown") moveSelector((selectedIndex + 1) % buttons.length);
-        if (e.key === "ArrowUp") moveSelector((selectedIndex - 1 + buttons.length) % buttons.length);
-        if (e.key === "Enter") buttons[selectedIndex].click();
-    });
+        </script>
 
-    moveSelector(0);
-</script>
+            <script src="./animations.js"></script>
+            <script src="./player.js"></script>
 
-<script>
-    playAnimation(document.getElementById("anim"), FreddyMenu);
-    playAnimation(document.getElementById("animNoiseMenu"), noiseMenu, 0.4);
-    playAnimation(document.getElementById("animWhiteMenu"), whiteMenu, 0.4);
+            <script>
+                const buttons = document.querySelectorAll(".menu-btn");
+                const selector = document.getElementById("selector");
+                let selectedIndex = 0;
 
-    const slide = document.querySelector(".slide");
+                function moveSelector(index) {
+                    selectedIndex = index;
+                    const btn = buttons[index];
+                    selector.style.top = btn.offsetTop + btn.offsetHeight / 2 - selector.offsetHeight / 2 + "px";
+                }
 
-    slide.addEventListener("animationend", () => {
-        slide.style.animation = "none";
-        void slide.offsetWidth;
-        slide.style.animation = "slideDown 10s linear forwards";
-    });
-</script>
+                buttons.forEach((btn, i) => {
+                    btn.addEventListener("mouseenter", () => moveSelector(i));
+                });
 
-</body>
+                document.addEventListener("keydown", (e) => {
+                    if (e.key === "ArrowDown") moveSelector((selectedIndex + 1) % buttons.length);
+                    if (e.key === "ArrowUp") moveSelector((selectedIndex - 1 + buttons.length) % buttons.length);
+                    if (e.key === "Enter") buttons[selectedIndex].click();
+                });
+
+                moveSelector(0);
+        </script>
+
+        <script>
+            playAnimation(document.getElementById("anim"), FreddyMenu);
+            playAnimation(document.getElementById("animNoiseMenu"), noiseMenu, 0.4);
+            playAnimation(document.getElementById("animWhiteMenu"), whiteMenu, 0.4);
+
+            const slide = document.querySelector(".slide");
+
+            slide.addEventListener("animationend", () => {
+                slide.style.animation = "none";
+                void slide.offsetWidth;
+                slide.style.animation = "slideDown 10s linear forwards";
+            });
+        </script>
+
+    </body>
 </html>
