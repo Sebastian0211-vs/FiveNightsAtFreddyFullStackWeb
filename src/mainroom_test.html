@@ -268,8 +268,11 @@
     }
     nextAmbience();
   }
-  window.addEventListener('click', startAudio, { once: true });
-  window.addEventListener('keydown', startAudio, { once: true });
+  window.onload = () => {
+      startAudio();
+  }
+  //window.addEventListener('click', startAudio, { once: true });
+  //window.addEventListener('keydown', startAudio, { once: true });
 
   // --- Background images ---
   const bg = new Image();
