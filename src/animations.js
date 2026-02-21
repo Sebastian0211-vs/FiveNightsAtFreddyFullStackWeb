@@ -440,3 +440,22 @@ const tabletAnimation = {
     basePath:   '../Assets/Tablette/frame_',
     frameDelay: 50,                        // ms per frame
 };
+
+function preloadFrames(def) {
+    if (!def) return [];
+    return def.frames.map(src => {
+        const img = new Image();
+        img.src = src;
+        return img;
+    });
+}
+
+const _preloaded = {
+    chica:       preloadFrames(chicajumpscare),
+    bonnie:      preloadFrames(bonnieJumpscare),
+    foxy:        preloadFrames(foxyJumpscare),
+    freddy:      preloadFrames(freddyJumpscare),
+    golden:      preloadFrames(goldenFreddyJumpscare),
+    powerOut:    preloadFrames(freddyJumpscarePowerOut),
+    noise:       preloadFrames(noiseMenu),
+};
