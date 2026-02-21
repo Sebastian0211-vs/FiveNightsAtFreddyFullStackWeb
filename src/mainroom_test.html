@@ -250,8 +250,9 @@
   // --- Audio ---
   const audioBase = '../Assets/FNaF 1 Audio/';
   const sfxFan = new Audio(audioBase + 'Buzz_Fan_Florescent2.wav');
-  sfxFan.loop = true; sfxFan.volume = 0.5;
+  sfxFan.loop = true; sfxFan.volume = 0.1;
   const sfxPhone = new Audio(audioBase + 'voiceover1c.wav');
+  sfxPhone.volume = 0.5;
   const ambienceSrcs = [audioBase + 'ambience2.wav', audioBase + 'EerieAmbienceLargeSca_MV005.wav'];
   let audioStarted = false;
 
@@ -269,10 +270,8 @@
     nextAmbience();
   }
   window.onload = () => {
-      startAudio();
+    startAudio();
   }
-  //window.addEventListener('click', startAudio, { once: true });
-  //window.addEventListener('keydown', startAudio, { once: true });
 
   // --- Background images ---
   const bg = new Image();
@@ -291,6 +290,49 @@
   const bgFreddyEyesImg = new Image();
   bgFreddyEyesImg.src = '../Assets/Main Room/305.png';
 
+  // ── Light flicker state ───────────────────────────────────────
+  // When a light is first turned on, we run a short flicker sequence
+  // that alternates between the dark and lit background before settling
+  // on the lit image. Each entry in the sequence is { lit: bool, delay: ms }.
+  const FLICKER_SEQUENCE = [
+    { lit: true,  delay: 40  },
+    { lit: false, delay: 60  },
+    { lit: true,  delay: 30  },
+    { lit: false, delay: 80  },
+    { lit: true,  delay: 50  },
+    { lit: false, delay: 45  },
+    { lit: true,  delay: 120 },
+    { lit: false, delay: 35  },
+    { lit: true,  delay: 0   },  // stay on — flicker done
+  ];
+
+  // Per-side flicker state: null means no flicker active, 'on'/'off' overrides the lit bg
+  const flickerOverride = { left: null, right: null };
+  let flickerTimers = { left: [], right: [] };
+
+  function triggerFlicker(side) {
+    // Cancel any in-progress flicker on this side
+    flickerTimers[side].forEach(t => clearTimeout(t));
+    flickerTimers[side] = [];
+    flickerOverride[side] = null;
+
+    let cumulative = 0;
+    FLICKER_SEQUENCE.forEach(({ lit, delay }, i) => {
+      const t = setTimeout(() => {
+        const isLast = (i === FLICKER_SEQUENCE.length - 1);
+        if (state[side].light === 'on') {
+          flickerOverride[side] = isLast ? null : (lit ? 'on' : 'off');
+        } else {
+          flickerOverride[side] = null;
+        }
+        // Keep audio in sync with whatever the visual is doing this step
+        updateLightAudio();
+      }, cumulative);
+      flickerTimers[side].push(t);
+      cumulative += delay;
+    });
+  }
+
   function getActiveBg() {
     // Eye-sequence override
     if (window._powerOutEyeFrame === '305') {
@@ -302,8 +344,14 @@
 
     const leftLit  = state.left.light  === 'on';
     const rightLit = state.right.light === 'on';
-    if (leftLit  && !rightLit) return bgLit.left.complete  && bgLit.left.naturalWidth  ? bgLit.left  : bg;
-    if (rightLit && !leftLit)  return bgLit.right.complete && bgLit.right.naturalWidth ? bgLit.right : bg;
+
+    // Apply per-side flicker overrides: 'off' forces dark bg even if light is on
+    const leftEffective  = leftLit  && flickerOverride.left  !== 'off';
+    const rightEffective = rightLit && flickerOverride.right !== 'off';
+
+    if (leftEffective  && !rightEffective) return bgLit.left.complete  && bgLit.left.naturalWidth  ? bgLit.left  : bg;
+    if (rightEffective && !leftEffective)  return bgLit.right.complete && bgLit.right.naturalWidth ? bgLit.right : bg;
+    // Both lit at once isn't normal gameplay but fall back to base bg
     return bg;
   }
 
@@ -324,6 +372,23 @@
   const sfxDoor = new Audio('../Assets/FNaF 1 Audio/SFXBible_12478.wav');
   sfxDoor.volume = 0.8;
 
+  const sfxLight = new Audio('../Assets/FNaF 1 Audio/BallastHumMedium2.wav');
+  sfxLight.loop = true;
+  sfxLight.volume = 0.6;
+
+  function updateLightAudio() {
+    // Audibly on only when the visual is also showing the lit bg —
+    // i.e. state is 'on' AND the flicker override isn't suppressing it.
+    const leftOn  = state.left.light  === 'on' && flickerOverride.left  !== 'off';
+    const rightOn = state.right.light === 'on' && flickerOverride.right !== 'off';
+    if (leftOn || rightOn) {
+      if (sfxLight.paused) sfxLight.play().catch(() => {});
+    } else {
+      sfxLight.pause();
+      sfxLight.currentTime = 0;
+    }
+  }
+
   function loadDoorFrames(animDef) {
     return animDef.frames.map(src => {
       const img = new Image();
@@ -339,8 +404,6 @@
   };
 
   // Per-door animation state
-  // frameIndex: 0 = door frame only (open), last = fully closed
-  // direction:  0 = idle, 1 = closing, -1 = opening
   const doorAnim = {
     left:  { frameIndex: 0, direction: 0, timer: null },
     right: { frameIndex: 0, direction: 0, timer: null },
@@ -418,12 +481,10 @@
     return btnImgs[side][`${s.light}_${s.door}`];
   }
 
-  // Button images — onerror so missing files don't break anything
   [...Object.values(btnImgs.left), ...Object.values(btnImgs.right)].forEach(img => {
     img.onerror = () => { console.warn('Missing:', img.src); };
   });
 
-  // Start render loop as soon as bg loads
   bg.onload = () => requestAnimationFrame(animate);
 
   // --- Pan ---
@@ -439,7 +500,7 @@
     right: { x: 1478, y: 261, scale: 1.0 },
   };
 
-  // Door positions (image-space) — tune with debug sliders
+  // Door positions (image-space)
   let doorPos = {
     left:  { x: mainRoomDoorLeft.imgX,  y: mainRoomDoorLeft.imgY,  scale: mainRoomDoorLeft.scale  },
     right: { x: mainRoomDoorRight.imgX, y: mainRoomDoorRight.imgY, scale: mainRoomDoorRight.scale },
@@ -469,7 +530,6 @@
     ctx.drawImage(img, sx, sy, dw, dh);
   }
 
-  // Screen rect of a button (for click detection)
   function getBtnScreenRect(side) {
     if (!bg || !bg.complete || !bg.naturalWidth) return null;
     const scale = H / bg.naturalHeight;
@@ -486,7 +546,6 @@
     };
   }
 
-  // Invisible HTML zones for button clicks (updated each frame)
   function updateButtonZones() {
     if (!bg || !bg.naturalWidth) return;
     ['left', 'right'].forEach(side => {
@@ -501,11 +560,28 @@
           startAudio();
           const rect = zone.getBoundingClientRect();
           const relY = e.clientY - rect.top;
-          // Top half = door toggle, bottom half = light toggle
           if (relY < rect.height / 2) {
             toggleDoor(side);
           } else {
-            state[side].light = state[side].light === 'off' ? 'on' : 'off';
+            const otherSide = side === 'left' ? 'right' : 'left';
+            if (state[side].light === 'off') {
+              // Turn this light on, force the other off
+              state[side].light = 'on';
+              state[otherSide].light = 'off';
+              // Cancel any flicker on the other side since it's turning off
+              flickerTimers[otherSide].forEach(t => clearTimeout(t));
+              flickerTimers[otherSide] = [];
+              flickerOverride[otherSide] = null;
+              // Trigger flicker on the newly-lit side
+              triggerFlicker(side);
+            } else {
+              state[side].light = 'off';
+              // Cancel flicker if the light is turned off mid-flicker
+              flickerTimers[side].forEach(t => clearTimeout(t));
+              flickerTimers[side] = [];
+              flickerOverride[side] = null;
+            }
+            updateLightAudio();
           }
         });
       }
@@ -520,9 +596,7 @@
     });
   }
 
-  // Set true the instant power hits 0 — removes fan & buttons immediately
   let powerOut = false;
-  // Set true while jumpscare is playing — freezes the main render loop
   let renderPaused = false;
 
   function draw() {
@@ -537,20 +611,16 @@
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, W, H);
 
-    // During black-screen / jumpscare phases just stay black
     const pof = window._powerOutEyeFrame;
     if (pof === 'black' || pof === 'jumpscare') return;
 
     const activeBg = getActiveBg();
     drawStripLayer(activeBg, imgW, imgH, scale, offsetX);
 
-    // Fan and buttons vanish the moment power is out
     if (!powerOut) {
       drawSprite(fanFrames[fanIndex], { x: fanAnimation.imgX, y: fanAnimation.imgY, scale: fanAnimation.scale }, scale, offsetX);
     }
 
-    // Draw doors — frame 0 is always visible (door frame/surround).
-    // Frames 1+ are the closing panels that animate on top.
     ['left', 'right'].forEach(side => {
       const anim   = doorAnim[side];
       const frames = doorFrames[side];
@@ -582,9 +652,6 @@
 
 
   // ── Shared jumpscare player ───────────────────────────────────
-  // Preloads all frames first so none are skipped, then plays them
-  // at the correct fps. After the last frame: fades to black, then
-  // either calls onDone (e.g. redirect) or resumes the game.
   function playJumpscare(def, sfxSrc, onDone) {
     if (!def) { console.warn('playJumpscare: missing animation def'); return; }
     renderPaused = true;
@@ -620,18 +687,11 @@
         if (frameIdx < frames.length) {
           setTimeout(nextFrame, msPerFrame);
         } else {
-          // All frames done — hold briefly, go black, then finish
-          setTimeout(() => {
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, W, H);
-            setTimeout(() => {
-              if (onDone) {
-                onDone();
-              } else {
-                renderPaused = false; // resume normal game
-              }
-            }, 500);
-          }, 400);
+          if (onDone) {
+            onDone();
+          } else {
+            renderPaused = false;
+          }
         }
       }
 
@@ -646,8 +706,6 @@
 
   const GO_MENU = () => { ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H); setTimeout(() => { window.location.href = 'menu.html'; }, 1500); };
   const GO_NOISE = () => { ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H); setTimeout(() => { playJumpscare(noiseMenu, NOISE, GO_MENU); }, 500); };
-  // NOTE: chicaJumpscare, foxxyJumpscare, bonnieJumpscare, goldenFreddyJumpscare
-  // must be defined in animations.js for these to work.
   function playChicaJumpscare()       { playJumpscare(chicajumpscare,          SCREAM,  null); }
   function playFoxyJumpscare()        { playJumpscare(foxyJumpscare,           SCREAM,  null); }
   function playBonnieJumpscare()      { playJumpscare(bonnieJumpscare,         SCREAM,  null); }
@@ -683,7 +741,6 @@
   bindSlider('sry',  'vry',  'right', 'y',     false);
   bindSlider('srsc', 'vrsc', 'right', 'scale', true);
 
-  // Door sliders — write into doorPos instead of btnPos
   function bindDoorSlider(id, valId, side, prop, isFloat) {
     const el = document.getElementById(id);
     el.addEventListener('input', function() {
@@ -713,9 +770,11 @@
   });
 
 
-  // --- Tablet (frame list built from tabletAnimation defined in animations.js) ---
-  const sfxCamera = new Audio('../Assets/FNaF 1 Audio/CAMERA_VIDEO_LOA_60105303.wav');
-  sfxCamera.volume = 0.8;
+  // --- Tablet ---
+  const sfxCameraUp = new Audio('../Assets/FNaF 1 Audio/CAMERA_VIDEO_LOA_60105303.wav');
+  const sfxCameraDown = new Audio('../Assets/FNaF 1 Audio/put down.wav')
+  sfxCameraUp.volume = 0.5;
+  sfxCameraDown.volume = 0.5;
 
   const tabletFrames = [];
   for (let i = 1; i <= tabletAnimation.frameCount; i++) {
@@ -729,7 +788,7 @@
   const tabletCtx    = tabletCanvas.getContext('2d');
   const tabletCam    = document.getElementById('tablet-cam');
 
-  let tabletState   = 'closed'; // closed | opening | waiting | open | closing
+  let tabletState   = 'closed';
   let tabletFrame   = 0;
   let lastFrameTime = 0;
 
@@ -790,8 +849,8 @@
   function openTablet() {
     if (tabletState !== 'closed') return;
     if (GameState.rawPower <= 0) return;
-    sfxCamera.currentTime = 0;
-    sfxCamera.play().catch(() => {});
+    sfxCameraUp.currentTime = 0;
+    sfxCameraUp.play().catch(() => {});
     tabletState  = 'opening';
     tabletFrame  = 0;
     tabletCanvas.style.display = 'block';
@@ -802,8 +861,8 @@
 
   function closeTablet() {
     if (tabletState !== 'open') return;
-    sfxCamera.currentTime = 0;
-    sfxCamera.play().catch(() => {});
+    sfxCameraDown.currentTime = 0;
+    sfxCameraDown.play().catch(() => {});
     tabletState = 'closing';
     tabletFrame = tabletFrames.length - 1;
     tabletCam.style.display    = 'none';
@@ -869,25 +928,18 @@
   });
 
   // ── GameState ──────────────────────────────────────────────
-  // Power pool: 999 raw units. Display = Math.round(raw / 10) / 10 → one decimal %.
-  // Usage drain: every second, subtract current usage from raw power.
-  // Passive drain: from night 2 onward, subtract 1 extra on a per-night interval.
-  // Night length: 8 min 55 sec = 535 seconds across 7 in-game hours (12 AM → 6 AM).
-
   const HOURS        = ['12 AM','1 AM','2 AM','3 AM','4 AM','5 AM','6 AM'];
   const NIGHT_SECS   = 535;
-  const SECS_PER_HOUR = NIGHT_SECS / 6; // ~89.2s per hour
+  const SECS_PER_HOUR = NIGHT_SECS / 6;
 
-  // Passive drain interval in seconds per night (0 = no passive drain)
   const PASSIVE_INTERVAL = { 1: 0, 2: 6, 3: 5, 4: 4, 5: 3, 6: 3, 7: 3 };
 
   const GameState = {
     night:        1,
-    rawPower:     999,   // the real value everything operates on
+    rawPower:     999,
     secondsElapsed: 0,
-    passiveAccum:   0,   // accumulator for passive drain seconds
+    passiveAccum:   0,
 
-    // Active usage: 1 base + 1 per closed door + 1 per active light (max 5)
     getUsage() {
       let u = 1;
       if (state.left.door   === 'closed') u++;
@@ -905,11 +957,9 @@
         return;
       }
 
-      // 1. Usage drain (every second)
       const usage = this.getUsage();
       this.rawPower -= usage;
 
-      // 2. Passive drain (night 2+)
       const interval = PASSIVE_INTERVAL[this.night] || 0;
       if (interval > 0) {
         this.passiveAccum++;
@@ -921,7 +971,6 @@
 
       this.rawPower = Math.max(0, this.rawPower);
 
-      // 3. Advance clock
       this.secondsElapsed++;
       if (this.secondsElapsed >= NIGHT_SECS) {
         this.on6AM();
@@ -931,7 +980,6 @@
       this.render();
     },
 
-    // Displayed % = raw / 10, rounded to 1 decimal place
     getDisplayPercent() {
       return (Math.round(this.rawPower) / 10).toFixed(1);
     },
@@ -944,7 +992,7 @@
       const usage   = this.getUsage();
       const pct     = this.getDisplayPercent();
       const fill    = document.getElementById('hud-power-bar-fill');
-      const rawPct  = this.rawPower / 999 * 100; // for the bar width
+      const rawPct  = this.rawPower / 999 * 100;
 
       document.getElementById('hud-night').textContent     = `Night ${this.night}`;
       document.getElementById('hud-time').textContent      = HOURS[this.getCurrentHour()];
@@ -962,44 +1010,33 @@
       if (this._powerOutTriggered) return;
       this._powerOutTriggered = true;
 
-      // ── Immediately kill fan, buttons, HUD ───────────────────
       powerOut = true;
       window._powerOutEyeFrame = '304';
       document.getElementById('hud').style.display        = 'none';
       document.getElementById('tablet-bar').style.display = 'none';
       document.querySelectorAll('.btn-zone').forEach(z => z.style.display = 'none');
 
-      // ── Cut all audio ────────────────────────────────────────
-      [sfxFan, sfxPhone].forEach(a => { a.pause(); a.currentTime = 0; });
+      [sfxFan, sfxPhone, sfxLight].forEach(a => { a.pause(); a.currentTime = 0; });
 
-      // ── Force doors open, lights off ─────────────────────────
       ['left', 'right'].forEach(side => {
         state[side].door  = 'open';
         state[side].light = 'off';
         startDoorAnim(side, -1);
       });
 
-      // ── Play power-down SFX ──────────────────────────────────
       const powerOutsfx = new Audio('../Assets/FNaF 1 Audio/powerdown.wav');
       powerOutsfx.play().catch(() => {});
 
-      // ── After powerdown sfx → footsteps → eye blink sequence ─
       powerOutsfx.addEventListener('ended', () => {
         const steps1 = new Audio('../Assets/FNaF 1 Audio/deep steps.wav');
         steps1.play().catch(() => {});
 
         steps1.addEventListener('ended', () => {
-          // ── Eye blink sequence for the full ~61s of the music box ──
-          // Phase 1 (0–2s): rapid flicker — eyes "powering on"
-          // Phase 2 (2s–59s): eyes mostly ON (305), occasional slow blinks to 304
-          // Phase 3 (59s+): eyes locked ON until music ends
-
           const musicBox = new Audio('../Assets/FNaF 1 Audio/music box.wav');
           window._powerOutEyeFrame = '304';
 
           const schedule = [];
 
-          // Phase 1: rapid power-on flicker
           const flickerPattern = [
             { img: '305', t: 0    },
             { img: '304', t: 120  },
@@ -1009,35 +1046,29 @@
             { img: '304', t: 800  },
             { img: '305', t: 1050 },
             { img: '304', t: 1300 },
-            { img: '305', t: 1600 }, // eyes fully ON
+            { img: '305', t: 1600 },
           ];
           flickerPattern.forEach(e => schedule.push(e));
 
-          // Phase 2: slow random blinks from 2s up to 59s
-          // Use a seeded-ish deterministic spread so blinks feel natural but aren't random each load
           const blinkTimes = [
             4200, 8800, 13500, 17100, 21600, 25300,
             29800, 34200, 38700, 42100, 46500, 50900, 55300,
           ];
           blinkTimes.forEach(t => {
             if (t < 59000) {
-              const dur = 250 + (t % 7) * 50; // 250–550ms dark, deterministic
+              const dur = 250 + (t % 7) * 50;
               schedule.push({ img: '304', t });
               schedule.push({ img: '305', t: t + dur });
             }
           });
 
           schedule.sort((a, b) => a.t - b.t);
-
-          // Fire all scheduled events
           schedule.forEach(({ img, t }) => {
             setTimeout(() => { window._powerOutEyeFrame = img; }, t);
           });
 
-          // Music box plays from the very start (first flicker at t=0)
           musicBox.play().catch(() => {});
 
-          // When musicbox ends → black → footsteps → jumpscare
           musicBox.addEventListener('ended', () => {
             window._powerOutEyeFrame = 'black';
 
@@ -1056,11 +1087,9 @@
 
     on6AM() {
       console.log('6 AM — night complete');
-
     },
   };
 
-  // Tick every real second
   setInterval(() => GameState.tick(), 1000);
   GameState.render();
 
