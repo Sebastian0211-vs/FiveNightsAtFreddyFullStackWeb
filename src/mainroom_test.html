@@ -1,169 +1,169 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FNAF Viewer</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FNAF Viewer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        @font-face {
-            font-family: 'FNAF';
-            src: url('../Assets/Fonts/five-nights-at-freddys.otf') format('opentype');
-        }
+    @font-face {
+      font-family: 'FNAF';
+      src: url('../Assets/Fonts/five-nights-at-freddys.otf') format('opentype');
+    }
 
-        body {
-            background: #000;
-            overflow: hidden;
-            width: 100vw;
-            height: 100vh;
-            cursor: grab;
-            user-select: none;
-        }
-        body.dragging { cursor: grabbing; }
-        canvas { display: block; position: absolute; top: 0; left: 0; }
+    body {
+      background: #000;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      cursor: grab;
+      user-select: none;
+    }
+    body.dragging { cursor: grabbing; }
+    canvas { display: block; position: absolute; top: 0; left: 0; }
 
-        /* ── HUD ──────────────────────────────────────────────────── */
-        #hud {
-            position: fixed;
-            bottom: 52px; /* sit above tablet bar */
-            left: 20px;
-            z-index: 500;
-            pointer-events: none;
-            user-select: none;
-            font-family: 'FNAF', 'Courier New', monospace;
-            font-size: clamp(10px, 1.3vw, 17px);
-            color: #5dff5d;
-            text-shadow: 0 0 8px #00cc00;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
+    /* ── HUD ──────────────────────────────────────────────────── */
+    #hud {
+      position: fixed;
+      bottom: 52px; /* sit above tablet bar */
+      left: 20px;
+      z-index: 500;
+      pointer-events: none;
+      user-select: none;
+      font-family: 'FNAF', 'Courier New', monospace;
+      font-size: clamp(10px, 1.3vw, 17px);
+      color: #5dff5d;
+      text-shadow: 0 0 8px #00cc00;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
 
-        #hud-night {
-            font-size: clamp(12px, 1.6vw, 21px);
-            letter-spacing: 0.05em;
-        }
+    #hud-night {
+      font-size: clamp(12px, 1.6vw, 21px);
+      letter-spacing: 0.05em;
+    }
 
-        #hud-time {
-            font-size: clamp(11px, 1.5vw, 20px);
-            letter-spacing: 0.08em;
-        }
+    #hud-time {
+      font-size: clamp(11px, 1.5vw, 20px);
+      letter-spacing: 0.08em;
+    }
 
-        #hud-power-label {
-            margin-top: 6px;
-        }
+    #hud-power-label {
+      margin-top: 6px;
+    }
 
-        #hud-power-bar-track {
-            width: clamp(80px, 10vw, 140px);
-            height: 8px;
-            background: #1a3d1a;
-            border: 1px solid #2a6a2a;
-            border-radius: 2px;
-            margin-top: 3px;
-            overflow: hidden;
-        }
+    #hud-power-bar-track {
+      width: clamp(80px, 10vw, 140px);
+      height: 8px;
+      background: #1a3d1a;
+      border: 1px solid #2a6a2a;
+      border-radius: 2px;
+      margin-top: 3px;
+      overflow: hidden;
+    }
 
-        #hud-power-bar-fill {
-            height: 100%;
-            background: #5dff5d;
-            box-shadow: 0 0 6px #00cc00;
-            transition: width 1s linear, background 1s;
-            border-radius: 2px;
-        }
+    #hud-power-bar-fill {
+      height: 100%;
+      background: #5dff5d;
+      box-shadow: 0 0 6px #00cc00;
+      transition: width 1s linear, background 1s;
+      border-radius: 2px;
+    }
 
-        #hud-power-bar-fill.low   { background: #ffaa00; box-shadow: 0 0 6px #cc8800; }
-        #hud-power-bar-fill.critical { background: #ff3333; box-shadow: 0 0 6px #cc0000; }
+    #hud-power-bar-fill.low   { background: #ffaa00; box-shadow: 0 0 6px #cc8800; }
+    #hud-power-bar-fill.critical { background: #ff3333; box-shadow: 0 0 6px #cc0000; }
 
-        #hud-usage {
-            margin-top: 3px;
-            letter-spacing: 0.12em;
-        }
+    #hud-usage {
+      margin-top: 3px;
+      letter-spacing: 0.12em;
+    }
 
-        /* Page fade-in on load */
-        #page-fade {
-            position: fixed;
-            inset: 0;
-            z-index: 998;
-            background: #000;
-            opacity: 1;
-            pointer-events: none;
-            transition: opacity 0.9s ease;
-        }
+    /* Page fade-in on load */
+    #page-fade {
+      position: fixed;
+      inset: 0;
+      z-index: 998;
+      background: #000;
+      opacity: 1;
+      pointer-events: none;
+      transition: opacity 0.9s ease;
+    }
 
-        /* Invisible click zones for buttons — positioned by JS */
-        .btn-zone {
-            position: absolute;
-            cursor: pointer;
-            z-index: 10;
-        }
+    /* Invisible click zones for buttons — positioned by JS */
+    .btn-zone {
+      position: absolute;
+      cursor: pointer;
+      z-index: 10;
+    }
 
-        #debug {
-            display: none;
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.88);
-            color: #0f0;
-            font: 11px monospace;
-            padding: 12px;
-            border: 1px solid #0f0;
-            z-index: 600;
-            width: 240px;
-        }
-        #debug label { display: block; margin-top: 6px; }
-        #debug input[type=range] { width: 100%; }
-        #debug .val { color: #ff0; float: right; }
-        #debug h3 { color: #0f0; margin-bottom: 2px; }
-        #debug h4 { color: #aaffaa; margin-top: 8px; margin-bottom: 2px; }
-        #debug .hint { color: #888; font-size: 10px; margin-top: 6px; }
-        #copy-btn { margin-top: 8px; width: 100%; background: #0a0; color: #fff; border: none; padding: 4px; cursor: pointer; font: 11px monospace; }
+    #debug {
+      display: none;
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0,0,0,0.88);
+      color: #0f0;
+      font: 11px monospace;
+      padding: 12px;
+      border: 1px solid #0f0;
+      z-index: 600;
+      width: 240px;
+    }
+    #debug label { display: block; margin-top: 6px; }
+    #debug input[type=range] { width: 100%; }
+    #debug .val { color: #ff0; float: right; }
+    #debug h3 { color: #0f0; margin-bottom: 2px; }
+    #debug h4 { color: #aaffaa; margin-top: 8px; margin-bottom: 2px; }
+    #debug .hint { color: #888; font-size: 10px; margin-top: 6px; }
+    #copy-btn { margin-top: 8px; width: 100%; background: #0a0; color: #fff; border: none; padding: 4px; cursor: pointer; font: 11px monospace; }
 
-        /* Tablet bar */
-        #tablet-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 40px;
-            background: #1a1a1a;
-            border-top: 2px solid #333;
-            z-index: 550;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-        #tablet-bar img {
-            height: 30px;
-            opacity: 0.7;
-        }
-        #tablet-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 40;
-            display: none;
-            background: #000;
-        }
-        #tablet-overlay canvas {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            object-fit: contain;
-        }
-        #tablet-cam {
-            position: fixed;
-            inset: 0;
-            z-index: 41;
-            display: none;
-            background: #000;
-        }
-        #tablet-cam img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-    </style>
+    /* Tablet bar */
+    #tablet-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 40px;
+      background: #1a1a1a;
+      border-top: 2px solid #333;
+      z-index: 550;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    #tablet-bar img {
+      height: 30px;
+      opacity: 0.7;
+    }
+    #tablet-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 40;
+      display: none;
+      background: #000;
+    }
+    #tablet-overlay canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      object-fit: contain;
+    }
+    #tablet-cam {
+      position: fixed;
+      inset: 0;
+      z-index: 41;
+      display: none;
+      background: #000;
+    }
+    #tablet-cam img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+  </style>
 </head>
 <body>
 <canvas id="c"></canvas>
@@ -171,87 +171,88 @@
 
 <!-- HUD -->
 <div id="hud">
-    <div id="hud-night">Night 1</div>
-    <div id="hud-time">12 AM</div>
-    <div id="hud-power-label">Power Left: <span id="hud-power-val">99%</span></div>
-    <div id="hud-power-bar-track">
-        <div id="hud-power-bar-fill" style="width:99%"></div>
-    </div>
-    <div id="hud-usage">Usage: <span id="hud-usage-val">█░░░░</span></div>
+  <div id="hud-night">Night 1</div>
+  <div id="hud-time">12 AM</div>
+  <div id="hud-power-label">Power Left: <span id="hud-power-val">99%</span></div>
+  <div id="hud-power-bar-track">
+    <div id="hud-power-bar-fill" style="width:99%"></div>
+  </div>
+  <div id="hud-usage">Usage: <span id="hud-usage-val">█░░░░</span></div>
 </div>
 <div id="debug">
-    <h3>Debug [D to hide]</h3>
-    <h4>Left Button</h4>
-    <label>X: <span class="val" id="vlx">0</span>
-        <input type="range" id="slx" min="0" max="3000" value="0">
-    </label>
-    <label>Y: <span class="val" id="vly">261</span>
-        <input type="range" id="sly" min="0" max="1500" value="261">
-    </label>
-    <label>Scale: <span class="val" id="vlsc">1.00</span>
-        <input type="range" id="slsc" min="0.1" max="3" step="0.01" value="1">
-    </label>
-    <h4>Right Button</h4>
-    <label>X: <span class="val" id="vrx">1478</span>
-        <input type="range" id="srx" min="0" max="3000" value="1478">
-    </label>
-    <label>Y: <span class="val" id="vry">261</span>
-        <input type="range" id="sry" min="0" max="1500" value="261">
-    </label>
-    <label>Scale: <span class="val" id="vrsc">1.00</span>
-        <input type="range" id="srsc" min="0.1" max="3" step="0.01" value="1">
-    </label>
-    <h4>Left Door</h4>
-    <label>X: <span class="val" id="vldx">73</span>
-        <input type="range" id="sldx" min="-500" max="3000" value="73">
-    </label>
-    <label>Y: <span class="val" id="vldy">41</span>
-        <input type="range" id="sldy" min="-500" max="1500" value="41">
-    </label>
-    <label>Scale: <span class="val" id="vldsc">1.00</span>
-        <input type="range" id="sldsc" min="0.1" max="3" step="0.01" value="1">
-    </label>
-    <h4>Right Door</h4>
-    <label>X: <span class="val" id="vrdx">1263</span>
-        <input type="range" id="srdx" min="-500" max="3000" value="1263">
-    </label>
-    <label>Y: <span class="val" id="vrdy">31</span>
-        <input type="range" id="srdy" min="-500" max="1500" value="31">
-    </label>
-    <label>Scale: <span class="val" id="vrdsc">1.00</span>
-        <input type="range" id="srdsc" min="0.1" max="3" step="0.01" value="1">
-    </label>
-    <div class="hint">Coords in source image pixels.</div>
-    <button id="copy-btn">Copy values</button>
+  <h3>Debug [D to hide]</h3>
+  <h4>Left Button</h4>
+  <label>X: <span class="val" id="vlx">0</span>
+    <input type="range" id="slx" min="0" max="3000" value="0">
+  </label>
+  <label>Y: <span class="val" id="vly">261</span>
+    <input type="range" id="sly" min="0" max="1500" value="261">
+  </label>
+  <label>Scale: <span class="val" id="vlsc">1.00</span>
+    <input type="range" id="slsc" min="0.1" max="3" step="0.01" value="1">
+  </label>
+  <h4>Right Button</h4>
+  <label>X: <span class="val" id="vrx">1478</span>
+    <input type="range" id="srx" min="0" max="3000" value="1478">
+  </label>
+  <label>Y: <span class="val" id="vry">261</span>
+    <input type="range" id="sry" min="0" max="1500" value="261">
+  </label>
+  <label>Scale: <span class="val" id="vrsc">1.00</span>
+    <input type="range" id="srsc" min="0.1" max="3" step="0.01" value="1">
+  </label>
+  <h4>Left Door</h4>
+  <label>X: <span class="val" id="vldx">73</span>
+    <input type="range" id="sldx" min="-500" max="3000" value="73">
+  </label>
+  <label>Y: <span class="val" id="vldy">41</span>
+    <input type="range" id="sldy" min="-500" max="1500" value="41">
+  </label>
+  <label>Scale: <span class="val" id="vldsc">1.00</span>
+    <input type="range" id="sldsc" min="0.1" max="3" step="0.01" value="1">
+  </label>
+  <h4>Right Door</h4>
+  <label>X: <span class="val" id="vrdx">1263</span>
+    <input type="range" id="srdx" min="-500" max="3000" value="1263">
+  </label>
+  <label>Y: <span class="val" id="vrdy">31</span>
+    <input type="range" id="srdy" min="-500" max="1500" value="31">
+  </label>
+  <label>Scale: <span class="val" id="vrdsc">1.00</span>
+    <input type="range" id="srdsc" min="0.1" max="3" step="0.01" value="1">
+  </label>
+  <div class="hint">Coords in source image pixels.</div>
+  <button id="copy-btn">Copy values</button>
 </div>
 
 <div id="tablet-bar">
-    <img src="../Assets/Tablette/open_tablette_icon.png" alt="tablet">
+  <img src="../Assets/Tablette/open_tablette_icon.png" alt="tablet">
 </div>
 <canvas id="tablet-anim-canvas" style="display:none;position:fixed;inset:0;width:100%;height:100%;z-index:45;"></canvas>
 <div id="tablet-cam" style="display:none;position:fixed;inset:0;z-index:44;background:#000;">
-    <img src="../Assets/Cam_views/188.png" style="width:100%;height:100%;object-fit:contain;">
+  <img src="../Assets/Cam_views/188.png" style="width:100%;height:100%;object-fit:contain;">
 </div>
 
 <!-- Animation data must load before the main script -->
 <script src="animations.js"></script>
 <script>
-    const canvas = document.getElementById('c');
-    const ctx = canvas.getContext('2d');
+  const canvas = document.getElementById('c');
+  const ctx = canvas.getContext('2d');
 
-    let W, H;
-    function resize() {
-        W = canvas.width = window.innerWidth;
-        H = canvas.height = window.innerHeight;
-    }
-    resize();
-    window.addEventListener('resize', resize);
+  let W, H;
+  function resize() {
+    W = canvas.width = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
 
     // --- Audio ---
     const audioBase = '../Assets/FNaF 1 Audio/';
     const sfxFan = new Audio(audioBase + 'Buzz_Fan_Florescent2.wav');
     sfxFan.loop = true; sfxFan.volume = 0.5;
     const sfxPhone = new Audio(audioBase + 'voiceover1c.wav');
+    sfxPhone.volume = 0.5;
     const ambienceSrcs = [audioBase + 'ambience2.wav', audioBase + 'EerieAmbienceLargeSca_MV005.wav'];
     const sfxScream  = new Audio('../Assets/FNaF 1 Audio/XSCREAM.wav');
     const sfxScream2 = new Audio('../Assets/FNaF 1 Audio/XSCREAM2.wav');
@@ -278,38 +279,87 @@
     //window.addEventListener('click', startAudio, { once: true });
     //window.addEventListener('keydown', startAudio, { once: true });
 
-    // --- Background images ---
-    const bg = new Image();
-    bg.src = '../assets/Main Room/39.png';
+  // --- Background images ---
+  const bg = new Image();
+  bg.src = '../assets/Main Room/39.png';
 
-    const bgLit = {
-        left:  new Image(),
-        right: new Image(),
-    };
-    bgLit.left.src  = '../Assets/Main Room/main_room_left_open_lit.png';
-    bgLit.right.src = '../Assets/Main Room/main_room_right_open_lit.png';
+  const bgLit = {
+    left:  new Image(),
+    right: new Image(),
+  };
+  bgLit.left.src  = '../Assets/Main Room/main_room_left_open_lit.png';
+  bgLit.right.src = '../Assets/Main Room/main_room_right_open_lit.png';
 
-    const bgPoweredDown = new Image();
-    bgPoweredDown.src = '../Assets/Main Room/304.png';
+  const bgPoweredDown = new Image();
+  bgPoweredDown.src = '../Assets/Main Room/304.png';
 
-    const bgFreddyEyesImg = new Image();
-    bgFreddyEyesImg.src = '../Assets/Main Room/305.png';
+  const bgFreddyEyesImg = new Image();
+  bgFreddyEyesImg.src = '../Assets/Main Room/305.png';
 
-    function getActiveBg() {
-        // Eye-sequence override
-        if (window._powerOutEyeFrame === '305') {
-            return bgFreddyEyesImg.complete && bgFreddyEyesImg.naturalWidth ? bgFreddyEyesImg : bgPoweredDown;
+  // ── Light flicker state ───────────────────────────────────────
+  // When a light is first turned on, we run a short flicker sequence
+  // that alternates between the dark and lit background before settling
+  // on the lit image. Each entry in the sequence is { lit: bool, delay: ms }.
+  const FLICKER_SEQUENCE = [
+    { lit: true,  delay: 40  },
+    { lit: false, delay: 60  },
+    { lit: true,  delay: 30  },
+    { lit: false, delay: 80  },
+    { lit: true,  delay: 50  },
+    { lit: false, delay: 45  },
+    { lit: true,  delay: 120 },
+    { lit: false, delay: 35  },
+    { lit: true,  delay: 0   },  // stay on — flicker done
+  ];
+
+  // Per-side flicker state: null means no flicker active, 'on'/'off' overrides the lit bg
+  const flickerOverride = { left: null, right: null };
+  let flickerTimers = { left: [], right: [] };
+
+  function triggerFlicker(side) {
+    // Cancel any in-progress flicker on this side
+    flickerTimers[side].forEach(t => clearTimeout(t));
+    flickerTimers[side] = [];
+    flickerOverride[side] = null;
+
+    let cumulative = 0;
+    FLICKER_SEQUENCE.forEach(({ lit, delay }, i) => {
+      const t = setTimeout(() => {
+        const isLast = (i === FLICKER_SEQUENCE.length - 1);
+        if (state[side].light === 'on') {
+          flickerOverride[side] = isLast ? null : (lit ? 'on' : 'off');
+        } else {
+          flickerOverride[side] = null;
         }
-        if (powerOut) {
-            return bgPoweredDown.complete && bgPoweredDown.naturalWidth ? bgPoweredDown : bg;
-        }
+        // Keep audio in sync with whatever the visual is doing this step
+        updateLightAudio();
+      }, cumulative);
+      flickerTimers[side].push(t);
+      cumulative += delay;
+    });
+  }
 
-        const leftLit  = state.left.light  === 'on';
-        const rightLit = state.right.light === 'on';
-        if (leftLit  && !rightLit) return bgLit.left.complete  && bgLit.left.naturalWidth  ? bgLit.left  : bg;
-        if (rightLit && !leftLit)  return bgLit.right.complete && bgLit.right.naturalWidth ? bgLit.right : bg;
-        return bg;
+  function getActiveBg() {
+    // Eye-sequence override
+    if (window._powerOutEyeFrame === '305') {
+      return bgFreddyEyesImg.complete && bgFreddyEyesImg.naturalWidth ? bgFreddyEyesImg : bgPoweredDown;
     }
+    if (powerOut) {
+      return bgPoweredDown.complete && bgPoweredDown.naturalWidth ? bgPoweredDown : bg;
+    }
+
+    const leftLit  = state.left.light  === 'on';
+    const rightLit = state.right.light === 'on';
+
+    // Apply per-side flicker overrides: 'off' forces dark bg even if light is on
+    const leftEffective  = leftLit  && flickerOverride.left  !== 'off';
+    const rightEffective = rightLit && flickerOverride.right !== 'off';
+
+    if (leftEffective  && !rightEffective) return bgLit.left.complete  && bgLit.left.naturalWidth  ? bgLit.left  : bg;
+    if (rightEffective && !leftEffective)  return bgLit.right.complete && bgLit.right.naturalWidth ? bgLit.right : bg;
+    // Both lit at once isn't normal gameplay but fall back to base bg
+    return bg;
+  }
 
     // --- Fan (loaded from fanAnimation defined in animations.js) ---
     const fanFrames = fanAnimation.frames.map(src => {
@@ -328,14 +378,31 @@
     const sfxDoor = new Audio('../Assets/FNaF 1 Audio/SFXBible_12478.wav');
     sfxDoor.volume = 0.8;
 
-    function loadDoorFrames(animDef) {
-        return animDef.frames.map(src => {
-            const img = new Image();
-            img.src = src;
-            img.onerror = () => console.warn('Missing door frame:', src);
-            return img;
-        });
+  const sfxLight = new Audio('../Assets/FNaF 1 Audio/BallastHumMedium2.wav');
+  sfxLight.loop = true;
+  sfxLight.volume = 0.6;
+
+  function updateLightAudio() {
+    // Audibly on only when the visual is also showing the lit bg —
+    // i.e. state is 'on' AND the flicker override isn't suppressing it.
+    const leftOn  = state.left.light  === 'on' && flickerOverride.left  !== 'off';
+    const rightOn = state.right.light === 'on' && flickerOverride.right !== 'off';
+    if (leftOn || rightOn) {
+      if (sfxLight.paused) sfxLight.play().catch(() => {});
+    } else {
+      sfxLight.pause();
+      sfxLight.currentTime = 0;
     }
+  }
+
+  function loadDoorFrames(animDef) {
+    return animDef.frames.map(src => {
+      const img = new Image();
+      img.src = src;
+      img.onerror = () => console.warn('Missing door frame:', src);
+      return img;
+    });
+  }
 
     const doorFrames = {
         left:  loadDoorFrames(mainRoomDoorLeft),
@@ -501,18 +568,35 @@
                 zone.className = 'btn-zone';
                 document.body.appendChild(zone);
 
-                zone.addEventListener('click', e => {
-                    startAudio();
-                    const rect = zone.getBoundingClientRect();
-                    const relY = e.clientY - rect.top;
-                    // Top half = door toggle, bottom half = light toggle
-                    if (relY < rect.height / 2) {
-                        toggleDoor(side);
-                    } else {
-                        state[side].light = state[side].light === 'off' ? 'on' : 'off';
-                    }
-                });
+        zone.addEventListener('click', e => {
+          startAudio();
+          const rect = zone.getBoundingClientRect();
+          const relY = e.clientY - rect.top;
+          if (relY < rect.height / 2) {
+            toggleDoor(side);
+          } else {
+            const otherSide = side === 'left' ? 'right' : 'left';
+            if (state[side].light === 'off') {
+              // Turn this light on, force the other off
+              state[side].light = 'on';
+              state[otherSide].light = 'off';
+              // Cancel any flicker on the other side since it's turning off
+              flickerTimers[otherSide].forEach(t => clearTimeout(t));
+              flickerTimers[otherSide] = [];
+              flickerOverride[otherSide] = null;
+              // Trigger flicker on the newly-lit side
+              triggerFlicker(side);
+            } else {
+              state[side].light = 'off';
+              // Cancel flicker if the light is turned off mid-flicker
+              flickerTimers[side].forEach(t => clearTimeout(t));
+              flickerTimers[side] = [];
+              flickerOverride[side] = null;
             }
+            updateLightAudio();
+          }
+        });
+      }
 
             const r = getBtnScreenRect(side);
             if (r) {
@@ -524,10 +608,8 @@
         });
     }
 
-    // Set true the instant power hits 0 — removes fan & buttons immediately
-    let powerOut = false;
-    // Set true while jumpscare is playing — freezes the main render loop
-    let renderPaused = false;
+  let powerOut = false;
+  let renderPaused = false;
 
     function draw() {
         if (!bg.complete || !bg.naturalWidth) return;
@@ -585,13 +667,10 @@
     }
 
 
-    // ── Shared jumpscare player ───────────────────────────────────
-    // Preloads all frames first so none are skipped, then plays them
-    // at the correct fps. After the last frame: fades to black, then
-    // either calls onDone (e.g. redirect) or resumes the game.
-    function playJumpscare(def, sfxSrc, onDone, maxDurationMs = null) {
-        if (!def) { console.warn('playJumpscare: missing animation def'); return; }
-        renderPaused = true;
+  // ── Shared jumpscare player ───────────────────────────────────
+  function playJumpscare(def, sfxSrc, onDone) {
+    if (!def) { console.warn('playJumpscare: missing animation def'); return; }
+    renderPaused = true;
 
         const sfx = typeof sfxSrc === 'string' ? new Audio(sfxSrc) : sfxSrc;
         sfx.currentTime = 0;
@@ -638,8 +717,8 @@
                     const dh = img.naturalHeight * sc;
                     ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
                 }
-
-                frameIdx++;
+        /*
+        frameIdx++;
                 if (frameIdx < frames.length) {
                     setTimeout(nextFrame, msPerFrame);
                 } else {
@@ -649,7 +728,18 @@
                         setTimeout(finish, 400);
                     }, 400);
                 }
-            }
+         */
+        frameIdx++;
+        if (frameIdx < frames.length) {
+          setTimeout(nextFrame, msPerFrame);
+        } else {
+          if (onDone) {
+            onDone();
+          } else {
+            renderPaused = false;
+          }
+        }
+      }
 
             nextFrame();
         }
@@ -730,9 +820,10 @@
     });
 
 
-    // --- Tablet (frame list built from tabletAnimation defined in animations.js) ---
-    const sfxCamera = new Audio('../Assets/FNaF 1 Audio/CAMERA_VIDEO_LOA_60105303.wav');
-    sfxCamera.volume = 0.8;
+  const sfxCameraUp = new Audio('../Assets/FNaF 1 Audio/CAMERA_VIDEO_LOA_60105303.wav');
+  const sfxCameraDown = new Audio('../Assets/FNaF 1 Audio/put down.wav')
+  sfxCameraUp.volume = 0.5;
+  sfxCameraDown.volume = 0.5;
 
     const tabletFrames = [];
     for (let i = 1; i <= tabletAnimation.frameCount; i++) {
@@ -746,9 +837,9 @@
     const tabletCtx    = tabletCanvas.getContext('2d');
     const tabletCam    = document.getElementById('tablet-cam');
 
-    let tabletState   = 'closed'; // closed | opening | waiting | open | closing
-    let tabletFrame   = 0;
-    let lastFrameTime = 0;
+  let tabletState   = 'closed';
+  let tabletFrame   = 0;
+  let lastFrameTime = 0;
 
     function resizeTabletCanvas() {
         tabletCanvas.width  = window.innerWidth;
@@ -804,30 +895,30 @@
         requestAnimationFrame(animateTablet);
     }
 
-    function openTablet() {
-        if (tabletState !== 'closed') return;
-        if (GameState.rawPower <= 0) return;
-        sfxCamera.currentTime = 0;
-        sfxCamera.play().catch(() => {});
-        tabletState  = 'opening';
-        tabletFrame  = 0;
-        tabletCanvas.style.display = 'block';
-        tabletCanvas.width  = window.innerWidth;
-        tabletCanvas.height = window.innerHeight;
-        requestAnimationFrame(animateTablet);
-    }
+  function openTablet() {
+    if (tabletState !== 'closed') return;
+    if (GameState.rawPower <= 0) return;
+    sfxCameraUp.currentTime = 0;
+    sfxCameraUp.play().catch(() => {});
+    tabletState  = 'opening';
+    tabletFrame  = 0;
+    tabletCanvas.style.display = 'block';
+    tabletCanvas.width  = window.innerWidth;
+    tabletCanvas.height = window.innerHeight;
+    requestAnimationFrame(animateTablet);
+  }
 
-    function closeTablet() {
-        if (tabletState !== 'open') return;
-        sfxCamera.currentTime = 0;
-        sfxCamera.play().catch(() => {});
-        tabletState = 'closing';
-        tabletFrame = tabletFrames.length - 1;
-        tabletCam.style.display    = 'none';
-        tabletCanvas.style.display = 'block';
-        drawTabletFrame(tabletFrame);
-        requestAnimationFrame(animateTablet);
-    }
+  function closeTablet() {
+    if (tabletState !== 'open') return;
+    sfxCameraDown.currentTime = 0;
+    sfxCameraDown.play().catch(() => {});
+    tabletState = 'closing';
+    tabletFrame = tabletFrames.length - 1;
+    tabletCam.style.display    = 'none';
+    tabletCanvas.style.display = 'block';
+    drawTabletFrame(tabletFrame);
+    requestAnimationFrame(animateTablet);
+  }
 
     tabletBar.addEventListener('click', openTablet);
 
@@ -885,15 +976,10 @@
         }));
     });
 
-    // ── GameState ──────────────────────────────────────────────
-    // Power pool: 999 raw units. Display = Math.round(raw / 10) / 10 → one decimal %.
-    // Usage drain: every second, subtract current usage from raw power.
-    // Passive drain: from night 2 onward, subtract 1 extra on a per-night interval.
-    // Night length: 8 min 55 sec = 535 seconds across 7 in-game hours (12 AM → 6 AM).
-
-    const HOURS        = ['12 AM','1 AM','2 AM','3 AM','4 AM','5 AM','6 AM'];
-    const NIGHT_SECS   = 535;
-    const SECS_PER_HOUR = NIGHT_SECS / 6; // ~89.2s per hour
+  // ── GameState ──────────────────────────────────────────────
+  const HOURS        = ['12 AM','1 AM','2 AM','3 AM','4 AM','5 AM','6 AM'];
+  const NIGHT_SECS   = 535;
+  const SECS_PER_HOUR = NIGHT_SECS / 6;
 
     // Passive drain interval in seconds per night (0 = no passive drain)
     const PASSIVE_INTERVAL = { 1: 0, 2: 6, 3: 5, 4: 4, 5: 3, 6: 3, 7: 3 };
@@ -922,46 +1008,42 @@
                 return;
             }
 
-            // 1. Usage drain (every second)
-            const usage = this.getUsage();
-            this.rawPower -= usage;
+      const usage = this.getUsage();
+      this.rawPower -= usage;
 
-            // 2. Passive drain (night 2+)
-            const interval = PASSIVE_INTERVAL[this.night] || 0;
-            if (interval > 0) {
-                this.passiveAccum++;
-                if (this.passiveAccum >= interval) {
-                    this.passiveAccum = 0;
-                    this.rawPower -= 1;
-                }
-            }
+      const interval = PASSIVE_INTERVAL[this.night] || 0;
+      if (interval > 0) {
+        this.passiveAccum++;
+        if (this.passiveAccum >= interval) {
+          this.passiveAccum = 0;
+          this.rawPower -= 1;
+        }
+      }
 
             this.rawPower = Math.max(0, this.rawPower);
 
-            // 3. Advance clock
-            this.secondsElapsed++;
-            if (this.secondsElapsed >= NIGHT_SECS) {
-                this.on6AM();
-                return;
-            }
+      this.secondsElapsed++;
+      if (this.secondsElapsed >= NIGHT_SECS) {
+        this.on6AM();
+        return;
+      }
 
             this.render();
         },
 
-        // Displayed % = raw / 10, rounded to 1 decimal place
-        getDisplayPercent() {
-            return (Math.round(this.rawPower) / 10).toFixed(1);
-        },
+    getDisplayPercent() {
+      return (Math.round(this.rawPower) / 10).toFixed(1);
+    },
 
         getCurrentHour() {
             return Math.min(6, Math.floor(this.secondsElapsed / SECS_PER_HOUR));
         },
 
-        render() {
-            const usage   = this.getUsage();
-            const pct     = this.getDisplayPercent();
-            const fill    = document.getElementById('hud-power-bar-fill');
-            const rawPct  = this.rawPower / 999 * 100; // for the bar width
+    render() {
+      const usage   = this.getUsage();
+      const pct     = this.getDisplayPercent();
+      const fill    = document.getElementById('hud-power-bar-fill');
+      const rawPct  = this.rawPower / 999 * 100;
 
             document.getElementById('hud-night').textContent     = `Night ${this.night}`;
             document.getElementById('hud-time').textContent      = HOURS[this.getCurrentHour()];
@@ -979,24 +1061,23 @@
             if (this._powerOutTriggered) return;
             this._powerOutTriggered = true;
 
-            // ── Immediately kill fan, buttons, HUD ───────────────────
-            powerOut = true;
-            window._powerOutEyeFrame = '304';
-            document.getElementById('hud').style.display        = 'none';
-            document.getElementById('tablet-bar').style.display = 'none';
-            document.querySelectorAll('.btn-zone').forEach(z => z.style.display = 'none');
+      powerOut = true;
+      window._powerOutEyeFrame = '304';
+      document.getElementById('hud').style.display        = 'none';
+      document.getElementById('tablet-bar').style.display = 'none';
+      document.querySelectorAll('.btn-zone').forEach(z => z.style.display = 'none');
 
-            // ── Cut all audio ────────────────────────────────────────
-            [sfxFan, sfxPhone].forEach(a => { a.pause(); a.currentTime = 0; });
-            if (currentAmbience) { currentAmbience.pause(); currentAmbience = null; }
-            // ── Force doors open, lights off ─────────────────────────
-            sfxDoor.currentTime = 0;
-            sfxDoor.play().catch(() => {});
-            ['left', 'right'].forEach(side => {
-                state[side].door  = 'open';
-                state[side].light = 'off';
-                startDoorAnim(side, -1);
-            });
+    // ── Cut all audio ────────────────────────────────────────
+    [sfxFan, sfxPhone, sfxLight].forEach(a => { a.pause(); a.currentTime = 0; });
+    if (currentAmbience) { currentAmbience.pause(); currentAmbience = null; }
+    // ── Force doors open, lights off ─────────────────────────
+    sfxDoor.currentTime = 0;
+    sfxDoor.play().catch(() => {});
+    ['left', 'right'].forEach(side => {
+        state[side].door  = 'open';
+        state[side].light = 'off';
+        startDoorAnim(side, -1);
+    });
 
             // ── Play power-down SFX ──────────────────────────────────
             // ── Play power-down SFX ──────────────────────────────────────
