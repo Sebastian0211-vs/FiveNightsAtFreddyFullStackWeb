@@ -24,60 +24,66 @@
     canvas { display: block; position: absolute; top: 0; left: 0; }
 
     /* ── HUD ──────────────────────────────────────────────────── */
-    #hud {
+    #hud-top-right {
       position: fixed;
-      bottom: 52px; /* sit above tablet bar */
-      left: 20px;
+      top: var(--hud-tr-top, 37px);
+      right: var(--hud-tr-right, 50px);
       z-index: 500;
       pointer-events: none;
       user-select: none;
       font-family: 'FNAF', 'Courier New', monospace;
-      font-size: clamp(10px, 1.3vw, 17px);
-      color: #5dff5d;
-      text-shadow: 0 0 8px #00cc00;
+      color: #fff;
+      text-shadow: 0 0 10px rgba(255,255,255,0.5);
+      text-align: right;
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 2px;
     }
-
-    #hud-night {
-      font-size: clamp(12px, 1.6vw, 21px);
-      letter-spacing: 0.05em;
-    }
-
     #hud-time {
-      font-size: clamp(11px, 1.5vw, 20px);
+      font-size: calc(clamp(24px, 3.6vw, 56px) * var(--hud-tr-scale, 1.6));
+      letter-spacing: 0.06em;
+      line-height: 1;
+    }
+    #hud-night {
+      font-size: calc(clamp(13px, 1.6vw, 26px) * var(--hud-tr-scale, 1.6));
+      letter-spacing: 0.08em;
+      opacity: 0.9;
+    }
+
+    #hud-power {
+      position: fixed;
+      bottom: var(--hud-pw-bottom, 123px);
+      left: var(--hud-pw-left, 70px);
+      z-index: 500;
+      pointer-events: none;
+      user-select: none;
+      font-family: 'FNAF', 'Courier New', monospace;
+      color: #fff;
+      text-shadow: 0 0 10px rgba(255,255,255,0.5);
+      font-size: calc(clamp(13px, 1.6vw, 26px) * var(--hud-bl-scale, 2.25));
       letter-spacing: 0.08em;
     }
 
-    #hud-power-label {
-      margin-top: 6px;
-    }
-
-    #hud-power-bar-track {
-      width: clamp(80px, 10vw, 140px);
-      height: 8px;
-      background: #1a3d1a;
-      border: 1px solid #2a6a2a;
-      border-radius: 2px;
-      margin-top: 3px;
-      overflow: hidden;
-    }
-
-    #hud-power-bar-fill {
-      height: 100%;
-      background: #5dff5d;
-      box-shadow: 0 0 6px #00cc00;
-      transition: width 1s linear, background 1s;
-      border-radius: 2px;
-    }
-
-    #hud-power-bar-fill.low   { background: #ffaa00; box-shadow: 0 0 6px #cc8800; }
-    #hud-power-bar-fill.critical { background: #ff3333; box-shadow: 0 0 6px #cc0000; }
-
     #hud-usage {
-      margin-top: 3px;
-      letter-spacing: 0.12em;
+      position: fixed;
+      bottom: var(--hud-us-bottom, 61px);
+      left: var(--hud-us-left, 70px);
+      z-index: 500;
+      pointer-events: none;
+      user-select: none;
+      font-family: 'FNAF', 'Courier New', monospace;
+      color: #fff;
+      text-shadow: 0 0 10px rgba(255,255,255,0.5);
+      font-size: calc(clamp(13px, 1.6vw, 26px) * var(--hud-bl-scale, 2.25));
+      letter-spacing: 0.08em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #hud-battery-img {
+      height: clamp(28px, 4vw, 52px);
+      width: auto;
+      image-rendering: pixelated;
     }
 
     /* Page fade-in on load */
@@ -91,7 +97,7 @@
       transition: opacity 0.9s ease;
     }
 
-    /* Invisible click zones for buttons — positioned by JS */
+    /* Invisible click zones for buttons */
     .btn-zone {
       position: absolute;
       cursor: pointer;
@@ -110,6 +116,8 @@
       border: 1px solid #0f0;
       z-index: 600;
       width: 240px;
+      max-height: 90vh;
+      overflow-y: auto;
     }
     #debug label { display: block; margin-top: 6px; }
     #debug input[type=range] { width: 100%; }
@@ -134,51 +142,28 @@
       justify-content: center;
       cursor: pointer;
     }
-    #tablet-bar img {
-      height: 30px;
-      opacity: 0.7;
-    }
-    #tablet-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 40;
-      display: none;
-      background: #000;
-    }
-    #tablet-overlay canvas {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      object-fit: contain;
-    }
-    #tablet-cam {
-      position: fixed;
-      inset: 0;
-      z-index: 41;
-      display: none;
-      background: #000;
-    }
-    #tablet-cam img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-    }
+    #tablet-bar img { height: 30px; opacity: 0.7; }
   </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div id="page-fade"></div>
 
-<!-- HUD -->
-<div id="hud">
-  <div id="hud-night">Night 1</div>
+<!-- HUD top-right: time + night -->
+<div id="hud-top-right">
   <div id="hud-time">12 AM</div>
-  <div id="hud-power-label">Power Left: <span id="hud-power-val">99%</span></div>
-  <div id="hud-power-bar-track">
-    <div id="hud-power-bar-fill" style="width:99%"></div>
-  </div>
-  <div id="hud-usage">Usage: <span id="hud-usage-val">█░░░░</span></div>
+  <div id="hud-night">Night 1</div>
 </div>
+
+<!-- HUD bottom-left: power % -->
+<div id="hud-power">Power Left: <span id="hud-power-val">99%</span></div>
+
+<!-- HUD usage: label + battery image -->
+<div id="hud-usage">
+  <span>Usage :</span>
+  <img id="hud-battery-img" src="../Assets/Battery/212.png" alt="battery">
+</div>
+
 <div id="debug">
   <h3>Debug [D to hide]</h3>
   <h4>Left Button</h4>
@@ -223,17 +208,42 @@
   </label>
   <div class="hint">Coords in source image pixels.</div>
   <button id="copy-btn">Copy values</button>
+  <h4>HUD Top-Right</h4>
+  <label>Top: <span class="val" id="vhtr-t">37</span>px
+    <input type="range" id="shtr-t" min="0" max="200" value="37">
+  </label>
+  <label>Right: <span class="val" id="vhtr-r">50</span>px
+    <input type="range" id="shtr-r" min="0" max="200" value="50">
+  </label>
+  <label>Size: <span class="val" id="vhtr-s">1.60</span>x
+    <input type="range" id="shtr-s" min="0.5" max="3" step="0.05" value="1.6">
+  </label>
+  <h4>HUD Power Left</h4>
+  <label>Bottom: <span class="val" id="vhpw-b">123</span>px
+    <input type="range" id="shpw-b" min="0" max="400" value="123">
+  </label>
+  <label>Left: <span class="val" id="vhpw-l">70</span>px
+    <input type="range" id="shpw-l" min="0" max="400" value="70">
+  </label>
+  <h4>HUD Usage / Battery</h4>
+  <label>Bottom: <span class="val" id="vhus-b">61</span>px
+    <input type="range" id="shus-b" min="0" max="400" value="61">
+  </label>
+  <label>Left: <span class="val" id="vhus-l">70</span>px
+    <input type="range" id="shus-l" min="0" max="400" value="70">
+  </label>
+  <label>Text Size: <span class="val" id="vhbl-s">2.25</span>x
+    <input type="range" id="shbl-s" min="0.5" max="3" step="0.05" value="2.25">
+  </label>
+  <button id="copy-hud-btn" style="margin-top:6px;width:100%;background:#00a;color:#fff;border:none;padding:4px;cursor:pointer;font:11px monospace;">Copy HUD values</button>
 </div>
 
 <div id="tablet-bar">
   <img src="../Assets/Tablette/open_tablette_icon.png" alt="tablet">
 </div>
 <canvas id="tablet-anim-canvas" style="display:none;position:fixed;inset:0;width:100%;height:100%;z-index:45;"></canvas>
-<div id="tablet-cam" style="display:none;position:fixed;inset:0;z-index:44;background:#000;">
-  <img src="../Assets/Cam_views/188.png" style="width:100%;height:100%;object-fit:contain;">
-</div>
+<canvas id="tablet-cam" style="display:none;position:fixed;inset:0;z-index:44;background:#000;width:100%;height:100%;"></canvas>
 
-<!-- Animation data must load before the main script -->
 <script src="animations.js"></script>
 <script>
   const canvas = document.getElementById('c');
@@ -247,59 +257,48 @@
   resize();
   window.addEventListener('resize', resize);
 
-    // --- Audio ---
-    const audioBase = '../Assets/FNaF 1 Audio/';
-    const sfxFan = new Audio(audioBase + 'Buzz_Fan_Florescent2.wav');
-    sfxFan.loop = true; sfxFan.volume = 0.5;
-    const sfxPhone = new Audio(audioBase + 'voiceover1c.wav');
-    sfxPhone.volume = 0.5;
-    const ambienceSrcs = [audioBase + 'ambience2.wav', audioBase + 'EerieAmbienceLargeSca_MV005.wav'];
-    const sfxScream  = new Audio('../Assets/FNaF 1 Audio/XSCREAM.wav');
-    const sfxScream2 = new Audio('../Assets/FNaF 1 Audio/XSCREAM2.wav');
-    const sfxNoise   = new Audio('../Assets/FNaF 1 Audio/COMPUTER_DIGITAL_L2076505.wav');
-    let audioStarted = false;
+  // --- Audio ---
+  const audioBase = '../Assets/FNaF 1 Audio/';
+  const sfxFan   = new Audio(audioBase + 'Buzz_Fan_Florescent2.wav');
+  sfxFan.loop = true; sfxFan.volume = 0.5;
+  const sfxPhone = new Audio(audioBase + 'voiceover1c.wav');
+  sfxPhone.volume = 0.5;
+  const ambienceSrcs = [audioBase + 'ambience2.wav', audioBase + 'EerieAmbienceLargeSca_MV005.wav'];
+  const sfxScream  = new Audio('../Assets/FNaF 1 Audio/XSCREAM.wav');
+  const sfxScream2 = new Audio('../Assets/FNaF 1 Audio/XSCREAM2.wav');
+  const sfxNoise   = new Audio('../Assets/FNaF 1 Audio/COMPUTER_DIGITAL_L2076505.wav');
+  let audioStarted = false;
 
-    let currentAmbience = null;
-    function startAudio() {
-        if (audioStarted) return;
-        audioStarted = true;
-        sfxFan.play().catch(() => {});
-        sfxPhone.play().catch(() => {});
-        function nextAmbience() {
-            currentAmbience = new Audio(ambienceSrcs[Math.floor(Math.random() * ambienceSrcs.length)]);
-            currentAmbience.volume = 0.4;
-            currentAmbience.play().catch(() => {});
-            currentAmbience.addEventListener('ended', nextAmbience);
-        }
-        nextAmbience();
+  let currentAmbience = null;
+  function startAudio() {
+    if (audioStarted) return;
+    audioStarted = true;
+    sfxFan.play().catch(() => {});
+    sfxPhone.play().catch(() => {});
+    function nextAmbience() {
+      currentAmbience = new Audio(ambienceSrcs[Math.floor(Math.random() * ambienceSrcs.length)]);
+      currentAmbience.volume = 0.4;
+      currentAmbience.play().catch(() => {});
+      currentAmbience.addEventListener('ended', nextAmbience);
     }
-    window.onload = () => {
-        startAudio();
-    }
-    //window.addEventListener('click', startAudio, { once: true });
-    //window.addEventListener('keydown', startAudio, { once: true });
+    nextAmbience();
+  }
+  window.onload = () => { startAudio(); };
 
   // --- Background images ---
   const bg = new Image();
   bg.src = '../assets/Main Room/39.png';
 
-  const bgLit = {
-    left:  new Image(),
-    right: new Image(),
-  };
+  const bgLit = { left: new Image(), right: new Image() };
   bgLit.left.src  = '../Assets/Main Room/main_room_left_open_lit.png';
   bgLit.right.src = '../Assets/Main Room/main_room_right_open_lit.png';
 
   const bgPoweredDown = new Image();
   bgPoweredDown.src = '../Assets/Main Room/304.png';
-
   const bgFreddyEyesImg = new Image();
   bgFreddyEyesImg.src = '../Assets/Main Room/305.png';
 
-  // ── Light flicker state ───────────────────────────────────────
-  // When a light is first turned on, we run a short flicker sequence
-  // that alternates between the dark and lit background before settling
-  // on the lit image. Each entry in the sequence is { lit: bool, delay: ms }.
+  // ── Light flicker ─────────────────────────────────────────────
   const FLICKER_SEQUENCE = [
     { lit: true,  delay: 40  },
     { lit: false, delay: 60  },
@@ -309,19 +308,15 @@
     { lit: false, delay: 45  },
     { lit: true,  delay: 120 },
     { lit: false, delay: 35  },
-    { lit: true,  delay: 0   },  // stay on — flicker done
+    { lit: true,  delay: 0   },
   ];
-
-  // Per-side flicker state: null means no flicker active, 'on'/'off' overrides the lit bg
   const flickerOverride = { left: null, right: null };
   let flickerTimers = { left: [], right: [] };
 
   function triggerFlicker(side) {
-    // Cancel any in-progress flicker on this side
     flickerTimers[side].forEach(t => clearTimeout(t));
     flickerTimers[side] = [];
     flickerOverride[side] = null;
-
     let cumulative = 0;
     FLICKER_SEQUENCE.forEach(({ lit, delay }, i) => {
       const t = setTimeout(() => {
@@ -331,7 +326,6 @@
         } else {
           flickerOverride[side] = null;
         }
-        // Keep audio in sync with whatever the visual is doing this step
         updateLightAudio();
       }, cumulative);
       flickerTimers[side].push(t);
@@ -340,234 +334,138 @@
   }
 
   function getActiveBg() {
-    // Eye-sequence override
     if (window._powerOutEyeFrame === '305') {
       return bgFreddyEyesImg.complete && bgFreddyEyesImg.naturalWidth ? bgFreddyEyesImg : bgPoweredDown;
     }
     if (powerOut) {
       return bgPoweredDown.complete && bgPoweredDown.naturalWidth ? bgPoweredDown : bg;
     }
-
     const leftLit  = state.left.light  === 'on';
     const rightLit = state.right.light === 'on';
-
-    // Apply per-side flicker overrides: 'off' forces dark bg even if light is on
     const leftEffective  = leftLit  && flickerOverride.left  !== 'off';
     const rightEffective = rightLit && flickerOverride.right !== 'off';
-
     if (leftEffective  && !rightEffective) return bgLit.left.complete  && bgLit.left.naturalWidth  ? bgLit.left  : bg;
     if (rightEffective && !leftEffective)  return bgLit.right.complete && bgLit.right.naturalWidth ? bgLit.right : bg;
-    // Both lit at once isn't normal gameplay but fall back to base bg
     return bg;
   }
 
-    // --- Fan (loaded from fanAnimation defined in animations.js) ---
-    const fanFrames = fanAnimation.frames.map(src => {
-        const img = new Image();
-        img.src = src;
-        return img;
-    });
-    let fanIndex  = 0;
-    let fanLoaded = 0;
-    fanFrames.forEach(f => {
-        f.onload  = () => { fanLoaded++; if (fanLoaded === fanFrames.length) setInterval(() => { fanIndex = (fanIndex + 1) % fanFrames.length; }, 1000 / fanAnimation.fps); };
-        f.onerror = () => { fanLoaded++; };
-    });
+  // --- Fan ---
+  const fanFrames = fanAnimation.frames.map(src => {
+    const img = new Image(); img.src = src; return img;
+  });
+  let fanIndex = 0, fanLoaded = 0;
+  fanFrames.forEach(f => {
+    f.onload  = () => { fanLoaded++; if (fanLoaded === fanFrames.length) setInterval(() => { fanIndex = (fanIndex + 1) % fanFrames.length; }, 1000 / fanAnimation.fps); };
+    f.onerror = () => { fanLoaded++; };
+  });
 
-    // --- Doors (loaded from mainRoomDoorLeft/Right defined in animations.js) ---
-    const sfxDoor = new Audio('../Assets/FNaF 1 Audio/SFXBible_12478.wav');
-    sfxDoor.volume = 0.8;
-
+  // --- Doors ---
+  const sfxDoor  = new Audio('../Assets/FNaF 1 Audio/SFXBible_12478.wav');
+  sfxDoor.volume = 0.8;
   const sfxLight = new Audio('../Assets/FNaF 1 Audio/BallastHumMedium2.wav');
-  sfxLight.loop = true;
-  sfxLight.volume = 0.6;
+  sfxLight.loop = true; sfxLight.volume = 0.6;
 
   function updateLightAudio() {
-    // Audibly on only when the visual is also showing the lit bg —
-    // i.e. state is 'on' AND the flicker override isn't suppressing it.
     const leftOn  = state.left.light  === 'on' && flickerOverride.left  !== 'off';
     const rightOn = state.right.light === 'on' && flickerOverride.right !== 'off';
     if (leftOn || rightOn) {
       if (sfxLight.paused) sfxLight.play().catch(() => {});
     } else {
-      sfxLight.pause();
-      sfxLight.currentTime = 0;
+      sfxLight.pause(); sfxLight.currentTime = 0;
     }
   }
 
   function loadDoorFrames(animDef) {
     return animDef.frames.map(src => {
-      const img = new Image();
-      img.src = src;
+      const img = new Image(); img.src = src;
       img.onerror = () => console.warn('Missing door frame:', src);
       return img;
     });
   }
+  const doorFrames = { left: loadDoorFrames(mainRoomDoorLeft), right: loadDoorFrames(mainRoomDoorRight) };
+  const doorAnim   = { left: { frameIndex: 0, direction: 0, timer: null }, right: { frameIndex: 0, direction: 0, timer: null } };
 
-    const doorFrames = {
-        left:  loadDoorFrames(mainRoomDoorLeft),
-        right: loadDoorFrames(mainRoomDoorRight),
-    };
-
-    // Per-door animation state
-    // frameIndex: 0 = door frame only (open), last = fully closed
-    // direction:  0 = idle, 1 = closing, -1 = opening
-    const doorAnim = {
-        left:  { frameIndex: 0, direction: 0, timer: null },
-        right: { frameIndex: 0, direction: 0, timer: null },
-    };
-
-    function stepDoor(side) {
-        const anim   = doorAnim[side];
-        const frames = doorFrames[side];
-        anim.frameIndex += anim.direction;
-
-        if (anim.frameIndex >= frames.length) {
-            anim.frameIndex = frames.length - 1;
-            anim.direction  = 0;
-            clearInterval(anim.timer); anim.timer = null;
-            state[side].door = 'closed';
-        } else if (anim.frameIndex <= 0) {
-            anim.frameIndex = 0;
-            anim.direction  = 0;
-            clearInterval(anim.timer); anim.timer = null;
-            state[side].door = 'open';
-        }
+  function stepDoor(side) {
+    const anim = doorAnim[side], frames = doorFrames[side];
+    anim.frameIndex += anim.direction;
+    if (anim.frameIndex >= frames.length) {
+      anim.frameIndex = frames.length - 1; anim.direction = 0;
+      clearInterval(anim.timer); anim.timer = null; state[side].door = 'closed';
+    } else if (anim.frameIndex <= 0) {
+      anim.frameIndex = 0; anim.direction = 0;
+      clearInterval(anim.timer); anim.timer = null; state[side].door = 'open';
     }
-
-    function startDoorAnim(side, direction) {
-        const anim = doorAnim[side];
-        const def  = side === 'left' ? mainRoomDoorLeft : mainRoomDoorRight;
-        if (anim.direction === direction) return;
-        anim.direction = direction;
-        if (anim.timer) { clearInterval(anim.timer); anim.timer = null; }
-        anim.timer = setInterval(() => stepDoor(side), 1000 / def.fps);
+  }
+  function startDoorAnim(side, direction) {
+    const anim = doorAnim[side], def = side === 'left' ? mainRoomDoorLeft : mainRoomDoorRight;
+    if (anim.direction === direction) return;
+    anim.direction = direction;
+    if (anim.timer) { clearInterval(anim.timer); anim.timer = null; }
+    anim.timer = setInterval(() => stepDoor(side), 1000 / def.fps);
+  }
+  function toggleDoor(side) {
+    const anim = doorAnim[side];
+    sfxDoor.currentTime = 0; sfxDoor.play().catch(() => {});
+    if (anim.direction === 1 || (anim.direction === 0 && anim.frameIndex === doorFrames[side].length - 1)) {
+      startDoorAnim(side, -1);
+    } else {
+      startDoorAnim(side, 1);
     }
+  }
 
-    function toggleDoor(side) {
-        const anim = doorAnim[side];
-        sfxDoor.currentTime = 0;
-        sfxDoor.play().catch(() => {});
-        if (anim.direction === 1 || (anim.direction === 0 && anim.frameIndex === doorFrames[side].length - 1)) {
-            startDoorAnim(side, -1); // open
-        } else {
-            startDoorAnim(side, 1);  // close
-        }
+  // --- Buttons ---
+  const btnBase = '../Assets/Door_Buttons/';
+  function loadBtn(side, light, door) {
+    const img = new Image(); img.src = `${btnBase}Button_${side}_light_${light}_${door}.png`; return img;
+  }
+  const btnImgs = {
+    left:  { off_closed: loadBtn('left','off','closed'), off_open: loadBtn('left','off','open'), on_closed: loadBtn('left','on','closed'), on_open: loadBtn('left','on','open') },
+    right: { off_closed: loadBtn('right','off','closed'), off_open: loadBtn('right','off','open'), on_closed: loadBtn('right','on','closed'), on_open: loadBtn('right','on','open') },
+  };
+  const state = { left: { door: 'closed', light: 'off' }, right: { door: 'closed', light: 'off' } };
+  function getBtnImg(side) { const s = state[side]; return btnImgs[side][`${s.light}_${s.door}`]; }
+  [...Object.values(btnImgs.left), ...Object.values(btnImgs.right)].forEach(img => { img.onerror = () => console.warn('Missing:', img.src); });
+
+  bg.onload = () => requestAnimationFrame(animate);
+
+  // --- Pan ---
+  let scroll = 0.5, targetScroll = 0.5, isDragging = false, lastX = 0, velocity = 0;
+  let btnPos  = { left: { x: 0, y: 261, scale: 1.0 }, right: { x: 1478, y: 261, scale: 1.0 } };
+  let doorPos = { left: { x: mainRoomDoorLeft.imgX, y: mainRoomDoorLeft.imgY, scale: mainRoomDoorLeft.scale }, right: { x: mainRoomDoorRight.imgX, y: mainRoomDoorRight.imgY, scale: mainRoomDoorRight.scale } };
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  const FOV_FACTOR = 0.35;
+
+  function drawStripLayer(img, imgW, imgH, scale, offsetX) {
+    for (let sx = 0; sx < W; sx++) {
+      const imgX = (offsetX + sx) / scale;
+      if (imgX < 0 || imgX >= imgW) continue;
+      const screenNorm = (sx / W - 0.5) * 2;
+      const dist = Math.sqrt(1 + (screenNorm * FOV_FACTOR) ** 2);
+      const stripH = H / dist;
+      ctx.drawImage(img, imgX, 0, 1, imgH, sx, (H - stripH) / 2, 1, stripH);
     }
-
-    // --- Button images ---
-    const btnBase = '../Assets/Door_Buttons/';
-    function loadBtn(side, light, door) {
-        const img = new Image();
-        img.src = `${btnBase}Button_${side}_light_${light}_${door}.png`;
-        return img;
-    }
-
-    const btnImgs = {
-        left: {
-            off_closed: loadBtn('left',  'off', 'closed'),
-            off_open:   loadBtn('left',  'off', 'open'),
-            on_closed:  loadBtn('left',  'on',  'closed'),
-            on_open:    loadBtn('left',  'on',  'open'),
-        },
-        right: {
-            off_closed: loadBtn('right', 'off', 'closed'),
-            off_open:   loadBtn('right', 'off', 'open'),
-            on_closed:  loadBtn('right', 'on',  'closed'),
-            on_open:    loadBtn('right', 'on',  'open'),
-        }
-    };
-
-    // Button states
-    const state = {
-        left:  { door: 'closed', light: 'off' },
-        right: { door: 'closed', light: 'off' },
-    };
-
-    function getBtnImg(side) {
-        const s = state[side];
-        return btnImgs[side][`${s.light}_${s.door}`];
-    }
-
-    // Button images — onerror so missing files don't break anything
-    [...Object.values(btnImgs.left), ...Object.values(btnImgs.right)].forEach(img => {
-        img.onerror = () => { console.warn('Missing:', img.src); };
-    });
-
-    // Start render loop as soon as bg loads
-    bg.onload = () => requestAnimationFrame(animate);
-
-    // --- Pan ---
-    let scroll = 0.5;
-    let targetScroll = 0.5;
-    let isDragging = false;
-    let lastX = 0;
-    let velocity = 0;
-
-    // Button positions (image-space)
-    let btnPos = {
-        left:  { x: 0,    y: 261, scale: 1.0 },
-        right: { x: 1478, y: 261, scale: 1.0 },
-    };
-
-    // Door positions (image-space) — tune with debug sliders
-    let doorPos = {
-        left:  { x: mainRoomDoorLeft.imgX,  y: mainRoomDoorLeft.imgY,  scale: mainRoomDoorLeft.scale  },
-        right: { x: mainRoomDoorRight.imgX, y: mainRoomDoorRight.imgY, scale: mainRoomDoorRight.scale },
-    };
-
-    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
-    const FOV_FACTOR = 0.35;
-
-    function drawStripLayer(img, imgW, imgH, scale, offsetX) {
-        for (let sx = 0; sx < W; sx++) {
-            const imgX = (offsetX + sx) / scale;
-            if (imgX < 0 || imgX >= imgW) continue;
-            const screenNorm = (sx / W - 0.5) * 2;
-            const dist = Math.sqrt(1 + (screenNorm * FOV_FACTOR) ** 2);
-            const stripH = H / dist;
-            const yOff = (H - stripH) / 2;
-            ctx.drawImage(img, imgX, 0, 1, imgH, sx, yOff, 1, stripH);
-        }
-    }
-
-    function drawSprite(img, imgSpace, scale, offsetX) {
-        if (!img.complete || !img.naturalWidth) return;
-        const sx = imgSpace.x * scale - offsetX;
-        const sy = imgSpace.y * scale;
-        const dw = img.naturalWidth  * scale * imgSpace.scale;
-        const dh = img.naturalHeight * scale * imgSpace.scale;
-        ctx.drawImage(img, sx, sy, dw, dh);
-    }
-
-    // Screen rect of a button (for click detection)
-    function getBtnScreenRect(side) {
-        if (!bg || !bg.complete || !bg.naturalWidth) return null;
-        const scale = H / bg.naturalHeight;
-        const maxOffset = (bg.naturalWidth * scale) - W;
-        const offsetX = scroll * maxOffset;
-        const pos = btnPos[side];
-        const img = getBtnImg(side);
-        if (!img.complete || !img.naturalWidth) return null;
-        return {
-            x: pos.x * scale - offsetX,
-            y: pos.y * scale,
-            w: img.naturalWidth  * scale * pos.scale,
-            h: img.naturalHeight * scale * pos.scale,
-        };
-    }
-
-    // Invisible HTML zones for button clicks (updated each frame)
-    function updateButtonZones() {
-        if (!bg || !bg.naturalWidth) return;
-        ['left', 'right'].forEach(side => {
-            let zone = document.getElementById('zone-' + side);
-            if (!zone) {
-                zone = document.createElement('div');
-                zone.id = 'zone-' + side;
-                zone.className = 'btn-zone';
-                document.body.appendChild(zone);
-
+  }
+  function drawSprite(img, imgSpace, scale, offsetX) {
+    if (!img.complete || !img.naturalWidth) return;
+    ctx.drawImage(img, imgSpace.x * scale - offsetX, imgSpace.y * scale, img.naturalWidth * scale * imgSpace.scale, img.naturalHeight * scale * imgSpace.scale);
+  }
+  function getBtnScreenRect(side) {
+    if (!bg || !bg.complete || !bg.naturalWidth) return null;
+    const scale = H / bg.naturalHeight, maxOffset = (bg.naturalWidth * scale) - W, offsetX = scroll * maxOffset;
+    const pos = btnPos[side], img = getBtnImg(side);
+    if (!img.complete || !img.naturalWidth) return null;
+    return { x: pos.x * scale - offsetX, y: pos.y * scale, w: img.naturalWidth * scale * pos.scale, h: img.naturalHeight * scale * pos.scale };
+  }
+  function updateButtonZones() {
+    if (!bg || !bg.naturalWidth) return;
+    ['left', 'right'].forEach(side => {
+      let zone = document.getElementById('zone-' + side);
+      if (!zone) {
+        zone = document.createElement('div');
+        zone.id = 'zone-' + side;
+        zone.className = 'btn-zone';
+        document.body.appendChild(zone);
         zone.addEventListener('click', e => {
           startAudio();
           const rect = zone.getBoundingClientRect();
@@ -577,331 +475,388 @@
           } else {
             const otherSide = side === 'left' ? 'right' : 'left';
             if (state[side].light === 'off') {
-              // Turn this light on, force the other off
               state[side].light = 'on';
               state[otherSide].light = 'off';
-              // Cancel any flicker on the other side since it's turning off
               flickerTimers[otherSide].forEach(t => clearTimeout(t));
-              flickerTimers[otherSide] = [];
-              flickerOverride[otherSide] = null;
-              // Trigger flicker on the newly-lit side
+              flickerTimers[otherSide] = []; flickerOverride[otherSide] = null;
               triggerFlicker(side);
             } else {
               state[side].light = 'off';
-              // Cancel flicker if the light is turned off mid-flicker
               flickerTimers[side].forEach(t => clearTimeout(t));
-              flickerTimers[side] = [];
-              flickerOverride[side] = null;
+              flickerTimers[side] = []; flickerOverride[side] = null;
             }
             updateLightAudio();
           }
         });
       }
+      const r = getBtnScreenRect(side);
+      if (r) { zone.style.left = r.x+'px'; zone.style.top = r.y+'px'; zone.style.width = r.w+'px'; zone.style.height = r.h+'px'; }
+    });
+  }
 
-            const r = getBtnScreenRect(side);
-            if (r) {
-                zone.style.left   = r.x + 'px';
-                zone.style.top    = r.y + 'px';
-                zone.style.width  = r.w + 'px';
-                zone.style.height = r.h + 'px';
-            }
-        });
+  let powerOut = false, renderPaused = false;
+
+  function draw() {
+    if (!bg.complete || !bg.naturalWidth) return;
+    const imgW = bg.naturalWidth, imgH = bg.naturalHeight;
+    const scale = H / imgH, maxOffset = (imgW * scale) - W, offsetX = scroll * maxOffset;
+    ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+    const pof = window._powerOutEyeFrame;
+    if (pof === 'black' || pof === 'jumpscare') return;
+    drawStripLayer(getActiveBg(), imgW, imgH, scale, offsetX);
+    if (!powerOut) drawSprite(fanFrames[fanIndex], { x: fanAnimation.imgX, y: fanAnimation.imgY, scale: fanAnimation.scale }, scale, offsetX);
+    ['left', 'right'].forEach(side => {
+      const anim = doorAnim[side], frames = doorFrames[side], pos = doorPos[side];
+      drawSprite(frames[0], pos, scale, offsetX);
+      if (anim.frameIndex > 0) drawSprite(frames[anim.frameIndex], pos, scale, offsetX);
+    });
+    if (!powerOut) {
+      drawSprite(getBtnImg('left'),  btnPos.left,  scale, offsetX);
+      drawSprite(getBtnImg('right'), btnPos.right, scale, offsetX);
+      updateButtonZones();
     }
+  }
 
-  let powerOut = false;
-  let renderPaused = false;
+  function animate() {
+    requestAnimationFrame(animate);
+    if (renderPaused) return;
+    if (!isDragging) { velocity *= 0.85; targetScroll += velocity; }
+    targetScroll = clamp(targetScroll, 0, 1);
+    scroll += (targetScroll - scroll) * 0.12;
+    draw();
+  }
 
-    function draw() {
-        if (!bg.complete || !bg.naturalWidth) return;
-
-        const imgW = bg.naturalWidth;
-        const imgH = bg.naturalHeight;
-        const scale = H / imgH;
-        const maxOffset = (imgW * scale) - W;
-        const offsetX = scroll * maxOffset;
-
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, W, H);
-
-        // During black-screen / jumpscare phases just stay black
-        const pof = window._powerOutEyeFrame;
-        if (pof === 'black' || pof === 'jumpscare') return;
-
-        const activeBg = getActiveBg();
-        drawStripLayer(activeBg, imgW, imgH, scale, offsetX);
-
-        // Fan and buttons vanish the moment power is out
-        if (!powerOut) {
-            drawSprite(fanFrames[fanIndex], { x: fanAnimation.imgX, y: fanAnimation.imgY, scale: fanAnimation.scale }, scale, offsetX);
-        }
-
-        // Draw doors — frame 0 is always visible (door frame/surround).
-        // Frames 1+ are the closing panels that animate on top.
-        ['left', 'right'].forEach(side => {
-            const anim   = doorAnim[side];
-            const frames = doorFrames[side];
-            const pos    = doorPos[side];
-            drawSprite(frames[0], pos, scale, offsetX);
-            if (anim.frameIndex > 0) {
-                drawSprite(frames[anim.frameIndex], pos, scale, offsetX);
-            }
-        });
-
-        if (!powerOut) {
-            drawSprite(getBtnImg('left'),  btnPos.left,  scale, offsetX);
-            drawSprite(getBtnImg('right'), btnPos.right, scale, offsetX);
-            updateButtonZones();
-        }
-    }
-
-    function animate() {
-        requestAnimationFrame(animate);
-        if (renderPaused) return;
-        if (!isDragging) {
-            velocity *= 0.85;
-            targetScroll += velocity;
-        }
-        targetScroll = clamp(targetScroll, 0, 1);
-        scroll += (targetScroll - scroll) * 0.12;
-        draw();
-    }
-
-
-  // ── Shared jumpscare player ───────────────────────────────────
-  function playJumpscare(def, sfxSrc, onDone) {
+  // ── Jumpscare player ──────────────────────────────────────────
+  // FIX: added maxDurationMs as 4th param (was referenced but missing)
+  function playJumpscare(def, sfxSrc, onDone, maxDurationMs) {
     if (!def) { console.warn('playJumpscare: missing animation def'); return; }
     renderPaused = true;
+    const sfx = typeof sfxSrc === 'string' ? new Audio(sfxSrc) : sfxSrc;
+    sfx.currentTime = 0;
+    const msPerFrame = 1000 / def.fps;
+    let finished = false;
 
-        const sfx = typeof sfxSrc === 'string' ? new Audio(sfxSrc) : sfxSrc;
-        sfx.currentTime = 0;
+    const frames = def.frames.map(src => { const img = new Image(); img.src = src; return img; });
 
-        const msPerFrame = 1000 / def.fps;
-        let loaded = 0;
-        let finished = false;
+    function finish() {
+      if (finished) return;
+      finished = true;
+      sfx.pause(); sfx.currentTime = 0;
+      if (onDone) { onDone(); } else { renderPaused = false; }
+    }
 
-        const frames = def.frames.map(src => {
-            const img = new Image();
-            img.src = src;
-            return img;
-        });
-// Frames already preloaded — start immediately
-        startPlaying();
+    sfx.play().catch(() => {});
+    if (maxDurationMs != null) setTimeout(finish, maxDurationMs);
 
-        function finish() {
-            if (finished) return;
-            finished = true;
-            sfx.pause();
-            sfx.currentTime = 0;
-            ctx.fillStyle = '#000';
-            ctx.fillRect(0, 0, W, H);
-            setTimeout(() => {
-                if (onDone) { onDone(); } else { renderPaused = false; }
-            }, 500);
-        }
+    let frameIdx = 0;
+    function nextFrame() {
+      if (finished) return;
+      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+      const img = frames[frameIdx];
+      if (img.naturalWidth) {
+        const sc = Math.max(W / img.naturalWidth, H / img.naturalHeight);
+        const dw = img.naturalWidth * sc, dh = img.naturalHeight * sc;
+        ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+      }
+      frameIdx++;
+      if (frameIdx < frames.length) { setTimeout(nextFrame, msPerFrame); } else { finish(); }
+    }
+    nextFrame();
+  }
 
-        function startPlaying() {
-            sfx.play().catch(() => {});
-            let frameIdx = 0;
+  const SCREAM  = sfxScream;
+  const SCREAM2 = sfxScream2;
+  const NOISE   = sfxNoise;
+  const JUMPSCARE_MAX_MS = 1000;
 
-            if (maxDurationMs !== null) setTimeout(finish, maxDurationMs);
+  const GO_MENU  = () => { ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H); setTimeout(() => { window.location.href = 'menu.html'; }, 1500); };
+  const GO_NOISE = () => { ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H); setTimeout(() => { playJumpscare(noiseMenu, NOISE, GO_MENU); }, 500); };
 
-            function nextFrame() {
-                if (finished) return;
-                ctx.fillStyle = '#000';
-                ctx.fillRect(0, 0, W, H);
+  function playChicaJumpscare()        { playJumpscare(chicajumpscare,          SCREAM,  null,     JUMPSCARE_MAX_MS); }
+  function playFoxyJumpscare()         { playJumpscare(foxyJumpscare,           SCREAM,  null,     JUMPSCARE_MAX_MS); }
+  function playBonnieJumpscare()       { playJumpscare(bonnieJumpscare,         SCREAM,  null,     JUMPSCARE_MAX_MS); }
+  function playFreddyJumpscare()       { playJumpscare(freddyJumpscare,         SCREAM,  null,     JUMPSCARE_MAX_MS); }
+  function playGoldenFreddyJumpscare() { playJumpscare(goldenFreddyJumpscare,   SCREAM2, null,     JUMPSCARE_MAX_MS); }
+  function playPowerOutJumpscare()     { playJumpscare(freddyJumpscarePowerOut, SCREAM,  GO_NOISE, JUMPSCARE_MAX_MS); }
+  function playnoiseMenu()             { playJumpscare(noiseMenu,               NOISE,   GO_MENU,  JUMPSCARE_MAX_MS); }
 
-                const img = frames[frameIdx];
-                if (img.naturalWidth) {
-                    const sc = Math.max(W / img.naturalWidth, H / img.naturalHeight);
-                    const dw = img.naturalWidth  * sc;
-                    const dh = img.naturalHeight * sc;
-                    ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
-                }
-        /*
-        frameIdx++;
-                if (frameIdx < frames.length) {
-                    setTimeout(nextFrame, msPerFrame);
-                } else {
-                    setTimeout(() => {
-                        ctx.fillStyle = '#000';
-                        ctx.fillRect(0, 0, W, H);
-                        setTimeout(finish, 400);
-                    }, 400);
-                }
-         */
-        frameIdx++;
-        if (frameIdx < frames.length) {
-          setTimeout(nextFrame, msPerFrame);
-        } else {
-          if (onDone) {
-            onDone();
-          } else {
-            renderPaused = false;
-          }
+  // --- Debug ---
+  let debugVisible = false;
+  window.addEventListener('keydown', e => {
+    if (e.key === 'd' || e.key === 'D') {
+      debugVisible = !debugVisible;
+      document.getElementById('debug').style.display = debugVisible ? 'block' : 'none';
+    }
+    if (e.key === 'j' || e.key === 'J') {
+      const picks = [playChicaJumpscare, playBonnieJumpscare, playFoxyJumpscare, playFreddyJumpscare, playGoldenFreddyJumpscare, playnoiseMenu];
+      picks[Math.floor(Math.random() * picks.length)]();
+    }
+  });
+
+  function bindSlider(id, valId, side, prop, isFloat) {
+    document.getElementById(id).addEventListener('input', function() {
+      btnPos[side][prop] = isFloat ? parseFloat(this.value) : +this.value;
+      document.getElementById(valId).textContent = isFloat ? parseFloat(this.value).toFixed(2) : this.value;
+    });
+  }
+  bindSlider('slx','vlx','left','x',false); bindSlider('sly','vly','left','y',false); bindSlider('slsc','vlsc','left','scale',true);
+  bindSlider('srx','vrx','right','x',false); bindSlider('sry','vry','right','y',false); bindSlider('srsc','vrsc','right','scale',true);
+
+  function bindDoorSlider(id, valId, side, prop, isFloat) {
+    document.getElementById(id).addEventListener('input', function() {
+      doorPos[side][prop] = isFloat ? parseFloat(this.value) : +this.value;
+      document.getElementById(valId).textContent = isFloat ? parseFloat(this.value).toFixed(2) : this.value;
+    });
+  }
+  bindDoorSlider('sldx','vldx','left','x',false); bindDoorSlider('sldy','vldy','left','y',false); bindDoorSlider('sldsc','vldsc','left','scale',true);
+  bindDoorSlider('srdx','vrdx','right','x',false); bindDoorSlider('srdy','vrdy','right','y',false); bindDoorSlider('srdsc','vrdsc','right','scale',true);
+
+  document.getElementById('copy-btn').addEventListener('click', () => {
+    const s = [`// Buttons`,`left:  { x: ${btnPos.left.x},  y: ${btnPos.left.y},  scale: ${btnPos.left.scale.toFixed(2)} },`,`right: { x: ${btnPos.right.x}, y: ${btnPos.right.y}, scale: ${btnPos.right.scale.toFixed(2)} }`,``,`// Doors`,`left:  { imgX: ${doorPos.left.x},  imgY: ${doorPos.left.y},  scale: ${doorPos.left.scale.toFixed(2)} },`,`right: { imgX: ${doorPos.right.x}, imgY: ${doorPos.right.y}, scale: ${doorPos.right.scale.toFixed(2)} }`].join('\n');
+    navigator.clipboard?.writeText(s); alert(s);
+  });
+
+  function bindHudSlider(sliderId, valId, cssVar, unit, isFloat) {
+    document.getElementById(sliderId).addEventListener('input', function() {
+      document.getElementById(valId).textContent = isFloat ? parseFloat(this.value).toFixed(2) : this.value;
+      document.documentElement.style.setProperty(cssVar, this.value + unit);
+    });
+  }
+  bindHudSlider('shtr-t','vhtr-t','--hud-tr-top','px',false);   bindHudSlider('shtr-r','vhtr-r','--hud-tr-right','px',false);
+  bindHudSlider('shtr-s','vhtr-s','--hud-tr-scale','',true);
+  bindHudSlider('shpw-b','vhpw-b','--hud-pw-bottom','px',false); bindHudSlider('shpw-l','vhpw-l','--hud-pw-left','px',false);
+  bindHudSlider('shus-b','vhus-b','--hud-us-bottom','px',false); bindHudSlider('shus-l','vhus-l','--hud-us-left','px',false);
+  bindHudSlider('shbl-s','vhbl-s','--hud-bl-scale','',true);
+
+  document.getElementById('copy-hud-btn').addEventListener('click', () => {
+    const v = id => document.getElementById(id).value;
+    const s = [`/* Top-Right */`,`--hud-tr-top:    ${v('shtr-t')}px`,`--hud-tr-right:  ${v('shtr-r')}px`,`--hud-tr-scale:  ${v('shtr-s')}`,`/* Power Left */`,`--hud-pw-bottom: ${v('shpw-b')}px`,`--hud-pw-left:   ${v('shpw-l')}px`,`/* Usage/Battery */`,`--hud-us-bottom: ${v('shus-b')}px`,`--hud-us-left:   ${v('shus-l')}px`,`--hud-bl-scale:  ${v('shbl-s')}`].join('\n');
+    navigator.clipboard?.writeText(s); alert(s);
+  });
+
+  // --- Tablet audio ---
+  const sfxCameraUp   = new Audio('../Assets/FNaF 1 Audio/CAMERA_VIDEO_LOA_60105303.wav');
+  const sfxCameraDown = new Audio('../Assets/FNaF 1 Audio/put down.wav');
+  const sfxCameraLoop = new Audio('../Assets/FNaF 1 Audio/MiniDV_Tape_Eject_1.wav');
+  sfxCameraUp.volume = 0.5; sfxCameraDown.volume = 0.5;
+  sfxCameraLoop.loop = true; sfxCameraLoop.volume = 0.4;
+
+  // --- Tablet animation frames ---
+  const tabletFrames = [];
+  for (let i = 1; i <= tabletAnimation.frameCount; i++) {
+    const img = new Image(); img.src = `${tabletAnimation.basePath}${i}.png`; tabletFrames.push(img);
+  }
+
+  // --- DOM refs (declared ONCE) ---
+  const tabletBar    = document.getElementById('tablet-bar');
+  const tabletCanvas = document.getElementById('tablet-anim-canvas');
+  const tabletCtx    = tabletCanvas.getContext('2d');
+  const tabletCam    = document.getElementById('tablet-cam');
+  tabletCam.width    = window.innerWidth;
+  tabletCam.height   = window.innerHeight;
+  const camCtx       = tabletCam.getContext('2d');
+
+  window.addEventListener('resize', () => {
+    tabletCam.width  = window.innerWidth;
+    tabletCam.height = window.innerHeight;
+  });
+
+  // --- Camera source — supports both .mp4 and image files ---
+  const camVideo = document.createElement('video');
+  camVideo.loop = true; camVideo.muted = true; camVideo.playsInline = true; camVideo.preload = 'auto';
+
+  let camImageEl = new Image();
+  let camSrcIsVideo = false;
+
+  function setCamSrc(src) {
+    const isVideo = /\.(mp4|webm|ogg)$/i.test(src);
+    camSrcIsVideo = isVideo;
+    if (isVideo) {
+      camVideo.src = src;
+      camAudio.src = src;
+      camImageEl = new Image(); // clear image
+    } else {
+      const img = new Image();
+      img.src = src;
+      camImageEl = img;
+      camVideo.src = '';
+      camAudio.src = '';
+    }
+  }
+
+  const camAudio = document.createElement('audio');
+  camAudio.loop = true; camAudio.volume = 0.8; camAudio.preload = 'auto';
+
+  // Set initial source here — swap this one line to change camera
+  setCamSrc('../Assets/Freddy/agnes.mp4');
+
+  function camReady() {
+    if (camSrcIsVideo) return camVideo.readyState >= 2 && camVideo.videoWidth > 0;
+    return camImageEl.complete && camImageEl.naturalWidth > 0;
+  }
+  function camWidth()  { return camSrcIsVideo ? camVideo.videoWidth  : camImageEl.naturalWidth;  }
+  function camHeight() { return camSrcIsVideo ? camVideo.videoHeight : camImageEl.naturalHeight; }
+  function camSource() { return camSrcIsVideo ? camVideo : camImageEl; }
+
+  function startCamVideo() {
+    if (!camSrcIsVideo) return;
+    camVideo.currentTime = 0; camAudio.currentTime = 0;
+    camVideo.play().catch(() => {}); camAudio.play().catch(() => {});
+  }
+  function stopCamVideo() {
+    camVideo.pause(); camVideo.currentTime = 0;
+    camAudio.pause(); camAudio.currentTime = 0;
+  }
+
+  // --- noiseMenu overlay ---
+  let noiseMenuFrames = [], noiseMenuReady = false;
+  (function preloadNoiseFrames() {
+    let loaded = 0;
+    const srcs = noiseMenu.frames;
+    noiseMenuFrames = srcs.map(src => {
+      const img = new Image();
+      img.onload = img.onerror = () => { loaded++; if (loaded === srcs.length) noiseMenuReady = true; };
+      img.src = src; return img;
+    });
+  })();
+
+  let noiseIndex = 0, noiseRafId = null, noiseLastTime = 0, noiseAccum = 0;
+  const noiseMsPerFrame = 1000 / noiseMenu.fps;
+
+  // --- Camera pan ---
+  let camPan = 0, camPanDir = 1;
+  const CAM_PAN_SPEED = 0.000065;
+
+  // --- Camera GUI overlay ---
+  const camFrameImg  = new Image(); camFrameImg.src  = '../Assets/Cam_views/11.png';
+  const camRedDotImg = new Image(); camRedDotImg.src = '../Assets/Cam_views/7.png';
+
+  const RED_DOT_ON = 900, RED_DOT_OFF = 400, RED_DOT_PERIOD = 1300;
+  function isRedDotVisible() { return (performance.now() % RED_DOT_PERIOD) < RED_DOT_ON; }
+
+  function drawCamView() {
+    const cw = tabletCam.width, ch = tabletCam.height;
+    camCtx.fillStyle = '#000'; camCtx.fillRect(0, 0, cw, ch);
+
+    if (camReady()) {
+      const imgW = camWidth(), imgH = camHeight();
+      if (camSrcIsVideo) {
+        // Video: cover-fill, centered
+        const scale = Math.max(cw / imgW, ch / imgH);
+        const dw = imgW * scale, dh = imgH * scale;
+        camCtx.drawImage(camSource(), (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+      } else {
+        // Image: strip-based fisheye pan (left ↔ right)
+        // Scale so image fills height OR width — whichever makes it wider than the screen
+        const scaleH = ch / imgH;
+        const scaleW = cw / imgW;
+        const scale  = Math.max(scaleH, scaleW * 1.4); // 1.4x ensures panning room even on wide images
+        const maxOffset = (imgW * scale) - cw;
+        const offsetX = camPan * Math.max(0, maxOffset);
+        for (let sx = 0; sx < cw; sx++) {
+          const imgX = (offsetX + sx) / scale;
+          if (imgX < 0 || imgX >= imgW) continue;
+          const screenNorm = (sx / cw - 0.5) * 2;
+          const dist = Math.sqrt(1 + (screenNorm * FOV_FACTOR) ** 2);
+          const stripH = ch / dist;
+          camCtx.drawImage(camSource(), imgX, 0, 1, imgH, sx, (ch - stripH) / 2, 1, stripH);
         }
       }
+    }
 
-            nextFrame();
+    const noiseFrame = noiseMenuReady ? noiseMenuFrames[noiseIndex] : null;
+    if (noiseFrame && noiseFrame.complete && noiseFrame.naturalWidth) {
+      camCtx.save();
+      camCtx.globalCompositeOperation = 'screen';
+      camCtx.globalAlpha = 0.55;
+      const scale = Math.max(cw / noiseFrame.naturalWidth, ch / noiseFrame.naturalHeight);
+      camCtx.drawImage(noiseFrame, (cw - noiseFrame.naturalWidth * scale) / 2, (ch - noiseFrame.naturalHeight * scale) / 2, noiseFrame.naturalWidth * scale, noiseFrame.naturalHeight * scale);
+      camCtx.restore();
+    }
+
+    if (camFrameImg.complete && camFrameImg.naturalWidth) camCtx.drawImage(camFrameImg, 0, 0, cw, ch);
+
+    if (isRedDotVisible() && camRedDotImg.complete && camRedDotImg.naturalWidth) {
+      const dotH = ch * 0.07, dotW = camRedDotImg.naturalWidth * (dotH / camRedDotImg.naturalHeight);
+      camCtx.drawImage(camRedDotImg, cw * 0.02, ch * 0.03, dotW, dotH);
+    }
+  }
+
+  function tickNoise(timestamp) {
+    if (tabletCam.style.display === 'none') { noiseRafId = null; return; }
+    const delta = noiseLastTime ? timestamp - noiseLastTime : 0;
+    noiseLastTime = timestamp;
+    noiseAccum += delta;
+    while (noiseAccum >= noiseMsPerFrame) { noiseAccum -= noiseMsPerFrame; noiseIndex = (noiseIndex + 1) % noiseMenuFrames.length; }
+    camPan += camPanDir * CAM_PAN_SPEED * delta;
+    if (camPan >= 1) { camPan = 1; camPanDir = -1; }
+    if (camPan <= 0) { camPan = 0; camPanDir =  1; }
+    drawCamView();
+    noiseRafId = requestAnimationFrame(tickNoise);
+  }
+  function startNoiseLoop() { if (noiseRafId) return; noiseLastTime = 0; noiseRafId = requestAnimationFrame(tickNoise); }
+  function stopNoiseLoop()  { if (noiseRafId) { cancelAnimationFrame(noiseRafId); noiseRafId = null; } }
+
+  // --- Tablet state ---
+  let tabletState = 'closed', tabletFrame = 0, lastFrameTime = 0;
+
+  function resizeTabletCanvas() { tabletCanvas.width = window.innerWidth; tabletCanvas.height = window.innerHeight; }
+  resizeTabletCanvas();
+  window.addEventListener('resize', resizeTabletCanvas);
+
+  function drawTabletFrame(idx) {
+    const img = tabletFrames[idx];
+    if (!img.complete || !img.naturalWidth) return;
+    tabletCtx.clearRect(0, 0, tabletCanvas.width, tabletCanvas.height);
+    const scale = Math.max(tabletCanvas.width / img.naturalWidth, tabletCanvas.height / img.naturalHeight);
+    const dw = img.naturalWidth * scale, dh = img.naturalHeight * scale;
+    tabletCtx.drawImage(img, (tabletCanvas.width - dw) / 2, (tabletCanvas.height - dh) / 2, dw, dh);
+  }
+
+  function animateTablet(timestamp) {
+    if (tabletState !== 'opening' && tabletState !== 'closing') return;
+    if (timestamp - lastFrameTime > tabletAnimation.frameDelay) {
+      lastFrameTime = timestamp;
+      if (tabletState === 'opening') {
+        drawTabletFrame(tabletFrame);
+        tabletFrame++;
+        if (tabletFrame >= tabletFrames.length) {
+          tabletState = 'waiting';
+          setTimeout(() => {
+            tabletCanvas.style.display = 'none';
+            tabletCam.style.display    = 'block';
+            tabletBar.style.display    = 'none';
+            tabletState = 'open';
+            startNoiseLoop();
+            startCamVideo();
+            sfxCameraLoop.currentTime = 0;
+            sfxCameraLoop.play().catch(() => {});
+          }, tabletAnimation.frameDelay);
+          return;
         }
-    }
-
-    // ── Individual jumpscare wrappers ─────────────────────────────
-    const SCREAM  = sfxScream;
-    const SCREAM2 = sfxScream2;
-    const NOISE   = sfxNoise;
-
-    const GO_MENU = () => { ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H); setTimeout(() => { window.location.href = 'menu.html'; }, 1500); };
-    const GO_NOISE = () => { ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H); setTimeout(() => { playJumpscare(noiseMenu, NOISE, GO_MENU); }, 500); };
-    // NOTE: chicaJumpscare, foxxyJumpscare, bonnieJumpscare, goldenFreddyJumpscare
-    const JUMPSCARE_MAX_MS = 1000;
-    // must be defined in animations.js for these to work.
-    function playChicaJumpscare()       { playJumpscare(chicajumpscare,          SCREAM,  null, JUMPSCARE_MAX_MS); }
-    function playFoxyJumpscare()        { playJumpscare(foxyJumpscare,           SCREAM,  null, JUMPSCARE_MAX_MS); }
-    function playBonnieJumpscare()      { playJumpscare(bonnieJumpscare,         SCREAM,  null, JUMPSCARE_MAX_MS); }
-    function playFreddyJumpscare()      { playJumpscare(freddyJumpscare,         SCREAM,  null, JUMPSCARE_MAX_MS); }
-    function playGoldenFreddyJumpscare(){ playJumpscare(goldenFreddyJumpscare,   SCREAM2, null, JUMPSCARE_MAX_MS); }
-    function playPowerOutJumpscare()    { playJumpscare(freddyJumpscarePowerOut, SCREAM,  GO_NOISE, JUMPSCARE_MAX_MS); }
-    function playnoiseMenu()            { playJumpscare(noiseMenu,               NOISE,  GO_MENU, JUMPSCARE_MAX_MS); }
-
-    // --- Debug ---
-    let debugVisible = false;
-    window.addEventListener('keydown', e => {
-        if (e.key === 'd' || e.key === 'D') {
-            debugVisible = !debugVisible;
-            document.getElementById('debug').style.display = debugVisible ? 'block' : 'none';
+      } else if (tabletState === 'closing') {
+        tabletFrame--;
+        if (tabletFrame < 0) {
+          stopNoiseLoop();
+          tabletCanvas.style.display = 'none';
+          tabletCam.style.display    = 'none';
+          tabletState = 'closed';
+          canvas.style.display = 'block';
+          tabletBar.style.display = 'flex';
+          document.querySelectorAll('.btn-zone').forEach(z => z.style.display = 'block');
+          return;
         }
-        if (e.key === 'j' || e.key === 'J') {
-            const picks = [playChicaJumpscare, playBonnieJumpscare, playFoxyJumpscare, playFreddyJumpscare, playGoldenFreddyJumpscare, playnoiseMenu];
-            picks[Math.floor(Math.random() * picks.length)]();
-        }
-    });
-
-    function bindSlider(id, valId, side, prop, isFloat) {
-        const el = document.getElementById(id);
-        el.addEventListener('input', function() {
-            btnPos[side][prop] = isFloat ? parseFloat(this.value) : +this.value;
-            document.getElementById(valId).textContent = isFloat ? parseFloat(this.value).toFixed(2) : this.value;
-        });
+        drawTabletFrame(tabletFrame);
+      }
     }
-    bindSlider('slx',  'vlx',  'left',  'x',     false);
-    bindSlider('sly',  'vly',  'left',  'y',     false);
-    bindSlider('slsc', 'vlsc', 'left',  'scale', true);
-    bindSlider('srx',  'vrx',  'right', 'x',     false);
-    bindSlider('sry',  'vry',  'right', 'y',     false);
-    bindSlider('srsc', 'vrsc', 'right', 'scale', true);
-
-    // Door sliders — write into doorPos instead of btnPos
-    function bindDoorSlider(id, valId, side, prop, isFloat) {
-        const el = document.getElementById(id);
-        el.addEventListener('input', function() {
-            doorPos[side][prop] = isFloat ? parseFloat(this.value) : +this.value;
-            document.getElementById(valId).textContent = isFloat ? parseFloat(this.value).toFixed(2) : this.value;
-        });
-    }
-    bindDoorSlider('sldx',  'vldx',  'left',  'x',     false);
-    bindDoorSlider('sldy',  'vldy',  'left',  'y',     false);
-    bindDoorSlider('sldsc', 'vldsc', 'left',  'scale', true);
-    bindDoorSlider('srdx',  'vrdx',  'right', 'x',     false);
-    bindDoorSlider('srdy',  'vrdy',  'right', 'y',     false);
-    bindDoorSlider('srdsc', 'vrdsc', 'right', 'scale', true);
-
-    document.getElementById('copy-btn').addEventListener('click', () => {
-        const s = [
-            `// Buttons`,
-            `left:  { x: ${btnPos.left.x},  y: ${btnPos.left.y},  scale: ${btnPos.left.scale.toFixed(2)} },`,
-            `right: { x: ${btnPos.right.x}, y: ${btnPos.right.y}, scale: ${btnPos.right.scale.toFixed(2)} }`,
-            ``,
-            `// Doors`,
-            `left:  { imgX: ${doorPos.left.x},  imgY: ${doorPos.left.y},  scale: ${doorPos.left.scale.toFixed(2)} },`,
-            `right: { imgX: ${doorPos.right.x}, imgY: ${doorPos.right.y}, scale: ${doorPos.right.scale.toFixed(2)} }`,
-        ].join('\n');
-        navigator.clipboard?.writeText(s);
-        alert(s);
-    });
-
-
-  const sfxCameraUp = new Audio('../Assets/FNaF 1 Audio/CAMERA_VIDEO_LOA_60105303.wav');
-  const sfxCameraDown = new Audio('../Assets/FNaF 1 Audio/put down.wav')
-  sfxCameraUp.volume = 0.5;
-  sfxCameraDown.volume = 0.5;
-
-    const tabletFrames = [];
-    for (let i = 1; i <= tabletAnimation.frameCount; i++) {
-        const img = new Image();
-        img.src = `${tabletAnimation.basePath}${i}.png`;
-        tabletFrames.push(img);
-    }
-
-    const tabletBar    = document.getElementById('tablet-bar');
-    const tabletCanvas = document.getElementById('tablet-anim-canvas');
-    const tabletCtx    = tabletCanvas.getContext('2d');
-    const tabletCam    = document.getElementById('tablet-cam');
-
-  let tabletState   = 'closed';
-  let tabletFrame   = 0;
-  let lastFrameTime = 0;
-
-    function resizeTabletCanvas() {
-        tabletCanvas.width  = window.innerWidth;
-        tabletCanvas.height = window.innerHeight;
-    }
-    resizeTabletCanvas();
-    window.addEventListener('resize', resizeTabletCanvas);
-
-    function drawTabletFrame(idx) {
-        const img = tabletFrames[idx];
-        if (!img.complete || !img.naturalWidth) return;
-        tabletCtx.clearRect(0, 0, tabletCanvas.width, tabletCanvas.height);
-        const scale = Math.max(tabletCanvas.width / img.naturalWidth, tabletCanvas.height / img.naturalHeight);
-        const dw = img.naturalWidth  * scale;
-        const dh = img.naturalHeight * scale;
-        const dx = (tabletCanvas.width  - dw) / 2;
-        const dy = (tabletCanvas.height - dh) / 2;
-        tabletCtx.drawImage(img, dx, dy, dw, dh);
-    }
-
-    function animateTablet(timestamp) {
-        if (tabletState !== 'opening' && tabletState !== 'closing') return;
-
-        if (timestamp - lastFrameTime > tabletAnimation.frameDelay) {
-            lastFrameTime = timestamp;
-
-            if (tabletState === 'opening') {
-                drawTabletFrame(tabletFrame);
-                tabletFrame++;
-                if (tabletFrame >= tabletFrames.length) {
-                    tabletState = 'waiting';
-                    setTimeout(() => {
-                        tabletCanvas.style.display = 'none';
-                        tabletCam.style.display    = 'block';
-                        tabletBar.style.display    = 'none';
-                        tabletState = 'open';
-                    }, tabletAnimation.frameDelay);
-                    return;
-                }
-            } else if (tabletState === 'closing') {
-                tabletFrame--;
-                if (tabletFrame < 0) {
-                    tabletCanvas.style.display = 'none';
-                    tabletState = 'closed';
-                    canvas.style.display = 'block';
-                    tabletBar.style.display = 'flex';
-                    document.querySelectorAll('.btn-zone').forEach(z => z.style.display = 'block');
-                    return;
-                }
-                drawTabletFrame(tabletFrame);
-            }
-        }
-        requestAnimationFrame(animateTablet);
-    }
+    requestAnimationFrame(animateTablet);
+  }
 
   function openTablet() {
     if (tabletState !== 'closed') return;
     if (GameState.rawPower <= 0) return;
-    sfxCameraUp.currentTime = 0;
-    sfxCameraUp.play().catch(() => {});
-    tabletState  = 'opening';
-    tabletFrame  = 0;
+    sfxCameraUp.currentTime = 0; sfxCameraUp.play().catch(() => {});
+    tabletState = 'opening'; tabletFrame = 0;
     tabletCanvas.style.display = 'block';
     tabletCanvas.width  = window.innerWidth;
     tabletCanvas.height = window.innerHeight;
@@ -910,8 +865,10 @@
 
   function closeTablet() {
     if (tabletState !== 'open') return;
-    sfxCameraDown.currentTime = 0;
-    sfxCameraDown.play().catch(() => {});
+    sfxCameraDown.currentTime = 0; sfxCameraDown.play().catch(() => {});
+    sfxCameraLoop.pause(); sfxCameraLoop.currentTime = 0;
+    stopCamVideo();
+    stopNoiseLoop();
     tabletState = 'closing';
     tabletFrame = tabletFrames.length - 1;
     tabletCam.style.display    = 'none';
@@ -920,323 +877,149 @@
     requestAnimationFrame(animateTablet);
   }
 
-    tabletBar.addEventListener('click', openTablet);
+  tabletBar.addEventListener('click', openTablet);
+  window.addEventListener('mousemove', e => {
+    const fromBottom = window.innerHeight - e.clientY;
+    if (fromBottom < 60 && tabletState === 'closed') openTablet();
+    if (fromBottom < 60 && tabletState === 'open')   closeTablet();
+  });
 
-    window.addEventListener('mousemove', e => {
-        const fromBottom = window.innerHeight - e.clientY;
-        if (fromBottom < 60 && tabletState === 'closed') openTablet();
-        if (fromBottom < 60 && tabletState === 'open')   closeTablet();
-    });
+  // --- Mouse/touch pan ---
+  canvas.addEventListener('mousedown', e => { isDragging = true; lastX = e.clientX; velocity = 0; document.body.classList.add('dragging'); startAudio(); });
+  window.addEventListener('mousemove', e => { if (!isDragging) return; const dx = e.clientX - lastX; const scale = H / bg.naturalHeight; const maxOffset = (bg.naturalWidth * scale) - W; velocity = -(dx / maxOffset); targetScroll += velocity; lastX = e.clientX; });
+  window.addEventListener('mouseup', () => { isDragging = false; document.body.classList.remove('dragging'); });
+  canvas.addEventListener('touchstart', e => { isDragging = true; lastX = e.touches[0].clientX; velocity = 0; e.preventDefault(); }, { passive: false });
+  window.addEventListener('touchmove', e => { if (!isDragging) return; const dx = e.touches[0].clientX - lastX; const scale = H / bg.naturalHeight; const maxOffset = (bg.naturalWidth * scale) - W; velocity = -(dx / maxOffset); targetScroll += velocity; lastX = e.touches[0].clientX; e.preventDefault(); }, { passive: false });
+  window.addEventListener('touchend', () => { isDragging = false; });
 
-    // --- Mouse / touch pan controls ---
-    canvas.addEventListener('mousedown', e => {
-        isDragging = true;
-        lastX = e.clientX;
-        velocity = 0;
-        document.body.classList.add('dragging');
-        startAudio();
-    });
-    window.addEventListener('mousemove', e => {
-        if (!isDragging) return;
-        const dx = e.clientX - lastX;
-        const scale = H / bg.naturalHeight;
-        const maxOffset = (bg.naturalWidth * scale) - W;
-        velocity = -(dx / maxOffset);
-        targetScroll += velocity;
-        lastX = e.clientX;
-    });
-    window.addEventListener('mouseup', () => {
-        isDragging = false;
-        document.body.classList.remove('dragging');
-    });
+  window.addEventListener('load', () => {
+    const fadeEl = document.getElementById('page-fade');
+    requestAnimationFrame(() => requestAnimationFrame(() => { fadeEl.style.opacity = '0'; }));
+  });
 
-    canvas.addEventListener('touchstart', e => {
-        isDragging = true;
-        lastX = e.touches[0].clientX;
-        velocity = 0;
-        e.preventDefault();
-    }, { passive: false });
-    window.addEventListener('touchmove', e => {
-        if (!isDragging) return;
-        const dx = e.touches[0].clientX - lastX;
-        const scale = H / bg.naturalHeight;
-        const maxOffset = (bg.naturalWidth * scale) - W;
-        velocity = -(dx / maxOffset);
-        targetScroll += velocity;
-        lastX = e.touches[0].clientX;
-        e.preventDefault();
-    }, { passive: false });
-    window.addEventListener('touchend', () => { isDragging = false; });
+  // ── GameState ──────────────────────────────────────────────────
+  const HOURS = ['12 AM','1 AM','2 AM','3 AM','4 AM','5 AM','6 AM'];
+  const NIGHT_SECS = 535, SECS_PER_HOUR = NIGHT_SECS / 6;
+  const PASSIVE_INTERVAL = { 1: 0, 2: 6, 3: 5, 4: 4, 5: 3, 6: 3, 7: 3 };
 
-    // Fade in on page load
-    window.addEventListener('load', () => {
-        const fadeEl = document.getElementById('page-fade');
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-            fadeEl.style.opacity = '0';
-        }));
-    });
+  const GameState = {
+    night: 1, rawPower: 999, secondsElapsed: 0, passiveAccum: 0,
 
-  // ── GameState ──────────────────────────────────────────────
-  const HOURS        = ['12 AM','1 AM','2 AM','3 AM','4 AM','5 AM','6 AM'];
-  const NIGHT_SECS   = 535;
-  const SECS_PER_HOUR = NIGHT_SECS / 6;
-
-    // Passive drain interval in seconds per night (0 = no passive drain)
-    const PASSIVE_INTERVAL = { 1: 0, 2: 6, 3: 5, 4: 4, 5: 3, 6: 3, 7: 3 };
-
-    const GameState = {
-        night:        1,
-        rawPower:     1,   // the real value everything operates on
-        secondsElapsed: 0,
-        passiveAccum:   0,   // accumulator for passive drain seconds
-
-        // Active usage: 1 base + 1 per closed door + 1 per active light (max 5)
-        getUsage() {
-            let u = 1;
-            if (state.left.door   === 'closed') u++;
-            if (state.right.door  === 'closed') u++;
-            if (state.left.light  === 'on')     u++;
-            if (state.right.light === 'on')     u++;
-            return Math.min(u, 5);
-        },
-
-        tick() {
-            if (this.rawPower <= 0) {
-                this.rawPower = 0;
-                this.render();
-                this.onPowerOut();
-                return;
-            }
-
-      const usage = this.getUsage();
-      this.rawPower -= usage;
-
-      const interval = PASSIVE_INTERVAL[this.night] || 0;
-      if (interval > 0) {
-        this.passiveAccum++;
-        if (this.passiveAccum >= interval) {
-          this.passiveAccum = 0;
-          this.rawPower -= 1;
-        }
-      }
-
-            this.rawPower = Math.max(0, this.rawPower);
-
-      this.secondsElapsed++;
-      if (this.secondsElapsed >= NIGHT_SECS) {
-        this.on6AM();
-        return;
-      }
-
-            this.render();
-        },
-
-    getDisplayPercent() {
-      return (Math.round(this.rawPower) / 10).toFixed(1);
+    getUsage() {
+      let u = 1;
+      if (state.left.door  === 'closed') u++;
+      if (state.right.door === 'closed') u++;
+      if (state.left.light === 'on')     u++;
+      if (state.right.light === 'on')    u++;
+      return Math.min(u, 5);
     },
 
-        getCurrentHour() {
-            return Math.min(6, Math.floor(this.secondsElapsed / SECS_PER_HOUR));
-        },
+    tick() {
+      if (this.rawPower <= 0) { this.rawPower = 0; this.render(); this.onPowerOut(); return; }
+      this.rawPower -= this.getUsage();
+      const interval = PASSIVE_INTERVAL[this.night] || 0;
+      if (interval > 0) { this.passiveAccum++; if (this.passiveAccum >= interval) { this.passiveAccum = 0; this.rawPower--; } }
+      this.rawPower = Math.max(0, this.rawPower);
+      this.secondsElapsed++;
+      if (this.secondsElapsed >= NIGHT_SECS) { this.on6AM(); return; }
+      this.render();
+    },
+
+    getDisplayPercent() { return (Math.round(this.rawPower) / 10).toFixed(1); },
+    getCurrentHour()    { return Math.min(6, Math.floor(this.secondsElapsed / SECS_PER_HOUR)); },
 
     render() {
-      const usage   = this.getUsage();
-      const pct     = this.getDisplayPercent();
-      const fill    = document.getElementById('hud-power-bar-fill');
-      const rawPct  = this.rawPower / 999 * 100;
+      const usage = this.getUsage();
+      document.getElementById('hud-night').textContent     = `Night ${this.night}`;
+      document.getElementById('hud-time').textContent      = HOURS[this.getCurrentHour()];
+      document.getElementById('hud-power-val').textContent = `${this.getDisplayPercent()}%`;
+      const batteryMap = { 1: '212', 2: '213', 3: '214', 4: '456', 5: '455' };
+      document.getElementById('hud-battery-img').src = `../Assets/Battery/${batteryMap[usage] || '212'}.png`;
+    },
 
-            document.getElementById('hud-night').textContent     = `Night ${this.night}`;
-            document.getElementById('hud-time').textContent      = HOURS[this.getCurrentHour()];
-            document.getElementById('hud-power-val').textContent = `${pct}%`;
-            document.getElementById('hud-usage-val').textContent =
-                '█'.repeat(usage) + '░'.repeat(5 - usage);
-
-            fill.style.width = `${rawPct}%`;
-            fill.classList.remove('low', 'critical');
-            if      (rawPct <= 15) fill.classList.add('critical');
-            else if (rawPct <= 35) fill.classList.add('low');
-        },
-
-        onPowerOut() {
-            if (this._powerOutTriggered) return;
-            this._powerOutTriggered = true;
-
+    onPowerOut() {
+      if (this._powerOutTriggered) return;
+      this._powerOutTriggered = true;
       powerOut = true;
       window._powerOutEyeFrame = '304';
-      document.getElementById('hud').style.display        = 'none';
-      document.getElementById('tablet-bar').style.display = 'none';
+      document.getElementById('hud-top-right').style.display = 'none';
+      document.getElementById('hud-power').style.display     = 'none';
+      document.getElementById('hud-usage').style.display     = 'none';
+      document.getElementById('tablet-bar').style.display    = 'none';
       document.querySelectorAll('.btn-zone').forEach(z => z.style.display = 'none');
+      [sfxFan, sfxPhone, sfxLight, sfxCameraLoop, camAudio].forEach(a => { a.pause(); a.currentTime = 0; });
+      stopCamVideo();
+      ['left', 'right'].forEach(side => { state[side].door = 'open'; state[side].light = 'off'; startDoorAnim(side, -1); });
 
-    // ── Cut all audio ────────────────────────────────────────
-    [sfxFan, sfxPhone, sfxLight].forEach(a => { a.pause(); a.currentTime = 0; });
-    if (currentAmbience) { currentAmbience.pause(); currentAmbience = null; }
-    // ── Force doors open, lights off ─────────────────────────
-    sfxDoor.currentTime = 0;
-    sfxDoor.play().catch(() => {});
-    ['left', 'right'].forEach(side => {
-        state[side].door  = 'open';
-        state[side].light = 'off';
-        startDoorAnim(side, -1);
-    });
+      const powerOutsfx = new Audio('../Assets/FNaF 1 Audio/powerdown.wav');
+      powerOutsfx.play().catch(() => {});
 
-            // ── Play power-down SFX ──────────────────────────────────
-            // ── Play power-down SFX ──────────────────────────────────────
-            const powerOutsfx = new Audio('../Assets/FNaF 1 Audio/powerdown.wav');
-            powerOutsfx.play().catch(() => {});
-
-// ── Après 3s : pas 1 (très faible) ──────────────────────────
-            setTimeout(() => {
-                const steps1 = new Audio('../Assets/FNaF 1 Audio/deep steps.wav');
-                steps1.volume = 0.15;
-                steps1.play().catch(() => {});
-
-                // ── Pas 2 (plus fort) enchaîné après la fin des pas 1 ────
-                steps1.addEventListener('ended', () => {
-                    const steps2 = new Audio('../Assets/FNaF 1 Audio/deep steps.wav');
-                    steps2.volume = 0.45;
-                    steps2.play().catch(() => {});
-
-                    // ── Pas 3 (encore plus fort) après 4s ────────────────
-                    setTimeout(() => {
-                        const steps3 = new Audio('../Assets/FNaF 1 Audio/deep steps.wav');
-                        steps3.volume = 0.85;
-                        steps3.play().catch(() => {});
-
-                        // ── Après la fin des pas 3 : music box 20s + yeux ──
-                        steps3.addEventListener('ended', () => {
-                            const musicBox = new Audio('../Assets/FNaF 1 Audio/music box.wav');
-                            window._powerOutEyeFrame = '304';
-
-                            const schedule = [];
-
-                            const flickerPattern = (() => {
-                                const pattern = [];
-
-                                function addPhase1(startT, duration) {
-                                    let t = startT;
-                                    while (t < startT + duration) {
-                                        pattern.push({ img: '305', t });
-                                        t += 50;
-                                        pattern.push({ img: '304', t });
-                                        t += 25;
-                                    }
-                                    return t;
-                                }
-
-                                function addPhase2(startT, duration) {
-                                    let t = startT;
-                                    while (t < startT + duration) {
-                                        pattern.push({ img: '305', t });
-                                        t += 250;
-                                        pattern.push({ img: '304', t });
-                                        t += 150;
-                                    }
-                                    return t;
-                                }
-
-                                function addPhase2Fast(startT, duration) {
-                                    let t = startT;
-                                    while (t < startT + duration) {
-                                        pattern.push({ img: '305', t });
-                                        t += 100;
-                                        pattern.push({ img: '304', t });
-                                        t += 80;
-                                    }
-                                    return t;
-                                }
-
-                                let t = 200;
-                                t = addPhase2(t, 4000);
-                                t = addPhase1(t, 1500);
-                                t = addPhase2(t, 1200);
-                                t = addPhase1(t, 1000);
-                                t += 200;
-                                t = addPhase2(t, 1000);
-                                t = addPhase1(t, 1500);
-                                t += 200;
-                                t = addPhase2(t, 2000);
-                                t = addPhase1(t, 1500);
-                                t = addPhase2(t, 1200);
-                                t = addPhase1(t, 1000);
-                                t = addPhase2Fast(t, 3000);
-
-                                return pattern.sort((a, b) => a.t - b.t);
-                            })();
-                            flickerPattern.forEach(e => schedule.push(e));
-
-                            /* Phase 2: quelques blinks pendant les 20s
-                            const blinkTimes = [3500, 7000, 11000, 15000, 18000];
-                            blinkTimes.forEach(t => {
-                                schedule.push({ img: '304', t });
-                                schedule.push({ img: '305', t: t + 300 });
-                            });
-                            */
-                            schedule.sort((a, b) => a.t - b.t);
-                            schedule.forEach(({ img, t }) => {
-                                setTimeout(() => { window._powerOutEyeFrame = img; }, t);
-                            });
-
-                            musicBox.play().catch(() => {});
-
-                            // ── Coupe la music box après 20s ─────────────────
-                            setTimeout(() => {
-                                musicBox.pause();
-                                window._powerOutEyeFrame = 'black';
-
-                                // ── Buzz direct après le cut ──────────────────
-                                const sequence = [
-                                    { play: true,  duration: 100 },
-                                    { play: false, duration: 50  },
-                                    { play: true,  duration: 80  },
-                                    { play: false, duration: 50  },
-                                    { play: true,  duration: 120 },
-                                    { play: false, duration: 100 },
-                                ]; // total ~500ms
-
-                                let t = 0;
-                                sequence.forEach(({ play, duration }) => {
-                                    setTimeout(() => {
-                                        if (play) {
-                                            const buzz = new Audio('../Assets/FNaF 1 Audio/Buzz_Fan_Florescent2.wav');
-                                            buzz.volume = 1;
-                                            buzz.play().catch(() => {});
-                                            setTimeout(() => buzz.pause(), duration);
-                                            window._powerOutEyeFrame = '304';
-                                        } else {
-                                            window._powerOutEyeFrame = 'black';
-                                        }
-                                    }, t);
-                                    t += duration;
-                                });
-
-                                // ── Après le buzz (~500ms) : pas puis jumpscare ──
-                                setTimeout(() => {
-                                    window._powerOutEyeFrame = 'black';
-                                    const steps4 = new Audio('../Assets/FNaF 1 Audio/deep steps.wav');
-                                    steps4.volume = 1;
-                                    steps4.play().catch(() => {});
-                                    steps4.addEventListener('ended', () => {
-                                        window._powerOutEyeFrame = 'jumpscare';
-                                        playPowerOutJumpscare();
-                                    });
-                                }, 500);
-                            }, 20000);
-                        });
-                    }, 4000);
+      setTimeout(() => {
+        const steps1 = new Audio('../Assets/FNaF 1 Audio/deep steps.wav');
+        steps1.volume = 0.15; steps1.play().catch(() => {});
+        steps1.addEventListener('ended', () => {
+          const steps2 = new Audio('../Assets/FNaF 1 Audio/deep steps.wav');
+          steps2.volume = 0.45; steps2.play().catch(() => {});
+          setTimeout(() => {
+            const steps3 = new Audio('../Assets/FNaF 1 Audio/deep steps.wav');
+            steps3.volume = 0.85; steps3.play().catch(() => {});
+            steps3.addEventListener('ended', () => {
+              const musicBox = new Audio('../Assets/FNaF 1 Audio/music box.wav');
+              window._powerOutEyeFrame = '304';
+              const schedule = [];
+              const flickerPattern = (() => {
+                const pattern = [];
+                function addPhase1(startT, duration) { let t = startT; while (t < startT + duration) { pattern.push({ img: '305', t }); t += 50; pattern.push({ img: '304', t }); t += 25; } return t; }
+                function addPhase2(startT, duration) { let t = startT; while (t < startT + duration) { pattern.push({ img: '305', t }); t += 250; pattern.push({ img: '304', t }); t += 150; } return t; }
+                function addPhase2Fast(startT, duration) { let t = startT; while (t < startT + duration) { pattern.push({ img: '305', t }); t += 100; pattern.push({ img: '304', t }); t += 80; } return t; }
+                let t = 200;
+                t = addPhase2(t, 4000); t = addPhase1(t, 1500); t = addPhase2(t, 1200); t = addPhase1(t, 1000);
+                t += 200; t = addPhase2(t, 1000); t = addPhase1(t, 1500); t += 200; t = addPhase2(t, 2000);
+                t = addPhase1(t, 1500); t = addPhase2(t, 1200); t = addPhase1(t, 1000); t = addPhase2Fast(t, 3000);
+                return pattern.sort((a, b) => a.t - b.t);
+              })();
+              flickerPattern.forEach(e => schedule.push(e));
+              schedule.sort((a, b) => a.t - b.t);
+              schedule.forEach(({ img, t }) => setTimeout(() => { window._powerOutEyeFrame = img; }, t));
+              musicBox.play().catch(() => {});
+              setTimeout(() => {
+                musicBox.pause();
+                window._powerOutEyeFrame = 'black';
+                const sequence = [
+                  { play: true, duration: 100 }, { play: false, duration: 50 },
+                  { play: true, duration: 80  }, { play: false, duration: 50 },
+                  { play: true, duration: 120 }, { play: false, duration: 100 },
+                ];
+                let t = 0;
+                sequence.forEach(({ play, duration }) => {
+                  setTimeout(() => {
+                    if (play) {
+                      const buzz = new Audio('../Assets/FNaF 1 Audio/Buzz_Fan_Florescent2.wav');
+                      buzz.volume = 1; buzz.play().catch(() => {});
+                      setTimeout(() => buzz.pause(), duration);
+                      window._powerOutEyeFrame = '304';
+                    } else { window._powerOutEyeFrame = 'black'; }
+                  }, t);
+                  t += duration;
                 });
-            }, 3000);
-        },
+                setTimeout(() => {
+                  window._powerOutEyeFrame = 'black';
+                  const steps4 = new Audio('../Assets/FNaF 1 Audio/deep steps.wav');
+                  steps4.volume = 1; steps4.play().catch(() => {});
+                  steps4.addEventListener('ended', () => { window._powerOutEyeFrame = 'jumpscare'; playPowerOutJumpscare(); });
+                }, 500);
+              }, 20000);
+            });
+          }, 4000);
+        });
+      }, 3000);
+    },
 
-        on6AM() {
-            console.log('6 AM — night complete');
+    on6AM() { console.log('6 AM — night complete'); },
+  };
 
-        },
-    };
-
-    // Tick every real second
-    setInterval(() => GameState.tick(), 1000);
-    GameState.render();
-
+  setInterval(() => GameState.tick(), 1000);
+  GameState.render();
 </script>
 </body>
 </html>
