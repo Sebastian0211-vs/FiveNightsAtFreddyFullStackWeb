@@ -669,6 +669,13 @@
     let noiseIndex = 0, noiseRafId = null, noiseLastTime = 0, noiseAccum = 0;
     const noiseMsPerFrame = 1000 / noiseMenu.fps;
 
+    // ── Foxy run cam overlay ──────────────────────────────────────
+    const foxyRunFrames = foxyRun.frames.map(src => {
+        const img = new Image(); img.src = src; return img;
+    });
+    let foxyRunIndex = 0, foxyRunAccum = 0;
+    const foxyRunMsPerFrame = 1000 / foxyRun.fps;
+
     // --- Camera pan ---
     let camPan = 0, camPanDir = 1;
     const CAM_PAN_SPEED = 0.000065;
@@ -720,6 +727,23 @@
             camCtx.restore();
         }
 
+        // ── Foxy run overlay on cam 2A (west_hall) ───────────────
+        if (window.foxyRunning && window.activeCam === 'west_hall') {
+            // Trigger run SFX once when the player first watches this cam
+            if (!window._foxyRunCamSfxTriggered) {
+                window._foxyRunCamSfxTriggered = true;
+                if (typeof foxy !== 'undefined') foxy.onWatchRunCam();
+            }
+            const fFrame = foxyRunFrames[foxyRunIndex];
+            if (fFrame && fFrame.complete && fFrame.naturalWidth) {
+                const sc = Math.max(cw / fFrame.naturalWidth, ch / fFrame.naturalHeight);
+                const dw = fFrame.naturalWidth * sc, dh = fFrame.naturalHeight * sc;
+                camCtx.drawImage(fFrame, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+            }
+        } else {
+            window._foxyRunCamSfxTriggered = false;
+        }
+
         if (camFrameImg.complete && camFrameImg.naturalWidth) camCtx.drawImage(camFrameImg, 0, 0, cw, ch);
 
         if (isRedDotVisible() && camRedDotImg.complete && camRedDotImg.naturalWidth) {
@@ -734,6 +758,11 @@
         noiseLastTime = timestamp;
         noiseAccum += delta;
         while (noiseAccum >= noiseMsPerFrame) { noiseAccum -= noiseMsPerFrame; noiseIndex = (noiseIndex + 1) % noiseMenuFrames.length; }
+
+        // Advance foxy run frame independently
+        foxyRunAccum += delta;
+        while (foxyRunAccum >= foxyRunMsPerFrame) { foxyRunAccum -= foxyRunMsPerFrame; foxyRunIndex = (foxyRunIndex + 1) % foxyRunFrames.length; }
+
         camPan += camPanDir * CAM_PAN_SPEED * delta;
         if (camPan >= 1) { camPan = 1; camPanDir = -1; }
         if (camPan <= 0) { camPan = 0; camPanDir =  1; }
@@ -801,6 +830,7 @@
     function openTablet() {
         if (tabletState !== 'closed') return;
         if (GameState.rawPower <= 0) return;
+        window.isTabletOpen = true;
         sfxCameraUp.currentTime = 0; sfxCameraUp.play().catch(() => {});
         tabletState = 'opening'; tabletFrame = 0;
         tabletCanvas.style.display = 'block';
@@ -811,6 +841,8 @@
 
     function closeTablet() {
         if (tabletState !== 'open') return;
+        window.isTabletOpen = false;
+        if (typeof foxy !== 'undefined') foxy.onTabletClose();
         sfxCameraDown.currentTime = 0; sfxCameraDown.play().catch(() => {});
         sfxCameraLoop.pause(); sfxCameraLoop.currentTime = 0;
         stopCamVideo();
