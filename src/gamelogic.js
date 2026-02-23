@@ -621,8 +621,7 @@ function initGameLogic() {
     setInterval(() => { if (chica.valid)  chica.tryMove();  }, ANIM_INTERVALS.chica);
     setInterval(() => { if (foxy.valid)   foxy.tryMove();   }, ANIM_INTERVALS.foxy);
 
-    // Expose globals the renderer needs
     window.foxyRunning  = false;
     window.isTabletOpen = false;
-    window.activeCam    = null;    // set by cam selector when built — 'west_hall', etc.
+    window.activeCam    = null;
 }
