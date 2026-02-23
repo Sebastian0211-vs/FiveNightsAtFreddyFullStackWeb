@@ -105,7 +105,7 @@ const GO_NOISE = () => {
 // Named jumpscare triggers (call these from AI logic or debug)
 function playChicaJumpscare()        { playJumpscare(chicajumpscare,        SCREAM,  null,      JUMPSCARE_MAX_MS); }
 function playBonnieJumpscare()       { playJumpscare(bonnieJumpscare,       SCREAM,  null,      JUMPSCARE_MAX_MS); }
-function playFoxyJumpscare()         { playJumpscare(foxyJumpscare,         SCREAM,  null,      JUMPSCARE_MAX_MS); }
+function playFoxyJumpscare()         { playJumpscare(foxyJumpscare,         SCREAM,  GO_NOISE,      JUMPSCARE_MAX_MS); }
 function playFreddyJumpscare()       { playJumpscare(freddyJumpscare,       SCREAM,  null,      JUMPSCARE_MAX_MS); }
 function playGoldenFreddyJumpscare() { playJumpscare(goldenFreddyJumpscare, SCREAM2, null,      JUMPSCARE_MAX_MS); }
 function playPowerOutJumpscare()     { playJumpscare(freddyJumpscarePowerOut, SCREAM, GO_NOISE, JUMPSCARE_MAX_MS); }
@@ -117,16 +117,16 @@ function playNoiseMenu()             { playJumpscare(noiseMenu,             NOIS
 // ── Animatronics ──────────────────────────────────────────────
 
 const FREDDY = false;
-const CHICA = false;
+const CHICA  = false;
 const BONNIE = false;
-const FOXY = false;
+const FOXY   = true;
 
 class Animatronic {
     constructor(name, rooms, startRoom = 'show_stage') {
         this.name      = name;
         this.rooms     = rooms;
         this.room      = startRoom;
-        this.ai_level  = 0;
+        this.ai_level  = 10;
         this.moving    = false;
         this.valid     = false;
     }
@@ -215,7 +215,105 @@ class Chica extends Animatronic {
 }
 
 
-// ── Graphes de déplacement ────────────────────────────────────
+class Foxy extends Animatronic {
+    constructor() {
+        super('Foxy', {});
+        this.valid      = FOXY;
+        this.stage      = 1;       // 1 = cove closed, 2 = peeking, 3 = out, 4 = running
+        this.locked     = false;   // post-tablet lock window
+        this.lockTimer  = null;
+        this.sprintTimer = null;
+        this.bangCount  = 0;       // how many times he's banged this night
+    }
+
+    // ── Called by mainroom whenever the tablet is closed ─────────
+    onTabletClose() {
+        const lockMs = (0.83 + Math.random() * (16.67 - 0.83)) * 1000;
+        this.locked = true;
+        if (this.lockTimer) clearTimeout(this.lockTimer);
+        this.lockTimer = setTimeout(() => { this.locked = false; }, lockMs);
+        console.log(`[Foxy] locked for ${(lockMs / 1000).toFixed(2)}s`);
+    }
+
+    // ── Called every 5.01 s ──────────────────────────────────────
+    tryMove() {
+        console.log(`[Foxy] tryMove called — stage ${this.stage}, locked: ${this.locked}, tablet open: ${window.isTabletOpen}`);
+        if (this.stage >= 4) return;              // already running, no more ticks needed
+        if (this.locked)          return;          // post-tablet lock → auto-fail
+        if (window.isTabletOpen)  return;          // tablet open → auto-fail
+
+        console.log(" [Foxy] tries to move with ai_level", this.ai_level);
+        if (Math.random() * 20 >= this.ai_level) return; // normal AI roll
+        this.stage++;
+        console.log(`[Foxy] stage → ${this.stage}`);
+
+        if (this.stage === 4) this._startSprint();
+    }
+
+    // ── Sprint: 25 s countdown, then attack ─────────────────────
+    _startSprint() {
+        console.log('[Foxy] RUNNING — 25 s to attack');
+        window.foxyRunning = true;
+        this._runSfxPlayed = false;
+
+        if (this.sprintTimer)  clearTimeout(this.sprintTimer);
+        if (this._runSfxTimer) clearTimeout(this._runSfxTimer);
+
+        // Play run SFX at the 22 s mark (last 3 s of the 25 s window)
+        this._runSfxTimer = setTimeout(() => this._playRunSfx(), 22000);
+        this.sprintTimer  = setTimeout(() => this._attack(),     25000);
+    }
+
+    _playRunSfx() {
+        if (this._runSfxPlayed) return;
+        this._runSfxPlayed = true;
+        const sfx = new Audio('../Assets/FNaF 1 Audio/run.wav');
+        sfx.volume = 0.9;
+        sfx.play().catch(() => {});
+    }
+
+    // Called by the renderer when the player switches to cam 2A while Foxy is running
+    onWatchRunCam() {
+        this._playRunSfx();
+    }
+
+    // ── Attack resolution ────────────────────────────────────────
+    _attack() {
+        window.foxyRunning = false;
+        window._foxyRunCamSfxTriggered = false;
+        this.sprintTimer = null;
+
+        if (state.left.door === 'open') {
+            // Door open → jumpscare
+            playFoxyJumpscare();
+        } else {
+            // Door closed → bang! power penalty + retreat
+            this._bangDoor();
+        }
+    }
+
+    // ── Door bang: 1% → 7% → 13% → 13% cap ─────────────────────
+    _bangDoor() {
+        const pct     = Math.min(1 + this.bangCount * 6, 13); // percent
+        const rawDrain = pct * 10;                             // rawPower units (999 base = 99.9%)
+        GameState.rawPower = Math.max(0, GameState.rawPower - rawDrain);
+        this.bangCount++;
+
+        // Retreat to stage 1 or 2 (50/50)
+        this.stage = Math.random() < 0.5 ? 1 : 2;
+        console.log(`[Foxy] banged door! −${pct}% power. Retreats to stage ${this.stage}`);
+
+        // Door bang SFX
+        const bangSfx = new Audio('../Assets/FNaF 1 Audio/knock2.wav');
+        bangSfx.volume = 0.8;
+        bangSfx.play().catch(() => {});
+    }
+
+    canAttack() { return false; } // attack is handled internally via timer
+}
+
+
+
 
 const FreddyRooms = {
     show_stage:       { label: 'Show Stage',          connections: ['dining_area'] },
@@ -271,8 +369,9 @@ const ROOMS = {
 const freddy = new Freddy();
 const bonnie = new Bonnie();
 const chica  = new Chica();
+const foxy   = new Foxy();
 
-const ANIMATRONICS = [freddy, bonnie, chica];
+const ANIMATRONICS = [freddy, bonnie, chica, foxy];
 
 const GameState = {
     night:          1,
@@ -502,9 +601,28 @@ const GameState = {
 };
 
 
+// ── Animatronic movement intervals (ms) ──────────────────────
+const ANIM_INTERVALS = {
+    freddy: 3020,
+    bonnie: 4970,
+    chica:  4980,
+    foxy:   5010,
+};
+
 // ── Start the game loop ───────────────────────────────────────
-// Called once the renderer is ready (mainroom_test.html calls this after bg.onload)
 function initGameLogic() {
+    // Power / time tick — every 1 s
     setInterval(() => GameState.tick(), 1000);
     GameState.render();
+
+    // Independent animatronic movement ticks
+    setInterval(() => { if (freddy.valid) freddy.tryMove(); }, ANIM_INTERVALS.freddy);
+    setInterval(() => { if (bonnie.valid) bonnie.tryMove(); }, ANIM_INTERVALS.bonnie);
+    setInterval(() => { if (chica.valid)  chica.tryMove();  }, ANIM_INTERVALS.chica);
+    setInterval(() => { if (foxy.valid)   foxy.tryMove();   }, ANIM_INTERVALS.foxy);
+
+    // Expose globals the renderer needs
+    window.foxyRunning  = false;
+    window.isTabletOpen = false;
+    window.activeCam    = null;    // set by cam selector when built — 'west_hall', etc.
 }

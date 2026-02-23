@@ -323,7 +323,6 @@ const chicajumpscare = {
         "../assets/Chica/235.png",
         "../assets/Chica/236.png",
         "../assets/Chica/237.png",
-        "../assets/Chica/238.png",
         "../assets/Chica/239.png",
         "../assets/Chica/279.png",
         "../assets/Chica/281.png",
@@ -346,16 +345,16 @@ const bonnieJumpscare = {
         "../Assets/Bonnie/300.png",
         "../Assets/Bonnie/301.png",
         "../Assets/Bonnie/303.png",
-        ],
+    ],
     fps: 30,
     // Position in source-image pixel space
-        scale: 1.0,
-        loop: false,   // don't loop the jumpscare animation
+    scale: 1.0,
+    loop: false,   // don't loop the jumpscare animation
 }
 
 const foxyJumpscare = {
     frames: [
-        "../AssetsFoxy/foxy jumpscare/242.png",
+        "../Assets/Foxy/foxy jumpscare/242.png",
         "../Assets/Foxy/foxy jumpscare/413.png",
         "../Assets/Foxy/foxy jumpscare/415.png",
         "../Assets/Foxy/foxy jumpscare/243.png",
@@ -380,8 +379,8 @@ const foxyJumpscare = {
     ],
     fps: 30,
     // Position in source-image pixel space
-     scale: 1.0,
-     loop: false,   // don't loop the jumpscare animation
+    scale: 1.0,
+    loop: false,   // don't loop the jumpscare animation
 
 }
 
@@ -390,11 +389,11 @@ const goldenFreddyJumpscare = {
         "../Assets/Golden Freddy/548.png",
         "../Assets/Golden Freddy/548.png",
         "../Assets/Golden Freddy/548.png",
-        ],
+    ],
     fps: 2,
     // Position in source-image pixel space
-     scale: 1.0,
-     loop: false,   // don't loop the jumpscare animation
+    scale: 1.0,
+    loop: false,   // don't loop the jumpscare animation
 }
 
 // freddy jumpscare
@@ -405,9 +404,7 @@ const freddyJumpscare = {
         "../Assets/Freddy/489.png",
         "../Assets/Freddy/490.png",
         "../Assets/Freddy/491.png",
-        "../Assets/Freddy/492.png",
         "../Assets/Freddy/493.png",
-        "../Assets/Freddy/494.png",
         "../Assets/Freddy/495.png",
         "../Assets/Freddy/496.png",
         "../Assets/Freddy/497.png",
@@ -436,8 +433,8 @@ const freddyJumpscare = {
     ],
     fps: 30,
     // Position in source-image pixel space
-     scale: 1.0,
-     loop: false,   // don't loop the jumpscare animation
+    scale: 1.0,
+    loop: false,   // don't loop the jumpscare animation
 }
 
 
@@ -467,8 +464,8 @@ const freddyJumpscarePowerOut = {
     ],
     fps: 30,
     // Position in source-image pixel space
-     scale: 1.0,
-     loop: false,   // don't loop the jumpscare animation
+    scale: 1.0,
+    loop: false,   // don't loop the jumpscare animation
 }
 // ── Fan animation ─────────────────────────────────────────────
 
@@ -485,6 +482,46 @@ const fanAnimation = {
     scale: 1.0,
 };
 
+
+// ── Foxy run animation ───────────────────────────────────────
+
+const foxyRun = {
+    frames: [
+        "../Assets/Foxy/foxy run/241.png",
+        "../Assets/Foxy/foxy run/244.png",
+        "../Assets/Foxy/foxy run/245.png",
+        "../Assets/Foxy/foxy run/246.png",
+        "../Assets/Foxy/foxy run/247.png",
+        "../Assets/Foxy/foxy run/248.png",
+        "../Assets/Foxy/foxy run/250.png",
+        "../Assets/Foxy/foxy run/282.png",
+        "../Assets/Foxy/foxy run/283.png",
+        "../Assets/Foxy/foxy run/284.png",
+        "../Assets/Foxy/foxy run/285.png",
+        "../Assets/Foxy/foxy run/286.png",
+        "../Assets/Foxy/foxy run/287.png",
+        "../Assets/Foxy/foxy run/288.png",
+        "../Assets/Foxy/foxy run/289.png",
+        "../Assets/Foxy/foxy run/290.png",
+        "../Assets/Foxy/foxy run/292.png",
+        "../Assets/Foxy/foxy run/302.png",
+        "../Assets/Foxy/foxy run/306.png",
+        "../Assets/Foxy/foxy run/327.png",
+        "../Assets/Foxy/foxy run/329.png",
+        "../Assets/Foxy/foxy run/330.png",
+        "../Assets/Foxy/foxy run/331.png",
+        "../Assets/Foxy/foxy run/332.png",
+        "../Assets/Foxy/foxy run/333.png",
+        "../Assets/Foxy/foxy run/334.png",
+        "../Assets/Foxy/foxy run/335.png",
+        "../Assets/Foxy/foxy run/336.png",
+        "../Assets/Foxy/foxy run/337.png",
+        "../Assets/Foxy/foxy run/340.png",
+    ],
+    fps: 24,
+    scale: 1.0,
+    loop: true,
+};
 
 // ── Tablet open / close animation ────────────────────────────
 
@@ -507,6 +544,7 @@ const _preloaded = {
     chica:       preloadFrames(chicajumpscare),
     bonnie:      preloadFrames(bonnieJumpscare),
     foxy:        preloadFrames(foxyJumpscare),
+    foxyRun:     preloadFrames(foxyRun),
     freddy:      preloadFrames(freddyJumpscare),
     golden:      preloadFrames(goldenFreddyJumpscare),
     powerOut:    preloadFrames(freddyJumpscarePowerOut),
