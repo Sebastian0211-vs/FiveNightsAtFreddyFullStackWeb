@@ -391,7 +391,7 @@ const goldenFreddyJumpscare = {
         "../Assets/Golden Freddy/548.png",
         "../Assets/Golden Freddy/548.png",
         ],
-    fps: 30,
+    fps: 2,
     // Position in source-image pixel space
      scale: 1.0,
      loop: false,   // don't loop the jumpscare animation
