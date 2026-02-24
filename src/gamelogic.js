@@ -116,10 +116,30 @@ function playNoiseMenu()             { playJumpscare(noiseMenu,             NOIS
 
 // ── Animatronics ──────────────────────────────────────────────
 
-const FREDDY = true;
-const CHICA  = true;
+const FREDDY = false;
+const CHICA  = false;
 const BONNIE = true;
 const FOXY   = true;
+
+const base_ai_level = {
+    1: {Freddy: 0, Bonnie:0, Chica:0, Foxy:0},
+    2: {Freddy: 0, Bonnie:3, Chica:1, Foxy:1},
+    3: {Freddy: 1, Bonnie:0, Chica:5, Foxy:2},
+    41: {Freddy: 1, Bonnie:2, Chica:4, Foxy:6},
+    42: {Freddy: 2, Bonnie:2, Chica:4, Foxy:6},
+    5: {Freddy: 3, Bonnie:5, Chica:7, Foxy:5},
+    6: {Freddy: 4, Bonnie:10, Chica:12, Foxy:16},
+}
+
+const boost_ai_level = {
+    AM12: {Freddy: 0, Bonnie:0, Chica:0, Foxy:0},
+    AM1: {Freddy: 0, Bonnie:0, Chica:0, Foxy:0},
+    AM2: {Freddy: 0, Bonnie:1, Chica:0, Foxy:0},
+    AM3: {Freddy: 0, Bonnie:1, Chica:1, Foxy:1},
+    AM4: {Freddy: 0, Bonnie:1, Chica:1, Foxy:1},
+    AM5: {Freddy: 0, Bonnie:0, Chica:0, Foxy:0},
+}
+
 
 class Animatronic {
     constructor(name, rooms, startRoom = 'show_stage') {
