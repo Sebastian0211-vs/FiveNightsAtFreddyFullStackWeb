@@ -942,6 +942,7 @@
     function openTablet() {
         if (tabletState !== 'closed') return;
         if (GameState.rawPower <= 0) return;
+        if (GameState._6amTriggered) return;
         window.isTabletOpen = true;
         if (typeof bonnie !== 'undefined') bonnie.onTabletOpen();
         sfxCameraUp.currentTime = 0; sfxCameraUp.play().catch(() => {});

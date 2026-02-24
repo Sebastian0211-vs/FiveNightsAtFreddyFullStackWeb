@@ -83,7 +83,7 @@ const GameState = {
         const usage = this.getUsage();
         document.getElementById('hud-night').textContent     = `Night ${this.night}`;
         document.getElementById('hud-time').textContent      = HOURS[this.getCurrentHour()];
-        document.getElementById('hud-power-val').textContent = `${this.getDisplayPercent()}%`;
+        document.getElementById('hud-power-val').textContent = `${Math.ceil(this.getDisplayPercent())}%`;
         const batteryMap = { 1: '212', 2: '213', 3: '214', 4: '456', 5: '455' };
         document.getElementById('hud-battery-img').src = `../Assets/Battery/${batteryMap[usage] || '212'}.png`;
     },
@@ -723,6 +723,7 @@ class Foxy extends Animatronic {
         this.bangCount   = 0;
     }
 
+    // ── Called by mainroom whenever the tablet is closed ─────────
     onTabletClose() {
         const lockMs = (0.83 + Math.random() * (16.67 - 0.83)) * 1000;
         this.locked = true;
@@ -731,13 +732,15 @@ class Foxy extends Animatronic {
         console.log(`[Foxy] locked for ${(lockMs / 1000).toFixed(2)}s`);
     }
 
+    // ── Called every 5.01 s ──────────────────────────────────────
     tryMove() {
-        if (this.stage >= 4)              return;
-        if (this._powerOutTriggered)      return;
-        if (this.locked)                  return;
-        if (window.isTabletOpen)          return;
-        console.log('[Foxy] tries to move — AI:', this.ai_level);
-        if (Math.random() * 20 >= this.ai_level) return;
+        if (this.stage >= 4) return;              // already running, no more ticks needed
+        if (this._6amTriggered) return; // night over → auto-fail
+        if (this._powerOutTriggered) return; // power out → auto-fail
+        if (this.locked)          return;          // post-tablet lock → auto-fail
+        if (window.isTabletOpen)  return;          // tablet open → auto-fail
+        console.log("[Foxy] tries to move with an AI level of " + this.ai_level);
+        if (Math.random() * 20 >= this.ai_level) return; // normal AI roll
 
         this.stage++;
         console.log(`[Foxy] stage → ${this.stage}`);
@@ -750,8 +753,8 @@ class Foxy extends Animatronic {
         window.foxyRunAnimDone = false;
         this._runSfxPlayed     = false;
 
-        if (this.sprintTimer)  clearTimeout(this.sprintTimer);
-        if (this._runSfxTimer) clearTimeout(this._runSfxTimer);
+        if (this.sprintTimer || this._6amTriggered)  clearTimeout(this.sprintTimer);
+        if (this._runSfxTimer || this._6amTriggered) clearTimeout(this._runSfxTimer);
 
         this._runSfxTimer = setTimeout(() => this._playRunSfx(), 22000);
         this.sprintTimer  = setTimeout(() => this._attack(),     25000);
