@@ -877,6 +877,7 @@ const CAMS = [
     { id: '2A', label: 'CAM 2A', room: 'west_hall'        },
     { id: '2B', label: 'CAM 2B', room: 'west_hall_corner' },
     { id: '3',  label: 'CAM 3',  room: 'backstage'        },
+    { id: '6',  label: 'CAM 6',  room: 'kitchen'          },
     { id: '4A', label: 'CAM 4A', room: 'east_hall'        },
     { id: '4B', label: 'CAM 4B', room: 'east_hall_corner' },
     { id: '5',  label: 'CAM 5',  room: 'supply_closet'    },
