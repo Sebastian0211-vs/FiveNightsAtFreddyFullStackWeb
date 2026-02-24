@@ -116,9 +116,9 @@ function playNoiseMenu()             { playJumpscare(noiseMenu,             NOIS
 
 // ── Animatronics ──────────────────────────────────────────────
 
-const FREDDY = false;
-const CHICA  = false;
-const BONNIE = false;
+const FREDDY = true;
+const CHICA  = true;
+const BONNIE = true;
 const FOXY   = true;
 
 class Animatronic {
