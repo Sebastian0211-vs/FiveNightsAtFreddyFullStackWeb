@@ -17,7 +17,7 @@
 // ── Night / time constants ────────────────────────────────────
 
 const HOURS         = ['12 AM','1 AM','2 AM','3 AM','4 AM','5 AM','6 AM'];
-const NIGHT_SECS    = 10;
+const NIGHT_SECS    = 535;
 const SECS_PER_HOUR = NIGHT_SECS / 6;
 
 // Power drained passively every N seconds (0 = no passive drain on night 1)
@@ -497,8 +497,8 @@ function playNoiseMenu()             { playJumpscare(noiseMenu,             NOIS
 
 // ── Animatronics ──────────────────────────────────────────────
 
-const FREDDY = false;
-const CHICA  = false;
+const FREDDY = true;
+const CHICA  = true;
 const BONNIE = true;
 const FOXY   = true;
 
@@ -556,9 +556,20 @@ class Animatronic {
     }
 }
 
+function getRoom(name) {
+    return Object.keys(ROOMS).find(key => ROOMS[key].who.includes(name));
+}
+
+function moveToRoom(name, newRoom) {
+    const current = getRoom(name);
+    if (current) ROOMS[current].who = ROOMS[current].who.filter(n => n !== name);
+    if (ROOMS[newRoom]) ROOMS[newRoom].who.push(name);
+}
+
 class Freddy extends Animatronic {
     constructor() {
         super('Freddy', FreddyRooms);
+        this.room = getRoom(this.name)
         this.valid = FREDDY;
     }
 
@@ -580,12 +591,21 @@ class Freddy extends Animatronic {
 class Bonnie extends Animatronic {
     constructor() {
         super('Bonnie', BonnieRooms);
+        this.room = getRoom(this.name)
         this.valid = BONNIE;
     }
 
     tryMove() {
-        if (Math.random() * 20 <= this.ai_level){
-            console.log("FREDDY'S MOVING OMG")
+        if (Math.random() * 20 <= this.ai_level) {
+            const current = getRoom(this.name);
+            const possibleMoves = BonnieRooms[current].connections;
+            const nextRoom = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+            console.log(`Bonnie: ${current} → ${nextRoom}`);
+            if (ROOMS[nextRoom].who.length === 0) {
+                moveToRoom(this.name, nextRoom);
+            } else {
+                console.log(`${nextRoom} is NOT empty! Stay in ${current}`);
+            }
         }
         return -1
     }
@@ -599,12 +619,13 @@ class Bonnie extends Animatronic {
 class Chica extends Animatronic {
     constructor() {
         super('Chica', ChicaRooms);
+        this.room = getRoom(this.name)
         this.valid = CHICA;
     }
 
     tryMove() {
         if (Math.random() * 20 <= this.ai_level){
-            console.log("FREDDY'S MOVING OMG")
+            console.log("CHICA'S MOVING OMG")
         }
         return -1
     }
@@ -644,6 +665,7 @@ class Foxy extends Animatronic {
         if (window.isTabletOpen)  return;          // tablet open → auto-fail
         console.log("Foxy tries to move...");
         if (Math.random() * 20 >= this.ai_level) return; // normal AI roll
+
         this.stage++;
         console.log(`[Foxy] stage → ${this.stage}`);
 
@@ -757,8 +779,8 @@ const ChicaRooms = {
 // ── Map globale des salles ────────────────────────────────────
 
 const ROOMS = {
-    show_stage:         { who: ['Freddy', 'Chica', 'Bonnie'] },
-    dining_area:        { who: [] },
+    show_stage:         { who: ['Freddy', 'Bonnie'] },
+    dining_area:        { who: ['Chica'] },
     backstage:          { who: [] },
     kitchen:            { who: [] },
     restrooms:          { who: [] },
@@ -770,6 +792,7 @@ const ROOMS = {
     pirate_cove:        { who: [] },
     office_left:        { who: [] },
     office_right:       { who: [] },
+    office: {who:[]},
 };
 
 
