@@ -647,6 +647,7 @@ class Foxy extends Animatronic {
     // ── Called every 5.01 s ──────────────────────────────────────
     tryMove() {
         if (this.stage >= 4) return;              // already running, no more ticks needed
+        if (this._6amTriggered) return; // night over → auto-fail
         if (this._powerOutTriggered) return; // power out → auto-fail
         if (this.locked)          return;          // post-tablet lock → auto-fail
         if (window.isTabletOpen)  return;          // tablet open → auto-fail
@@ -666,8 +667,8 @@ class Foxy extends Animatronic {
         window.foxyRunAnimDone = false;
         this._runSfxPlayed = false;
 
-        if (this.sprintTimer)  clearTimeout(this.sprintTimer);
-        if (this._runSfxTimer) clearTimeout(this._runSfxTimer);
+        if (this.sprintTimer || this._6amTriggered)  clearTimeout(this.sprintTimer);
+        if (this._runSfxTimer || this._6amTriggered) clearTimeout(this._runSfxTimer);
 
         // Play run SFX at the 22 s mark (last 3 s of the 25 s window)
         this._runSfxTimer = setTimeout(() => this._playRunSfx(), 22000);
