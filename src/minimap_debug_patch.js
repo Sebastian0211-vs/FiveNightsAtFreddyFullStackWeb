@@ -86,17 +86,20 @@
 
         // Positions par salle
         const byRoom = {};
-        function place(anim, name, roomOverride) {
-            if (!anim || !anim.valid) return;
-            const key = roomOverride || anim.room;
+        function place(name) {
+            const key = getRoom(name);
+            if (!key) return;
             (byRoom[key] = byRoom[key] || []).push(name);
         }
-        place(typeof freddy !== 'undefined' ? freddy : null, 'Freddy');
-        place(typeof bonnie !== 'undefined' ? bonnie : null, 'Bonnie');
-        place(typeof chica  !== 'undefined' ? chica  : null, 'Chica');
-        if (typeof foxy !== 'undefined' && foxy.valid)
-            place(foxy, 'Foxy', foxy.stage >= 4 ? 'west_hall' : 'pirate_cove');
 
+        place('Freddy');
+        place('Bonnie');
+        place('Chica');
+
+        if (typeof foxy !== 'undefined' && foxy.valid) {
+            const foxyRoom = foxy.stage >= 4 ? 'west_hall' : 'pirate_cove';
+            (byRoom[foxyRoom] = byRoom[foxyRoom] || []).push('Foxy');
+        }
         // Salles + dots
         Object.entries(ROOM_LAYOUT).forEach(([id, r]) => {
             const rx = r.x * scaleX, ry = r.y * scaleY;
