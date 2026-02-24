@@ -2,7 +2,7 @@
 //  gamelogic.js  —  Game state, power, animatronic AI, jumpscares
 //
 //  Depends on:  animations.js  (animation defs)
-//  Expects these globals from mainroom_test.html (renderer):
+//  Expects these globals from mainroom.html (renderer):
 //    state            — door/light state object  { left, right }
 //    powerOut         — boolean flag (set here, read by renderer)
 //    window._powerOutEyeFrame — string flag read by renderer draw()
@@ -553,7 +553,7 @@ class Freddy extends Animatronic {
 //    • Porte ouverte + jet raté → reste et replanifie
 //    • Porte ouverte + jet OK   → entre silencieusement (inOffice = true)
 //
-//  window.bonnieAtDoor  — lu par mainroom_test.html pour afficher l'image
+//  window.bonnieAtDoor  — lu par mainroom.html pour afficher l'image
 // ─────────────────────────────────────────────────────────────
 
 class Bonnie extends Animatronic {
