@@ -297,6 +297,10 @@
 </div>
 <canvas id="tablet-anim-canvas" style="display:none;position:fixed;inset:0;width:100%;height:100%;z-index:45;"></canvas>
 <canvas id="tablet-cam" style="display:none;position:fixed;inset:0;z-index:44;background:#000;width:100%;height:100%;"></canvas>
+<!-- Hidden video element for kitchen cam -->
+<video id="kitchen-video" src="../Assets/Freddy/puppet.mp4"
+       loop playsinline
+       style="display:none;position:absolute;pointer-events:none;"></video>
 
 <script src="animations.js"></script>
 <script src="gamelogic.js"></script>
@@ -670,6 +674,7 @@
         backstage:        'Backstage',
         east_hall:        'East Hall',
         east_hall_corner: 'East Hall Corner',
+        kitchen:          'Kitchen',
         supply_closet:    'Supply Closet',
         restrooms:        'Restrooms',
     };
@@ -699,6 +704,12 @@
         if (_camBtns[room]) _camBtns[room].classList.add('active');
         // Reset pan on cam switch
         camPan = 0.5; camPanDir = 1;
+        // Kitchen video: play when selected, pause otherwise
+        if (room === 'kitchen') {
+            kitchenVideo.play().catch(() => {});
+        } else {
+            kitchenVideo.pause();
+        }
     }
 
     function showCamSelector() {
@@ -731,10 +742,19 @@
         return _camImg;
     }
 
-    // stopCamVideo / startCamVideo kept as no-ops (called by gamelogic during power-out)
+    // stopCamVideo / startCamVideo — drive the kitchen video element
     var camAudio = { pause() {}, play() { return Promise.resolve(); }, currentTime: 0 };
-    function startCamVideo() {}
-    function stopCamVideo()  {}
+    const kitchenVideo = document.getElementById('kitchen-video');
+
+    function startCamVideo() {
+        if (window.activeCam === 'kitchen') {
+            kitchenVideo.play().catch(() => {});
+        }
+    }
+    function stopCamVideo() {
+        kitchenVideo.pause();
+        kitchenVideo.currentTime = 0;
+    }
 
     // Set initial cam to show_stage
     window.activeCam = 'show_stage';
@@ -780,22 +800,40 @@
         const src = (typeof getCamImagePath !== 'undefined' && window.activeCam)
             ? getCamImagePath(window.activeCam)
             : null;
-        const camImg = getOrLoadCamImg(src);
 
-        if (camImg && camImg.complete && camImg.naturalWidth) {
-            // Cover-fill with subtle side pan
-            const imgW = camImg.naturalWidth, imgH = camImg.naturalHeight;
-            const scaleH = ch / imgH, scaleW = cw / imgW;
+        if (window.activeCam === 'kitchen' && kitchenVideo.readyState >= 2) {
+            // Draw video frame — cover-fill with subtle pan
+            const vw = kitchenVideo.videoWidth || cw;
+            const vh = kitchenVideo.videoHeight || ch;
+            const scaleH = ch / vh, scaleW = cw / vw;
             const scale  = Math.max(scaleH, scaleW * 1.4);
-            const maxOffset = Math.max(0, (imgW * scale) - cw);
-            const offsetX = camPan * maxOffset;
+            const maxOffset = Math.max(0, (vw * scale) - cw);
+            const offsetX   = camPan * maxOffset;
             for (let sx = 0; sx < cw; sx++) {
                 const imgX = (offsetX + sx) / scale;
-                if (imgX < 0 || imgX >= imgW) continue;
+                if (imgX < 0 || imgX >= vw) continue;
                 const screenNorm = (sx / cw - 0.5) * 2;
                 const dist = Math.sqrt(1 + (screenNorm * FOV_FACTOR) ** 2);
                 const stripH = ch / dist;
-                camCtx.drawImage(camImg, imgX, 0, 1, imgH, sx, (ch - stripH) / 2, 1, stripH);
+                camCtx.drawImage(kitchenVideo, imgX, 0, 1, vh, sx, (ch - stripH) / 2, 1, stripH);
+            }
+        } else {
+            const camImg = getOrLoadCamImg(src);
+            if (camImg && camImg.complete && camImg.naturalWidth) {
+                // Cover-fill with subtle side pan
+                const imgW = camImg.naturalWidth, imgH = camImg.naturalHeight;
+                const scaleH = ch / imgH, scaleW = cw / imgW;
+                const scale  = Math.max(scaleH, scaleW * 1.4);
+                const maxOffset = Math.max(0, (imgW * scale) - cw);
+                const offsetX = camPan * maxOffset;
+                for (let sx = 0; sx < cw; sx++) {
+                    const imgX = (offsetX + sx) / scale;
+                    if (imgX < 0 || imgX >= imgW) continue;
+                    const screenNorm = (sx / cw - 0.5) * 2;
+                    const dist = Math.sqrt(1 + (screenNorm * FOV_FACTOR) ** 2);
+                    const stripH = ch / dist;
+                    camCtx.drawImage(camImg, imgX, 0, 1, imgH, sx, (ch - stripH) / 2, 1, stripH);
+                }
             }
         }
 
