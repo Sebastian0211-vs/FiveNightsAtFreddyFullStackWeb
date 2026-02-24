@@ -396,8 +396,8 @@ const ChicaRooms = {
 // ── Map globale des salles ────────────────────────────────────
 
 const ROOMS = {
-    show_stage:         { who: ['Freddy', 'Bonnie'] },
-    dining_area:        { who: ['Chica'] },
+    show_stage:         { who: ['Freddy', 'Chica','Bonnie'] },
+    dining_area:        { who: [] },
     backstage:          { who: [] },
     kitchen:            { who: [] },
     restrooms:          { who: [] },
@@ -409,7 +409,7 @@ const ROOMS = {
     pirate_cove:        { who: [] },
     office_left:        { who: [] },
     office_right:       { who: [] },
-    office: {who:[]},
+    office:             { who:[]  },
 };
 
 
