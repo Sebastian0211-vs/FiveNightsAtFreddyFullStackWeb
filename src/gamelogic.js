@@ -105,7 +105,7 @@ const GO_NOISE = () => {
 // Named jumpscare triggers (call these from AI logic or debug)
 function playChicaJumpscare()        { playJumpscare(chicajumpscare,        SCREAM,  null,      JUMPSCARE_MAX_MS); }
 function playBonnieJumpscare()       { playJumpscare(bonnieJumpscare,       SCREAM,  null,      JUMPSCARE_MAX_MS); }
-function playFoxyJumpscare()         { playJumpscare(foxyJumpscare,         SCREAM,  GO_NOISE,      JUMPSCARE_MAX_MS); }
+function playFoxyJumpscare()         { playJumpscare(foxyJumpscare,         SCREAM,  null,      JUMPSCARE_MAX_MS); }
 function playFreddyJumpscare()       { playJumpscare(freddyJumpscare,       SCREAM,  null,      JUMPSCARE_MAX_MS); }
 function playGoldenFreddyJumpscare() { playJumpscare(goldenFreddyJumpscare, SCREAM2, null,      JUMPSCARE_MAX_MS); }
 function playPowerOutJumpscare()     { playJumpscare(freddyJumpscarePowerOut, SCREAM, GO_NOISE, JUMPSCARE_MAX_MS); }
@@ -237,13 +237,12 @@ class Foxy extends Animatronic {
 
     // ── Called every 5.01 s ──────────────────────────────────────
     tryMove() {
-        console.log(`[Foxy] tryMove called — stage ${this.stage}, locked: ${this.locked}, tablet open: ${window.isTabletOpen}`);
         if (this.stage >= 4) return;              // already running, no more ticks needed
         if (this.locked)          return;          // post-tablet lock → auto-fail
         if (window.isTabletOpen)  return;          // tablet open → auto-fail
 
-        console.log(" [Foxy] tries to move with ai_level", this.ai_level);
         if (Math.random() * 20 >= this.ai_level) return; // normal AI roll
+
         this.stage++;
         console.log(`[Foxy] stage → ${this.stage}`);
 
@@ -253,7 +252,8 @@ class Foxy extends Animatronic {
     // ── Sprint: 25 s countdown, then attack ─────────────────────
     _startSprint() {
         console.log('[Foxy] RUNNING — 25 s to attack');
-        window.foxyRunning = true;
+        window.foxyRunning    = true;
+        window.foxyRunAnimDone = false;
         this._runSfxPlayed = false;
 
         if (this.sprintTimer)  clearTimeout(this.sprintTimer);
@@ -275,6 +275,14 @@ class Foxy extends Animatronic {
     // Called by the renderer when the player switches to cam 2A while Foxy is running
     onWatchRunCam() {
         this._playRunSfx();
+
+        // Cancel the original 25 s countdown and the scheduled sfx timer
+        if (this.sprintTimer)  { clearTimeout(this.sprintTimer);  this.sprintTimer  = null; }
+        if (this._runSfxTimer) { clearTimeout(this._runSfxTimer); this._runSfxTimer = null; }
+
+        // Give the player 3 s to close the left door
+        console.log('[Foxy] Seen running — 3 s to close door');
+        this.sprintTimer = setTimeout(() => this._attack(), 3000);
     }
 
     // ── Attack resolution ────────────────────────────────────────
@@ -601,6 +609,110 @@ const GameState = {
 };
 
 
+// ── Camera system ────────────────────────────────────────────
+
+const CAM_BASE = '../Assets/Cam_views/';
+
+// All selectable cameras
+const CAMS = [
+    { id: '1A', label: 'CAM 1A', room: 'show_stage'       },
+    { id: '1B', label: 'CAM 1B', room: 'dining_area'      },
+    { id: '1C', label: 'CAM 1C', room: 'pirate_cove'      },
+    { id: '2A', label: 'CAM 2A', room: 'west_hall'        },
+    { id: '2B', label: 'CAM 2B', room: 'west_hall_corner' },
+    { id: '3',  label: 'CAM 3',  room: 'backstage'        },
+    { id: '4A', label: 'CAM 4A', room: 'east_hall'        },
+    { id: '4B', label: 'CAM 4B', room: 'east_hall_corner' },
+    { id: '5',  label: 'CAM 5',  room: 'supply_closet'    },
+    { id: '7',  label: 'CAM 7',  room: 'restrooms'        },
+];
+
+// Pick one randomly from an array
+function _pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+// Per-room cache: { key: string, path: string }
+const _camCache = {};
+
+// Stable pick — only re-rolls when room occupants or foxy stage changes
+function _stablePick(room, arr, extraKey) {
+    const who   = (ROOMS[room] && ROOMS[room].who) ? [...ROOMS[room].who].sort().join(',') : '';
+    const key   = who + '|' + (extraKey ?? '');
+    const cache = _camCache[room];
+    if (cache && cache.key === key) return cache.path;
+    const path = _pick(arr);
+    _camCache[room] = { key, path };
+    return path;
+}
+
+// Returns the image path to display for a given room, based on who's there
+function getCamImagePath(room) {
+    const who = (ROOMS[room] && ROOMS[room].who) ? ROOMS[room].who : [];
+    const hasFreddy = who.includes('Freddy');
+    const hasBonnie = who.includes('Bonnie');
+    const hasChica  = who.includes('Chica');
+
+    switch (room) {
+
+        case 'show_stage':
+            if (hasFreddy && hasBonnie && hasChica)
+                return _stablePick(room, ['All_1.png', 'All_2.png']).replace(/^/, CAM_BASE + 'show stage/');
+            if (hasBonnie && hasFreddy)  return CAM_BASE + 'show stage/Bonnie_Freddy.png';
+            if (hasChica  && hasFreddy)  return CAM_BASE + 'show stage/chica_freddy.png';
+            if (hasFreddy)               return _stablePick(room, ['Freddy_1.png', 'Freddy_2.png']).replace(/^/, CAM_BASE + 'show stage/');
+            return CAM_BASE + 'show stage/Empty.png';
+
+        case 'dining_area':
+            if (hasBonnie) return _stablePick(room, ['Bonnie_1.png', 'Bonnie_2.png']).replace(/^/, CAM_BASE + 'Dining Area/');
+            if (hasChica)  return _stablePick(room, ['Chica_1.png',  'Chica_2.png']).replace(/^/, CAM_BASE + 'Dining Area/');
+            if (hasFreddy) return CAM_BASE + 'Dining Area/Freddy.png';
+            return CAM_BASE + 'Dining Area/Empty.png';
+
+        case 'pirate_cove': {
+            if (!foxy || !foxy.valid) return CAM_BASE + 'Pirate Cove/stage_1.png';
+            if (foxy.stage === 4)
+                return CAM_BASE + 'Pirate Cove/' + (Math.floor(Date.now() / 500) % 2 === 0 ? 'stage_4_1.png' : 'stage_4_2.png');
+            return CAM_BASE + `Pirate Cove/stage_${foxy.stage}.png`;
+        }
+
+        case 'west_hall':
+            if (hasBonnie) return CAM_BASE + 'West Hall/Bonnie.png';
+            return CAM_BASE + 'West Hall/empty_lightson.png';
+
+        case 'west_hall_corner':
+            if (hasBonnie) return _stablePick(room, ['Bonnie_1.png', 'Bonnie_2.png', 'Bonnie_3.png']).replace(/^/, CAM_BASE + 'West Hall Corner/');
+            if (hasFreddy) return CAM_BASE + 'West Hall Corner/Golden_Freddy.png';
+            return _stablePick(room, ['Empty_1.png', 'Empty_2.png']).replace(/^/, CAM_BASE + 'West Hall Corner/');
+
+        case 'backstage':
+            if (hasBonnie) return _stablePick(room, ['Bonnie.png', 'Bonnie_close.png']).replace(/^/, CAM_BASE + 'Backstage/');
+            if (hasFreddy) return CAM_BASE + 'Backstage/Freddy.png';
+            return _stablePick(room, ['Empty_1.png', 'Empty_2.png']).replace(/^/, CAM_BASE + 'Backstage/');
+
+        case 'east_hall':
+            if (hasChica)  return _stablePick(room, ['Chica_1.png', 'Chica_2.png']).replace(/^/, CAM_BASE + 'East Hall/');
+            if (hasFreddy) return CAM_BASE + 'East Hall/Freddy.png';
+            return _stablePick(room, ['Empty_1.png', 'Empty_2.png', 'Empty_3.png']).replace(/^/, CAM_BASE + 'East Hall/');
+
+        case 'east_hall_corner':
+            if (hasChica)  return _stablePick(room, ['Chica_1.png', 'Chica_2.png', 'Chica_3.png']).replace(/^/, CAM_BASE + 'East Hall Corner/');
+            if (hasFreddy) return CAM_BASE + 'East Hall Corner/Freddy.png';
+            return _stablePick(room, ['Empty_1.png', 'Empty_2.png', 'Empty_3.png', 'Empty_4.png', 'Empty_5.png']).replace(/^/, CAM_BASE + 'East Hall Corner/');
+
+        case 'restrooms':
+            if (hasChica)  return _stablePick(room, ['Chica_1.png', 'Chica_2.png']).replace(/^/, CAM_BASE + 'Restrooms/');
+            if (hasFreddy) return CAM_BASE + 'Restrooms/Freddy.png';
+            return CAM_BASE + 'Restrooms/Empty.png';
+
+        case 'supply_closet':
+            if (hasBonnie) return CAM_BASE + 'Supply Closet/Bonnie.png';
+            return CAM_BASE + 'Supply Closet/Empty.png';
+
+        default:
+            return null;
+    }
+}
+
+
 // ── Animatronic movement intervals (ms) ──────────────────────
 const ANIM_INTERVALS = {
     freddy: 3020,
@@ -621,7 +733,8 @@ function initGameLogic() {
     setInterval(() => { if (chica.valid)  chica.tryMove();  }, ANIM_INTERVALS.chica);
     setInterval(() => { if (foxy.valid)   foxy.tryMove();   }, ANIM_INTERVALS.foxy);
 
+    // Expose globals the renderer needs
     window.foxyRunning  = false;
     window.isTabletOpen = false;
-    window.activeCam    = null;
+    window.activeCam    = null;    // set by cam selector when built — 'west_hall', etc.
 }

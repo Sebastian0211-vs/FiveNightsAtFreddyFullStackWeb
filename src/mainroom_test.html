@@ -143,6 +143,54 @@
             cursor: pointer;
         }
         #tablet-bar img { height: 30px; opacity: 0.7; }
+
+        /* ── Cam selector overlay ──────────────────────────────── */
+        #cam-selector {
+            display: none;
+            position: fixed;
+            top: 50%;
+            right: 0;
+            transform: translateY(-50%);
+            z-index: 60;
+            background: linear-gradient(to right, transparent 0%, rgba(0,0,0,0.85) 25%);
+            padding: 16px 14px 16px 32px;
+            box-sizing: border-box;
+        }
+        #cam-selector-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            align-items: flex-end;
+        }
+        .cam-btn {
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            font-weight: bold;
+            letter-spacing: 0.08em;
+            color: #aaffaa;
+            background: rgba(0, 40, 0, 0.7);
+            border: 1px solid #3a3;
+            border-radius: 3px;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: background 0.1s, color 0.1s;
+            user-select: none;
+            width: 90px;
+            text-align: center;
+        }
+        .cam-btn:hover   { background: rgba(0, 80, 0, 0.85); color: #fff; }
+        .cam-btn.active  { background: rgba(0, 120, 0, 0.9); color: #fff; border-color: #6f6; }
+        #cam-label {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            color: #aaffaa;
+            letter-spacing: 0.10em;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            max-width: 90px;
+            word-break: break-word;
+        }
     </style>
 </head>
 <body>
@@ -240,6 +288,12 @@
 
 <div id="tablet-bar">
     <img src="../Assets/Tablette/open_tablette_icon.png" alt="tablet">
+</div>
+
+<!-- Camera selector overlay — shown when tablet is open -->
+<div id="cam-selector">
+    <div id="cam-label">CAM 1A — Show Stage</div>
+    <div id="cam-selector-grid"></div>
 </div>
 <canvas id="tablet-anim-canvas" style="display:none;position:fixed;inset:0;width:100%;height:100%;z-index:45;"></canvas>
 <canvas id="tablet-cam" style="display:none;position:fixed;inset:0;z-index:44;background:#000;width:100%;height:100%;"></canvas>
@@ -602,57 +656,88 @@
     tabletCam.height   = window.innerHeight;
     const camCtx       = tabletCam.getContext('2d');
 
+    // ── Cam selector ──────────────────────────────────────────────
+    const camSelectorEl = document.getElementById('cam-selector');
+    const camLabelEl    = document.getElementById('cam-label');
+    const camGridEl     = document.getElementById('cam-selector-grid');
+
+    const CAM_LABELS = {
+        show_stage:       'Show Stage',
+        dining_area:      'Dining Area',
+        pirate_cove:      "Pirate's Cove",
+        west_hall:        'West Hall',
+        west_hall_corner: 'West Hall Corner',
+        backstage:        'Backstage',
+        east_hall:        'East Hall',
+        east_hall_corner: 'East Hall Corner',
+        supply_closet:    'Supply Closet',
+        restrooms:        'Restrooms',
+    };
+
+    let _camBtns = {};
+
+    function buildCamSelector() {
+        // CAMS is defined in gamelogic.js
+        if (typeof CAMS === 'undefined') return;
+        camGridEl.innerHTML = '';
+        _camBtns = {};
+        CAMS.forEach(cam => {
+            const btn = document.createElement('button');
+            btn.className  = 'cam-btn';
+            btn.textContent = cam.label;
+            btn.addEventListener('click', () => selectCam(cam.room, cam.label));
+            camGridEl.appendChild(btn);
+            _camBtns[cam.room] = btn;
+        });
+    }
+
+    function selectCam(room, camLabel) {
+        window.activeCam = room;
+        camLabelEl.textContent = `${camLabel} — ${CAM_LABELS[room] || room}`;
+        // Update active button highlight
+        Object.values(_camBtns).forEach(b => b.classList.remove('active'));
+        if (_camBtns[room]) _camBtns[room].classList.add('active');
+        // Reset pan on cam switch
+        camPan = 0.5; camPanDir = 1;
+    }
+
+    function showCamSelector() {
+        camSelectorEl.style.display = 'block';
+        if (typeof CAMS === 'undefined' || !CAMS.length) return;
+        buildCamSelector();
+        // Find the cam entry matching the current activeCam, fall back to first
+        const current = CAMS.find(c => c.room === window.activeCam) || CAMS[0];
+        selectCam(current.room, current.label);
+    }
+    function hideCamSelector() {
+        camSelectorEl.style.display = 'none';
+    }
+
     window.addEventListener('resize', () => {
         tabletCam.width  = window.innerWidth;
         tabletCam.height = window.innerHeight;
     });
 
-    // --- Camera source — supports both .mp4 and image files ---
-    const camVideo = document.createElement('video');
-    camVideo.loop = true; camVideo.muted = true; camVideo.playsInline = true; camVideo.preload = 'auto';
+    // --- Camera source — now using static images via getCamImagePath ---
+    // Dynamic cam image — updated by drawCamView each frame
+    let _camImg = null, _camImgSrc = '';
 
-    let camImageEl = new Image();
-    let camSrcIsVideo = false;
-
-    function setCamSrc(src) {
-        const isVideo = /\.(mp4|webm|ogg)$/i.test(src);
-        camSrcIsVideo = isVideo;
-        if (isVideo) {
-            camVideo.src = src;
-            camAudio.src = src;
-            camImageEl = new Image(); // clear image
-        } else {
-            const img = new Image();
-            img.src = src;
-            camImageEl = img;
-            camVideo.src = '';
-            camAudio.src = '';
-        }
+    function getOrLoadCamImg(src) {
+        if (!src) return null;
+        if (src === _camImgSrc && _camImg) return _camImg;
+        _camImgSrc = src;
+        _camImg = new Image();
+        _camImg.src = src;
+        return _camImg;
     }
 
-    var camAudio = document.createElement('audio');
-    camAudio.loop = true; camAudio.volume = 1.0; camAudio.preload = 'auto';
+    // stopCamVideo / startCamVideo kept as no-ops (called by gamelogic during power-out)
+    var camAudio = { pause() {}, play() { return Promise.resolve(); }, currentTime: 0 };
+    function startCamVideo() {}
+    function stopCamVideo()  {}
 
-    // Set initial source here — swap this one line to change camera
-    setCamSrc('../Assets/Freddy/coc.mp4');
-
-    function camReady() {
-        if (camSrcIsVideo) return camVideo.readyState >= 2 && camVideo.videoWidth > 0;
-        return camImageEl.complete && camImageEl.naturalWidth > 0;
-    }
-    function camWidth()  { return camSrcIsVideo ? camVideo.videoWidth  : camImageEl.naturalWidth;  }
-    function camHeight() { return camSrcIsVideo ? camVideo.videoHeight : camImageEl.naturalHeight; }
-    function camSource() { return camSrcIsVideo ? camVideo : camImageEl; }
-
-    function startCamVideo() {
-        if (!camSrcIsVideo) return;
-        camVideo.currentTime = 0; camAudio.currentTime = 0;
-        camVideo.play().catch(() => {}); camAudio.play().catch(() => {});
-    }
-    function stopCamVideo() {
-        camVideo.pause(); camVideo.currentTime = 0;
-        camAudio.pause(); camAudio.currentTime = 0;
-    }
+    // Set initial cam to show_stage
+    window.activeCam = 'show_stage';
 
     // --- noiseMenu overlay ---
     let noiseMenuFrames = [], noiseMenuReady = false;
@@ -691,29 +776,36 @@
         const cw = tabletCam.width, ch = tabletCam.height;
         camCtx.fillStyle = '#000'; camCtx.fillRect(0, 0, cw, ch);
 
-        if (camReady()) {
-            const imgW = camWidth(), imgH = camHeight();
-            if (camSrcIsVideo) {
-                // Video: cover-fill, centered
-                const scale = Math.max(cw / imgW, ch / imgH);
-                const dw = imgW * scale, dh = imgH * scale;
-                camCtx.drawImage(camSource(), (cw - dw) / 2, (ch - dh) / 2, dw, dh);
-            } else {
-                // Image: strip-based fisheye pan (left ↔ right)
-                // Scale so image fills height OR width — whichever makes it wider than the screen
-                const scaleH = ch / imgH;
-                const scaleW = cw / imgW;
-                const scale  = Math.max(scaleH, scaleW * 1.4); // 1.4x ensures panning room even on wide images
-                const maxOffset = (imgW * scale) - cw;
-                const offsetX = camPan * Math.max(0, maxOffset);
-                for (let sx = 0; sx < cw; sx++) {
-                    const imgX = (offsetX + sx) / scale;
-                    if (imgX < 0 || imgX >= imgW) continue;
-                    const screenNorm = (sx / cw - 0.5) * 2;
-                    const dist = Math.sqrt(1 + (screenNorm * FOV_FACTOR) ** 2);
-                    const stripH = ch / dist;
-                    camCtx.drawImage(camSource(), imgX, 0, 1, imgH, sx, (ch - stripH) / 2, 1, stripH);
-                }
+        // ── Draw current cam image ───────────────────────────────
+        const src = (typeof getCamImagePath !== 'undefined' && window.activeCam)
+            ? getCamImagePath(window.activeCam)
+            : null;
+        const camImg = getOrLoadCamImg(src);
+
+        if (camImg && camImg.complete && camImg.naturalWidth) {
+            // Cover-fill with subtle side pan
+            const imgW = camImg.naturalWidth, imgH = camImg.naturalHeight;
+            const scaleH = ch / imgH, scaleW = cw / imgW;
+            const scale  = Math.max(scaleH, scaleW * 1.4);
+            const maxOffset = Math.max(0, (imgW * scale) - cw);
+            const offsetX = camPan * maxOffset;
+            for (let sx = 0; sx < cw; sx++) {
+                const imgX = (offsetX + sx) / scale;
+                if (imgX < 0 || imgX >= imgW) continue;
+                const screenNorm = (sx / cw - 0.5) * 2;
+                const dist = Math.sqrt(1 + (screenNorm * FOV_FACTOR) ** 2);
+                const stripH = ch / dist;
+                camCtx.drawImage(camImg, imgX, 0, 1, imgH, sx, (ch - stripH) / 2, 1, stripH);
+            }
+        }
+
+        // ── Foxy run frame drawn BEFORE noise so noise composites on top ─
+        if (window.foxyRunning && window.activeCam === 'west_hall' && !window.foxyRunAnimDone) {
+            const fFrame = foxyRunFrames[foxyRunIndex];
+            if (fFrame && fFrame.complete && fFrame.naturalWidth) {
+                const sc = Math.max(cw / fFrame.naturalWidth, ch / fFrame.naturalHeight);
+                const dw = fFrame.naturalWidth * sc, dh = fFrame.naturalHeight * sc;
+                camCtx.drawImage(fFrame, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
             }
         }
 
@@ -727,21 +819,15 @@
             camCtx.restore();
         }
 
-        // ── Foxy run overlay on cam 2A (west_hall) ───────────────
+        // ── Foxy run trigger logic (sfx + 3s timer) on cam 2A ────────────
         if (window.foxyRunning && window.activeCam === 'west_hall') {
-            // Trigger run SFX once when the player first watches this cam
             if (!window._foxyRunCamSfxTriggered) {
                 window._foxyRunCamSfxTriggered = true;
                 if (typeof foxy !== 'undefined') foxy.onWatchRunCam();
             }
-            const fFrame = foxyRunFrames[foxyRunIndex];
-            if (fFrame && fFrame.complete && fFrame.naturalWidth) {
-                const sc = Math.max(cw / fFrame.naturalWidth, ch / fFrame.naturalHeight);
-                const dw = fFrame.naturalWidth * sc, dh = fFrame.naturalHeight * sc;
-                camCtx.drawImage(fFrame, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
-            }
-        } else {
+        } else if (!window.foxyRunning) {
             window._foxyRunCamSfxTriggered = false;
+            if (foxyRunIndex !== 0) { foxyRunIndex = 0; foxyRunAccum = 0; }
         }
 
         if (camFrameImg.complete && camFrameImg.naturalWidth) camCtx.drawImage(camFrameImg, 0, 0, cw, ch);
@@ -759,9 +845,19 @@
         noiseAccum += delta;
         while (noiseAccum >= noiseMsPerFrame) { noiseAccum -= noiseMsPerFrame; noiseIndex = (noiseIndex + 1) % noiseMenuFrames.length; }
 
-        // Advance foxy run frame independently
-        foxyRunAccum += delta;
-        while (foxyRunAccum >= foxyRunMsPerFrame) { foxyRunAccum -= foxyRunMsPerFrame; foxyRunIndex = (foxyRunIndex + 1) % foxyRunFrames.length; }
+        // Advance foxy run frame independently — plays once, stops at last frame
+        if (!window.foxyRunAnimDone) {
+            foxyRunAccum += delta;
+            while (foxyRunAccum >= foxyRunMsPerFrame) {
+                foxyRunAccum -= foxyRunMsPerFrame;
+                if (foxyRunIndex < foxyRunFrames.length - 1) {
+                    foxyRunIndex++;
+                } else {
+                    window.foxyRunAnimDone = true;
+                    break;
+                }
+            }
+        }
 
         camPan += camPanDir * CAM_PAN_SPEED * delta;
         if (camPan >= 1) { camPan = 1; camPanDir = -1; }
@@ -802,6 +898,7 @@
                         tabletCam.style.display    = 'block';
                         tabletBar.style.display    = 'none';
                         tabletState = 'open';
+                        showCamSelector();
                         startNoiseLoop();
                         startCamVideo();
                         sfxCameraLoop.currentTime = 0;
@@ -813,6 +910,7 @@
                 tabletFrame--;
                 if (tabletFrame < 0) {
                     stopNoiseLoop();
+                    hideCamSelector();
                     tabletCanvas.style.display = 'none';
                     tabletCam.style.display    = 'none';
                     tabletState = 'closed';
