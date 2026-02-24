@@ -18,7 +18,9 @@
         west_hall:          { x:   105   , y: 230,  w: 40,  h: 55,  label: 'W.Hall'      },
         west_hall_corner:   { x:   105, y: 290,  w: 40,  h: 55,  label: 'W.Corner'    },
         restrooms:          { x:  310, y: 100,  w: 30,  h: 115,  label: 'Restrooms'   },
-        //office_left:        {    x:  158, y: 295,  w: 55,  h: 65,  label: 'YOU'         }, -> A VOIR COMMENT PRECISMENET
+        office_left:        {    x:  160, y: 295,  w: 10,  h: 65,  label: 'Left Office'         },
+        office_right:        {    x:  190, y: 295,  w: 10,  h: 65,  label: 'Right Office'         },
+
     };
 
     const ANIM_CFG = {
