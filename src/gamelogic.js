@@ -17,7 +17,7 @@
 // ── Night / time constants ────────────────────────────────────
 
 const HOURS         = ['12 AM','1 AM','2 AM','3 AM','4 AM','5 AM','6 AM'];
-const NIGHT_SECS    = 100;
+const NIGHT_SECS    = 535;
 const SECS_PER_HOUR = NIGHT_SECS / 6;
 
 // Power drained passively every N seconds (0 = no passive drain on night 1)
@@ -83,7 +83,7 @@ const GameState = {
         const usage = this.getUsage();
         document.getElementById('hud-night').textContent     = `Night ${this.night}`;
         document.getElementById('hud-time').textContent      = HOURS[this.getCurrentHour()];
-        document.getElementById('hud-power-val').textContent = `${this.getDisplayPercent()}%`;
+        document.getElementById('hud-power-val').textContent = `${ceil(this.getDisplayPercent())}%`;
         const batteryMap = { 1: '212', 2: '213', 3: '214', 4: '456', 5: '455' };
         document.getElementById('hud-battery-img').src = `../Assets/Battery/${batteryMap[usage] || '212'}.png`;
     },
