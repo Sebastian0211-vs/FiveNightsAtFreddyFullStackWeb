@@ -83,7 +83,7 @@ const GameState = {
         const usage = this.getUsage();
         document.getElementById('hud-night').textContent     = `Night ${this.night}`;
         document.getElementById('hud-time').textContent      = HOURS[this.getCurrentHour()];
-        document.getElementById('hud-power-val').textContent = `${ceil(this.getDisplayPercent())}%`;
+        document.getElementById('hud-power-val').textContent = `${Math.ceil(this.getDisplayPercent())}%`;
         const batteryMap = { 1: '212', 2: '213', 3: '214', 4: '456', 5: '455' };
         document.getElementById('hud-battery-img').src = `../Assets/Battery/${batteryMap[usage] || '212'}.png`;
     },
