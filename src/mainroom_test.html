@@ -474,7 +474,7 @@
         left:  { off_closed: loadBtn('left','off','closed'), off_open: loadBtn('left','off','open'), on_closed: loadBtn('left','on','closed'), on_open: loadBtn('left','on','open') },
         right: { off_closed: loadBtn('right','off','closed'), off_open: loadBtn('right','off','open'), on_closed: loadBtn('right','on','closed'), on_open: loadBtn('right','on','open') },
     };
-    const state = { left: { door: 'closed', light: 'off' }, right: { door: 'closed', light: 'off' } };
+    const state = { left: { door: 'open', light: 'off' }, right: { door: 'open', light: 'off' } };
     function getBtnImg(side) { const s = state[side]; return btnImgs[side][`${s.light}_${s.door}`]; }
     [...Object.values(btnImgs.left), ...Object.values(btnImgs.right)].forEach(img => { img.onerror = () => console.warn('Missing:', img.src); });
 
