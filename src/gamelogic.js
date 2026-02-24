@@ -17,410 +17,12 @@
 // ── Night / time constants ────────────────────────────────────
 
 const HOURS         = ['12 AM','1 AM','2 AM','3 AM','4 AM','5 AM','6 AM'];
-const NIGHT_SECS    = 535;
+const NIGHT_SECS    = 100;
 const SECS_PER_HOUR = NIGHT_SECS / 6;
 
 // Power drained passively every N seconds (0 = no passive drain on night 1)
 const PASSIVE_INTERVAL = { 1: 0, 2: 6, 3: 5, 4: 4, 5: 3, 6: 3, 7: 3 };
 
-
-// ── Jumpscare engine ──────────────────────────────────────────
-
-/**
- * playJumpscare(def, sfxSrc, onDone, maxDurationMs)
- *   def           — animation definition object (from animations.js)
- *   sfxSrc        — Audio object or path string for the scream SFX
- *   onDone        — callback fired when animation ends (optional)
- *   maxDurationMs — hard cut-off in ms (optional)
- */
-function playJumpscare(def, sfxSrc, onDone, maxDurationMs) {
-    if (!def) { console.warn('playJumpscare: missing animation def'); return; }
-
-    renderPaused = true;
-
-    const sfx = typeof sfxSrc === 'string' ? new Audio(sfxSrc) : sfxSrc;
-    sfx.currentTime = 0;
-
-    const msPerFrame = 1000 / def.fps;
-    let finished = false;
-
-    const frames = def.frames.map(src => {
-        const img = new Image();
-        img.src = src;
-        return img;
-    });
-
-    function finish() {
-        if (finished) return;
-        finished = true;
-        sfx.pause();
-        sfx.currentTime = 0;
-        if (onDone) { onDone(); } else { renderPaused = false; }
-    }
-
-    sfx.play().catch(() => {});
-    if (maxDurationMs != null) setTimeout(finish, maxDurationMs);
-
-    let frameIdx = 0;
-    function nextFrame() {
-        if (finished) return;
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, W, H);
-        const img = frames[frameIdx];
-        if (img.naturalWidth) {
-            const sc = Math.max(W / img.naturalWidth, H / img.naturalHeight);
-            const dw = img.naturalWidth * sc, dh = img.naturalHeight * sc;
-            ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
-        }
-        frameIdx++;
-        if (frameIdx < frames.length) {
-            setTimeout(nextFrame, msPerFrame);
-        } else {
-            finish();
-        }
-    }
-    nextFrame();
-}
-
-// Audio refs for jumpscares (created once to avoid repeated instantiation)
-const SCREAM  = new Audio('../Assets/FNaF 1 Audio/XSCREAM.wav');
-const SCREAM2 = new Audio('../Assets/FNaF 1 Audio/XSCREAM2.wav');
-const NOISE   = new Audio('../Assets/FNaF 1 Audio/COMPUTER_DIGITAL_L2076505.wav');
-
-const JUMPSCARE_MAX_MS = 1000;
-
-// Navigation callbacks
-const GO_MENU = () => {
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, W, H);
-    setTimeout(() => { window.location.href = 'menu.html'; }, 1500);
-};
-
-const GO_NOISE = () => {
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, W, H);
-    setTimeout(() => { playJumpscare(noiseMenu, NOISE, GO_MENU); }, 500);
-};
-
-// Named jumpscare triggers (call these from AI logic or debug)
-function playChicaJumpscare()        { playJumpscare(chicajumpscare,        SCREAM,  null,      JUMPSCARE_MAX_MS); }
-function playBonnieJumpscare()       { playJumpscare(bonnieJumpscare,       SCREAM,  null,      JUMPSCARE_MAX_MS); }
-function playFoxyJumpscare()         { playJumpscare(foxyJumpscare,         SCREAM,  null,      JUMPSCARE_MAX_MS); }
-function playFreddyJumpscare()       { playJumpscare(freddyJumpscare,       SCREAM,  null,      JUMPSCARE_MAX_MS); }
-function playGoldenFreddyJumpscare() { playJumpscare(goldenFreddyJumpscare, SCREAM2, null,      JUMPSCARE_MAX_MS); }
-function playPowerOutJumpscare()     { playJumpscare(freddyJumpscarePowerOut, SCREAM, GO_NOISE, JUMPSCARE_MAX_MS); }
-function playNoiseMenu()             { playJumpscare(noiseMenu,             NOISE,   GO_MENU,   JUMPSCARE_MAX_MS); }
-
-
-// ── GameState ─────────────────────────────────────────────────
-
-// ── Animatronics ──────────────────────────────────────────────
-
-const FREDDY = true;
-const CHICA  = true;
-const BONNIE = true;
-const FOXY   = true;
-
-const base_ai_level = {
-    1: {Freddy: 0, Bonnie:0, Chica:0, Foxy:0},
-    2: {Freddy: 0, Bonnie:3, Chica:1, Foxy:1},
-    3: {Freddy: 1, Bonnie:0, Chica:5, Foxy:2},
-    41: {Freddy: 1, Bonnie:2, Chica:4, Foxy:6},
-    42: {Freddy: 2, Bonnie:2, Chica:4, Foxy:6},
-    5: {Freddy: 3, Bonnie:5, Chica:7, Foxy:5},
-    6: {Freddy: 4, Bonnie:10, Chica:12, Foxy:16},
-}
-
-const boost_ai_level = {
-    AM12: {Freddy: 0, Bonnie:0, Chica:0, Foxy:0},
-    AM1: {Freddy: 0, Bonnie:0, Chica:0, Foxy:0},
-    AM2: {Freddy: 0, Bonnie:1, Chica:0, Foxy:0},
-    AM3: {Freddy: 0, Bonnie:1, Chica:1, Foxy:1},
-    AM4: {Freddy: 0, Bonnie:1, Chica:1, Foxy:1},
-    AM5: {Freddy: 0, Bonnie:0, Chica:0, Foxy:0},
-}
-
-
-class Animatronic {
-    constructor(name, rooms, startRoom = 'show_stage') {
-        this.name      = name;
-        this.rooms     = rooms;
-        this.room      = startRoom;
-        this.ai_level  = 10;
-        this.moving    = false;
-        this.valid     = false;
-    }
-
-    tryMove() {
-        /*
-        if (Math.random() * 20 >= this.ai_level) return;
-
-        const current = this.rooms[this.room];
-        if (!current) return;
-
-        const next = current.connections[Math.floor(Math.random() * current.connections.length)];
-        if (!next) return;
-
-        ROOMS[this.room].who = ROOMS[this.room].who.filter(n => n !== this.name);
-        this.room = next;
-        ROOMS[this.room].who.push(this.name);
-
-        console.log(`${this.name} → ${this.room}`);
-        */
-        return false;
-    }
-
-    canAttack(side) {
-        return false;
-    }
-}
-
-function getRoom(name) {
-    return Object.keys(ROOMS).find(key => ROOMS[key].who.includes(name));
-}
-
-function moveToRoom(name, newRoom) {
-    const current = getRoom(name);
-    if (current) ROOMS[current].who = ROOMS[current].who.filter(n => n !== name);
-    if (ROOMS[newRoom]) ROOMS[newRoom].who.push(name);
-}
-
-class Freddy extends Animatronic {
-    constructor() {
-        super('Freddy', FreddyRooms);
-        this.room = getRoom(this.name)
-        this.valid = FREDDY;
-    }
-
-    tryMove() {
-        if (Math.random() * 20 <= this.ai_level){
-            console.log("FREDDY'S MOVING OMG")
-        }
-        return -1
-    }
-
-    canAttack() {
-        // Freddy attaque uniquement si la porte droite est ouverte ET que les lumières sont éteintes
-        return this.room === 'east_hall_corner'
-            && state.right.door === 'open'
-            && state.right.light === 'off';
-    }
-}
-
-class Bonnie extends Animatronic {
-    constructor() {
-        super('Bonnie', BonnieRooms);
-        this.room = getRoom(this.name)
-        this.valid = BONNIE;
-    }
-
-    tryMove() {
-        if (Math.random() * 20 <= this.ai_level) {
-            const current = getRoom(this.name);
-            const possibleMoves = BonnieRooms[current].connections;
-            const nextRoom = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-            console.log(`Bonnie: ${current} → ${nextRoom}`);
-            if (ROOMS[nextRoom].who.length === 0) {
-                moveToRoom(this.name, nextRoom);
-            } else {
-                console.log(`${nextRoom} is NOT empty! Stay in ${current}`);
-            }
-        }
-    }
-
-    canAttack() {
-        return this.room === 'west_hall_corner'
-            && state.left.door === 'open';
-    }
-}
-
-class Chica extends Animatronic {
-    constructor() {
-        super('Chica', ChicaRooms);
-        this.room = getRoom(this.name)
-        this.valid = CHICA;
-    }
-
-    tryMove() {
-        if (Math.random() * 20 <= this.ai_level){
-            console.log("CHICA'S MOVING OMG")
-        }
-        return -1
-    }
-
-    canAttack() {
-        return this.room === 'east_hall_corner'
-            && state.right.door === 'open';
-    }
-}
-
-
-class Foxy extends Animatronic {
-    constructor() {
-        super('Foxy', {});
-        this.valid      = FOXY;
-        this.stage      = 1;       // 1 = cove closed, 2 = peeking, 3 = out, 4 = running
-        this.locked     = false;   // post-tablet lock window
-        this.lockTimer  = null;
-        this.sprintTimer = null;
-        this.bangCount  = 0;       // how many times he's banged this night
-    }
-
-    // ── Called by mainroom whenever the tablet is closed ─────────
-    onTabletClose() {
-        const lockMs = (0.83 + Math.random() * (16.67 - 0.83)) * 1000;
-        this.locked = true;
-        if (this.lockTimer) clearTimeout(this.lockTimer);
-        this.lockTimer = setTimeout(() => { this.locked = false; }, lockMs);
-        console.log(`[Foxy] locked for ${(lockMs / 1000).toFixed(2)}s`);
-    }
-
-    // ── Called every 5.01 s ──────────────────────────────────────
-    tryMove() {
-        if (this.stage >= 4) return;              // already running, no more ticks needed
-        if (this.locked)          return;          // post-tablet lock → auto-fail
-        if (window.isTabletOpen)  return;          // tablet open → auto-fail
-
-        if (Math.random() * 20 >= this.ai_level) return; // normal AI roll
-
-        this.stage++;
-        console.log(`[Foxy] stage → ${this.stage}`);
-
-        if (this.stage === 4) this._startSprint();
-    }
-
-    // ── Sprint: 25 s countdown, then attack ─────────────────────
-    _startSprint() {
-        console.log('[Foxy] RUNNING — 25 s to attack');
-        window.foxyRunning    = true;
-        window.foxyRunAnimDone = false;
-        this._runSfxPlayed = false;
-
-        if (this.sprintTimer)  clearTimeout(this.sprintTimer);
-        if (this._runSfxTimer) clearTimeout(this._runSfxTimer);
-
-        // Play run SFX at the 22 s mark (last 3 s of the 25 s window)
-        this._runSfxTimer = setTimeout(() => this._playRunSfx(), 22000);
-        this.sprintTimer  = setTimeout(() => this._attack(),     25000);
-    }
-
-    _playRunSfx() {
-        if (this._runSfxPlayed) return;
-        this._runSfxPlayed = true;
-        const sfx = new Audio('../Assets/FNaF 1 Audio/run.wav');
-        sfx.volume = 0.9;
-        sfx.play().catch(() => {});
-    }
-
-    // Called by the renderer when the player switches to cam 2A while Foxy is running
-    onWatchRunCam() {
-        this._playRunSfx();
-
-        // Cancel the original 25 s countdown and the scheduled sfx timer
-        if (this.sprintTimer)  { clearTimeout(this.sprintTimer);  this.sprintTimer  = null; }
-        if (this._runSfxTimer) { clearTimeout(this._runSfxTimer); this._runSfxTimer = null; }
-
-        // Give the player 3 s to close the left door
-        console.log('[Foxy] Seen running — 3 s to close door');
-        this.sprintTimer = setTimeout(() => this._attack(), 3000);
-    }
-
-    // ── Attack resolution ────────────────────────────────────────
-    _attack() {
-        window.foxyRunning = false;
-        window._foxyRunCamSfxTriggered = false;
-        this.sprintTimer = null;
-
-        if (state.left.door === 'open') {
-            // Door open → jumpscare
-            playFoxyJumpscare();
-        } else {
-            // Door closed → bang! power penalty + retreat
-            this._bangDoor();
-        }
-    }
-
-    // ── Door bang: 1% → 7% → 13% → 13% cap ─────────────────────
-    _bangDoor() {
-        const pct     = Math.min(1 + this.bangCount * 6, 13); // percent
-        const rawDrain = pct * 10;                             // rawPower units (999 base = 99.9%)
-        GameState.rawPower = Math.max(0, GameState.rawPower - rawDrain);
-        this.bangCount++;
-
-        // Retreat to stage 1 or 2 (50/50)
-        this.stage = Math.random() < 0.5 ? 1 : 2;
-        console.log(`[Foxy] banged door! −${pct}% power. Retreats to stage ${this.stage}`);
-
-        // Door bang SFX
-        const bangSfx = new Audio('../Assets/FNaF 1 Audio/knock2.wav');
-        bangSfx.volume = 0.8;
-        bangSfx.play().catch(() => {});
-    }
-
-    canAttack() { return false; } // attack is handled internally via timer
-}
-
-
-
-
-const FreddyRooms = {
-    show_stage:       { label: 'Show Stage',          connections: ['dining_area'] },
-    dining_area:      { label: 'Dining Area',          connections: ['restrooms'] },
-    restrooms:        { label: 'Restrooms',            connections: ['kitchen'] },
-    kitchen:          { label: 'Kitchen',              connections: ['east_hall'] },
-    east_hall:        { label: 'East Hall',            connections: ['east_hall_corner'] },
-    east_hall_corner: { label: 'East Hall Corner',     connections: [] }, // fin de chemin
-};
-
-const BonnieRooms = {
-    show_stage:         { label: 'Show Stage',         connections: ['dining_area', 'backstage'] },
-    dining_area:        { label: 'Dining Area',         connections: ['backstage', 'west_hall'] },
-    backstage:          { label: 'Backstage',           connections: ['dining_area', 'west_hall'] },
-    west_hall:          { label: 'West Hall',           connections: ['dining_area', 'west_hall_corner', 'supply_closet'] },
-    supply_closet:      { label: 'Supply Closet',       connections: ['office_left', 'west_hall', 'dining_area'] },
-    west_hall_corner:   { label: 'West Hall Corner',    connections: ['supply_closet', 'office_left', 'dining_area'] },
-    office_left:        { label: 'Office (Left)',        connections: [] }, // fin de chemin
-};
-
-const ChicaRooms = {
-    show_stage:       { label: 'Show Stage',            connections: ['dining_area'] },
-    dining_area:      { label: 'Dining Area',           connections: ['restrooms', 'kitchen'] },
-    restrooms:        { label: 'Restrooms',             connections: ['kitchen', 'east_hall'] },
-    kitchen:          { label: 'Kitchen',               connections: ['restrooms', 'east_hall'] },
-    east_hall:        { label: 'East Hall',             connections: ['dining_area', 'east_hall_corner'] },
-    east_hall_corner: { label: 'East Hall Corner',      connections: ['east_hall'] }, // fin de chemin
-    office_right:     { label: 'Office (Right)',         connections: [] },
-};
-
-
-// ── Map globale des salles ────────────────────────────────────
-
-const ROOMS = {
-    show_stage:         { who: ['Freddy', 'Chica','Bonnie'] },
-    dining_area:        { who: [] },
-    backstage:          { who: [] },
-    kitchen:            { who: [] },
-    restrooms:          { who: [] },
-    east_hall:          { who: [] },
-    east_hall_corner:   { who: [] },
-    west_hall:          { who: [] },
-    west_hall_corner:   { who: [] },
-    supply_closet:      { who: [] },
-    pirate_cove:        { who: [] },
-    office_left:        { who: [] },
-    office_right:       { who: [] },
-    office:             { who:[]  },
-};
-
-
-// ── Instances ─────────────────────────────────────────────────
-
-const freddy = new Freddy();
-const bonnie = new Bonnie();
-const chica  = new Chica();
-const foxy   = new Foxy();
-
-const ANIMATRONICS = [freddy, bonnie, chica, foxy];
 
 const GameState = {
     night:          1,
@@ -644,10 +246,553 @@ const GameState = {
 
     // ── Night complete ───────────────────────────────────────
     on6AM() {
+        if (this._6amTriggered) return;
+        this._6amTriggered = true;
         console.log('6 AM — night complete');
-        // TODO: show 6 AM screen, increment night, navigate
+
+        // Hide HUD and interactive elements
+        document.getElementById('hud-top-right').style.display = 'none';
+        document.getElementById('hud-power').style.display     = 'none';
+        document.getElementById('hud-usage').style.display     = 'none';
+        document.getElementById('tablet-bar').style.display    = 'none';
+        document.querySelectorAll('.btn-zone').forEach(z => z.style.display = 'none');
+
+        // Kill all audio
+        [sfxFan, sfxPhone, sfxLight, sfxCameraLoop, camAudio].forEach(a => {
+            a.pause(); a.currentTime = 0;
+        });
+        stopCamVideo();
+
+        // SFX
+        new Audio('../Assets/FNaF 1 Audio/chimes 2.wav').play().catch(() => {});
+        setTimeout(() => {
+            new Audio('../Assets/FNaF 1 Audio/CROWD_SMALL_CHIL_EC049202.wav').play().catch(() => {});
+        }, 2000);
+
+        // ── Timing constants ─────────────────────────────────
+        const FADEIN_MS  = 800;   // black → "5 AM" fade in
+        const HOLD_MS    = 2200;  // hold before slide
+        const SLIDE_MS   = 900;   // number slide duration
+        const HOLD2_MS   = 2000;  // hold "6 AM" before reset
+        const FADEOUT_MS = 600;   // "6 AM" → black fade out
+
+        const NUM_FONT = 'bold 140px "FNAF", Arial';
+        const AM_FONT  = 'bold 80px "FNAF", Arial';
+        const COLOR    = '#fff';
+
+        // Measure "AM" width so we can position number + "AM" as a unit
+        ctx.font = AM_FONT;
+        const amW   = ctx.measureText(' AM').width;
+        ctx.font = NUM_FONT;
+        const n5W   = ctx.measureText('5').width;
+        const n6W   = ctx.measureText('6').width;
+
+        // Center point: number right-edge + " AM" left-edge meet at W/2 + small offset
+        // We'll draw number right-aligned at cx, then " AM" left-aligned at cx
+        const cx = W / 2 - amW / 2;
+        const cy = H / 2;
+
+        renderPaused = true;
+
+        // Helper: draw one frame of the animation
+        // numOffset = Y offset of the number only (AM stays fixed)
+        // alpha = overall canvas alpha (for fades)
+        const drawFrame = (numOffset, alpha) => {
+            ctx.clearRect(0, 0, W, H);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, W, H);
+
+            ctx.save();
+            ctx.globalAlpha  = alpha;
+            ctx.textBaseline = 'middle';
+            ctx.textAlign    = 'right';
+            ctx.fillStyle    = COLOR;
+
+            // Static "AM"
+            ctx.font = AM_FONT;
+            ctx.textAlign = 'left';
+            ctx.fillText(' AM', cx, cy);
+
+            // Sliding numbers — clip to the text row height so they don't bleed
+            const clipH = 160;
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(0, cy - clipH / 2, W, clipH);
+            ctx.clip();
+
+            ctx.font      = NUM_FONT;
+            ctx.textAlign = 'right';
+            ctx.fillText('5', cx, cy + numOffset);
+            ctx.fillText('6', cx, cy + numOffset - H);
+
+            ctx.restore(); // clip
+            ctx.restore(); // globalAlpha
+        };
+
+        // ── Phase 1: fade in "5 AM" ───────────────────────────
+        const runPhase = (durationMs, fromAlpha, toAlpha, fromOffset, toOffset, onDone) => {
+            const start = performance.now();
+            const frame = (now) => {
+                const t    = Math.min((now - start) / durationMs, 1);
+                const ease = t < 0.5 ? 4*t*t*t : 1 - Math.pow(-2*t+2,3)/2;
+                const alpha  = fromAlpha  + (toAlpha  - fromAlpha)  * ease;
+                const offset = fromOffset + (toOffset - fromOffset) * ease;
+                drawFrame(offset, alpha);
+                if (t < 1) requestAnimationFrame(frame);
+                else onDone();
+            };
+            requestAnimationFrame(frame);
+        };
+
+        // Chain: fade in → hold → slide → hold → fade out → reset
+        runPhase(FADEIN_MS, 0, 1, 0, 0, () => {
+            // hold "5 AM"
+            drawFrame(0, 1);
+            setTimeout(() => {
+                // slide 5 out / 6 in
+                runPhase(SLIDE_MS, 1, 1, 0, H, () => {
+                    // draw clean "6 AM" (offset = H means 5 is gone, 6 is at cy)
+                    // At offset=H: '5' is at cy+H (off screen), '6' is at cy+H-H = cy ✓
+                    drawFrame(H, 1);
+                    setTimeout(() => {
+                        // fade out
+                        runPhase(FADEOUT_MS, 1, 0, H, H, () => {
+
+                            // ── Night 6 cap: go to menu instead of resetting ──
+                            if (this.night >= 6) {
+                                ctx.fillStyle = '#000';
+                                ctx.fillRect(0, 0, W, H);
+                                setTimeout(() => { window.location.href = 'menu.html'; }, 1000);
+                                return;
+                            }
+
+                            // Reset night state
+                            this.night++;
+                            this.rawPower       = 999;
+                            this.secondsElapsed = 0;
+                            this.passiveAccum   = 0;
+                            this._6amTriggered  = false;
+
+                            ANIMATRONICS.forEach(a => {
+                                if (a instanceof Foxy) {
+                                    a.stage     = 1;
+                                    a.bangCount = 0;
+                                    window.foxyRunning     = false;
+                                    window.foxyRunAnimDone = false;
+                                }
+                                if (a.valid && ROOMS[a.room]) {
+                                    ROOMS[a.room].who = ROOMS[a.room].who.filter(n => n !== a.name);
+                                    a.room = 'show_stage';
+                                    ROOMS['show_stage'].who.push(a.name);
+                                }
+                            });
+
+                            renderPaused = false;
+                            this.render();
+
+                            document.getElementById('hud-top-right').style.display = '';
+                            document.getElementById('hud-power').style.display     = '';
+                            document.getElementById('hud-usage').style.display     = '';
+                            document.getElementById('tablet-bar').style.display    = 'flex';
+                            document.querySelectorAll('.btn-zone').forEach(z => z.style.display = 'block');
+
+                            sfxFan.play().catch(() => {});
+                        });
+                    }, HOLD2_MS);
+                });
+            }, HOLD_MS);
+        });
     },
 };
+
+// ── Jumpscare engine ──────────────────────────────────────────
+
+/**
+ * playJumpscare(def, sfxSrc, onDone, maxDurationMs)
+ *   def           — animation definition object (from animations.js)
+ *   sfxSrc        — Audio object or path string for the scream SFX
+ *   onDone        — callback fired when animation ends (optional)
+ *   maxDurationMs — hard cut-off in ms (optional)
+ */
+function playJumpscare(def, sfxSrc, onDone, maxDurationMs) {
+    if (!def) { console.warn('playJumpscare: missing animation def'); return; }
+
+    renderPaused = true;
+
+    const sfx = typeof sfxSrc === 'string' ? new Audio(sfxSrc) : sfxSrc;
+    sfx.currentTime = 0;
+
+    const msPerFrame = 1000 / def.fps;
+    let finished = false;
+
+    const frames = def.frames.map(src => {
+        const img = new Image();
+        img.src = src;
+        return img;
+    });
+
+    function finish() {
+        if (finished) return;
+        finished = true;
+        sfx.pause();
+        sfx.currentTime = 0;
+        if (onDone) { onDone(); } else { renderPaused = false; }
+    }
+
+    sfx.play().catch(() => {});
+    if (maxDurationMs != null) setTimeout(finish, maxDurationMs);
+
+    let frameIdx = 0;
+    function nextFrame() {
+        if (finished) return;
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, W, H);
+        const img = frames[frameIdx];
+        if (img.naturalWidth) {
+            const sc = Math.max(W / img.naturalWidth, H / img.naturalHeight);
+            const dw = img.naturalWidth * sc, dh = img.naturalHeight * sc;
+            ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+        }
+        frameIdx++;
+        if (frameIdx < frames.length) {
+            setTimeout(nextFrame, msPerFrame);
+        } else {
+            finish();
+        }
+    }
+    nextFrame();
+}
+
+// Audio refs for jumpscares (created once to avoid repeated instantiation)
+const SCREAM  = new Audio('../Assets/FNaF 1 Audio/XSCREAM.wav');
+const SCREAM2 = new Audio('../Assets/FNaF 1 Audio/XSCREAM2.wav');
+const NOISE   = new Audio('../Assets/FNaF 1 Audio/COMPUTER_DIGITAL_L2076505.wav');
+
+const JUMPSCARE_MAX_MS = 1000;
+
+// Navigation callbacks
+const GO_MENU = () => {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+    setTimeout(() => { window.location.href = 'menu.html'; }, 1500);
+};
+
+const GO_NOISE = () => {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, W, H);
+    setTimeout(() => { playJumpscare(noiseMenu, NOISE, GO_MENU); }, 500);
+};
+
+// Named jumpscare triggers (call these from AI logic or debug)
+function playChicaJumpscare()        { playJumpscare(chicajumpscare,        SCREAM,  null,      JUMPSCARE_MAX_MS); }
+function playBonnieJumpscare()       { playJumpscare(bonnieJumpscare,       SCREAM,  null,      JUMPSCARE_MAX_MS); }
+function playFoxyJumpscare()         { playJumpscare(foxyJumpscare,         SCREAM,  GO_NOISE,      JUMPSCARE_MAX_MS); }
+function playFreddyJumpscare()       { playJumpscare(freddyJumpscare,       SCREAM,  null,      JUMPSCARE_MAX_MS); }
+function playGoldenFreddyJumpscare() { playJumpscare(goldenFreddyJumpscare, SCREAM2, null,      JUMPSCARE_MAX_MS); }
+function playPowerOutJumpscare()     { playJumpscare(freddyJumpscarePowerOut, SCREAM, GO_NOISE, JUMPSCARE_MAX_MS); }
+function playNoiseMenu()             { playJumpscare(noiseMenu,             NOISE,   GO_MENU,   JUMPSCARE_MAX_MS); }
+
+
+// ── GameState ─────────────────────────────────────────────────
+
+// ── Animatronics ──────────────────────────────────────────────
+
+const FREDDY = true;
+const CHICA  = true;
+const BONNIE = true;
+const FOXY   = true;
+
+const base_ai_level = {
+    1: {Freddy: 0, Bonnie:0, Chica:0, Foxy:0},
+    2: {Freddy: 0, Bonnie:3, Chica:1, Foxy:1},
+    3: {Freddy: 1, Bonnie:0, Chica:5, Foxy:2},
+    41: {Freddy: 1, Bonnie:2, Chica:4, Foxy:6},
+    42: {Freddy: 2, Bonnie:2, Chica:4, Foxy:6},
+    5: {Freddy: 3, Bonnie:5, Chica:7, Foxy:5},
+    6: {Freddy: 4, Bonnie:10, Chica:12, Foxy:16},
+}
+
+const boost_ai_level = {
+    '12 AM': {Freddy: 0, Bonnie:0, Chica:0, Foxy:0},
+    '1 AM':  {Freddy: 0, Bonnie:0, Chica:0, Foxy:0},
+    '2 AM':  {Freddy: 0, Bonnie:1, Chica:0, Foxy:0},
+    '3 AM':  {Freddy: 0, Bonnie:1, Chica:1, Foxy:1},
+    '4 AM':  {Freddy: 0, Bonnie:1, Chica:1, Foxy:1},
+    '5 AM':  {Freddy: 0, Bonnie:0, Chica:0, Foxy:0},
+}
+
+
+class Animatronic {
+    constructor(name, rooms, startRoom = 'show_stage') {
+        this.name   = name;
+        this.rooms  = rooms;
+        this.room   = startRoom;
+        this.moving = false;
+        this.valid  = false;
+    }
+
+    get ai_level() {
+        const base  = (base_ai_level[GameState.night]?.[this.name]  || 0);
+        const boost = (boost_ai_level[HOURS[GameState.getCurrentHour()]]?.[this.name] || 0);
+        return base + boost;
+    }
+
+    tryMove()    { return false; }
+    canAttack()  { return false; }
+}
+
+function getRoom(name) {
+    return Object.keys(ROOMS).find(key => ROOMS[key].who.includes(name));
+}
+
+function moveToRoom(name, newRoom) {
+    const current = getRoom(name);
+    if (current) ROOMS[current].who = ROOMS[current].who.filter(n => n !== name);
+    if (ROOMS[newRoom]) ROOMS[newRoom].who.push(name);
+}
+
+class Freddy extends Animatronic {
+    constructor() {
+        super('Freddy', FreddyRooms);
+        this.room = getRoom(this.name)
+        this.valid = FREDDY;
+    }
+
+    tryMove() {
+        console.log("[Freddy] tries to move with an AI level of " + this.ai_level);
+        if (Math.random() * 20 <= this.ai_level){
+            console.log("FREDDY'S MOVING OMG")
+        }
+        return -1
+    }
+
+    canAttack() {
+        // Freddy attaque uniquement si la porte droite est ouverte ET que les lumières sont éteintes
+        return this.room === 'east_hall_corner'
+            && state.right.door === 'open'
+            && state.right.light === 'off';
+    }
+}
+
+class Bonnie extends Animatronic {
+    constructor() {
+        super('Bonnie', BonnieRooms);
+        this.room = getRoom(this.name)
+        this.valid = BONNIE;
+    }
+
+    tryMove() {
+        console.log("[Bonnie] tries to move with an AI level of " + this.ai_level);
+        if (Math.random() * 20 <= this.ai_level) {
+            const current = getRoom(this.name);
+            const possibleMoves = BonnieRooms[current].connections;
+            const nextRoom = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+            console.log(`Bonnie: ${current} → ${nextRoom}`);
+            if (ROOMS[nextRoom].who.length === 0) {
+                moveToRoom(this.name, nextRoom);
+            } else {
+                console.log(`${nextRoom} is NOT empty! Stay in ${current}`);
+            }
+        }
+    }
+
+    canAttack() {
+        return this.room === 'west_hall_corner'
+            && state.left.door === 'open';
+    }
+}
+
+class Chica extends Animatronic {
+    constructor() {
+        super('Chica', ChicaRooms);
+        this.room = getRoom(this.name)
+        this.valid = CHICA;
+    }
+
+    tryMove() {
+        console.log("[Chica] tries to move with an AI level of " + this.ai_level);
+        if (Math.random() * 20 <= this.ai_level){
+            console.log("CHICA'S MOVING OMG")
+        }
+        return -1
+    }
+
+    canAttack() {
+        return this.room === 'east_hall_corner'
+            && state.right.door === 'open';
+    }
+}
+
+
+class Foxy extends Animatronic {
+    constructor() {
+        super('Foxy', {});
+        this.valid      = FOXY;
+        this.stage      = 1;       // 1 = cove closed, 2 = peeking, 3 = out, 4 = running
+        this.locked     = false;   // post-tablet lock window
+        this.lockTimer  = null;
+        this.sprintTimer = null;
+        this.bangCount  = 0;       // how many times he's banged this night
+    }
+
+    // ── Called by mainroom whenever the tablet is closed ─────────
+    onTabletClose() {
+        const lockMs = (0.83 + Math.random() * (16.67 - 0.83)) * 1000;
+        this.locked = true;
+        if (this.lockTimer) clearTimeout(this.lockTimer);
+        this.lockTimer = setTimeout(() => { this.locked = false; }, lockMs);
+        console.log(`[Foxy] locked for ${(lockMs / 1000).toFixed(2)}s`);
+    }
+
+    // ── Called every 5.01 s ──────────────────────────────────────
+    tryMove() {
+        if (this.stage >= 4) return;              // already running, no more ticks needed
+        if (this._powerOutTriggered) return; // power out → auto-fail
+        if (this.locked)          return;          // post-tablet lock → auto-fail
+        if (window.isTabletOpen)  return;          // tablet open → auto-fail
+        console.log("[Foxy] tries to move with an AI level of " + this.ai_level);
+        if (Math.random() * 20 >= this.ai_level) return; // normal AI roll
+
+        this.stage++;
+        console.log(`[Foxy] stage → ${this.stage}`);
+
+        if (this.stage === 4) this._startSprint();
+    }
+
+    // ── Sprint: 25 s countdown, then attack ─────────────────────
+    _startSprint() {
+        console.log('[Foxy] RUNNING — 25 s to attack');
+        window.foxyRunning    = true;
+        window.foxyRunAnimDone = false;
+        this._runSfxPlayed = false;
+
+        if (this.sprintTimer)  clearTimeout(this.sprintTimer);
+        if (this._runSfxTimer) clearTimeout(this._runSfxTimer);
+
+        // Play run SFX at the 22 s mark (last 3 s of the 25 s window)
+        this._runSfxTimer = setTimeout(() => this._playRunSfx(), 22000);
+        this.sprintTimer  = setTimeout(() => this._attack(),     25000);
+    }
+
+    _playRunSfx() {
+        if (this._runSfxPlayed) return;
+        this._runSfxPlayed = true;
+        const sfx = new Audio('../Assets/FNaF 1 Audio/run.wav');
+        sfx.volume = 0.9;
+        sfx.play().catch(() => {});
+    }
+
+    // Called by the renderer when the player switches to cam 2A while Foxy is running
+    onWatchRunCam() {
+        this._playRunSfx();
+
+        // Cancel the original 25 s countdown and the scheduled sfx timer
+        if (this.sprintTimer)  { clearTimeout(this.sprintTimer);  this.sprintTimer  = null; }
+        if (this._runSfxTimer) { clearTimeout(this._runSfxTimer); this._runSfxTimer = null; }
+
+        // Give the player 3 s to close the left door
+        console.log('[Foxy] Seen running — 3 s to close door');
+        this.sprintTimer = setTimeout(() => this._attack(), 3000);
+    }
+
+    // ── Attack resolution ────────────────────────────────────────
+    _attack() {
+        window.foxyRunning = false;
+        window._foxyRunCamSfxTriggered = false;
+        this.sprintTimer = null;
+
+        if (state.left.door === 'open') {
+            // Door open → jumpscare
+            playFoxyJumpscare();
+        } else {
+            // Door closed → bang! power penalty + retreat
+            this._bangDoor();
+        }
+    }
+
+    // ── Door bang: 1% → 7% → 13% → 13% cap ─────────────────────
+    _bangDoor() {
+        const pct     = Math.min(1 + this.bangCount * 6, 13); // percent
+        const rawDrain = pct * 10;                             // rawPower units (999 base = 99.9%)
+        GameState.rawPower = Math.max(0, GameState.rawPower - rawDrain);
+        this.bangCount++;
+
+        // Retreat to stage 1 or 2 (50/50)
+        this.stage = Math.random() < 0.5 ? 1 : 2;
+        console.log(`[Foxy] banged door! −${pct}% power. Retreats to stage ${this.stage}`);
+
+        // Door bang SFX
+        const bangSfx = new Audio('../Assets/FNaF 1 Audio/knock2.wav');
+        bangSfx.volume = 0.8;
+        bangSfx.play().catch(() => {});
+    }
+
+    canAttack() { return false; } // attack is handled internally via timer
+}
+
+
+
+
+const FreddyRooms = {
+    show_stage:       { label: 'Show Stage',          connections: ['dining_area'] },
+    dining_area:      { label: 'Dining Area',          connections: ['restrooms'] },
+    restrooms:        { label: 'Restrooms',            connections: ['kitchen'] },
+    kitchen:          { label: 'Kitchen',              connections: ['east_hall'] },
+    east_hall:        { label: 'East Hall',            connections: ['east_hall_corner'] },
+    east_hall_corner: { label: 'East Hall Corner',     connections: [] }, // fin de chemin
+};
+
+const BonnieRooms = {
+    show_stage:         { label: 'Show Stage',         connections: ['dining_area', 'backstage'] },
+    dining_area:        { label: 'Dining Area',         connections: ['backstage', 'west_hall'] },
+    backstage:          { label: 'Backstage',           connections: ['dining_area', 'west_hall'] },
+    west_hall:          { label: 'West Hall',           connections: ['dining_area', 'west_hall_corner', 'supply_closet'] },
+    supply_closet:      { label: 'Supply Closet',       connections: ['office_left', 'west_hall', 'dining_area'] },
+    west_hall_corner:   { label: 'West Hall Corner',    connections: ['supply_closet', 'office_left', 'dining_area'] },
+    office_left:        { label: 'Office (Left)',        connections: [] }, // fin de chemin
+};
+
+const ChicaRooms = {
+    show_stage:       { label: 'Show Stage',            connections: ['dining_area'] },
+    dining_area:      { label: 'Dining Area',           connections: ['restrooms', 'kitchen'] },
+    restrooms:        { label: 'Restrooms',             connections: ['kitchen', 'east_hall'] },
+    kitchen:          { label: 'Kitchen',               connections: ['restrooms', 'east_hall'] },
+    east_hall:        { label: 'East Hall',             connections: ['dining_area', 'east_hall_corner'] },
+    east_hall_corner: { label: 'East Hall Corner',      connections: ['east_hall'] }, // fin de chemin
+    office_right:     { label: 'Office (Right)',         connections: [] },
+};
+
+
+// ── Map globale des salles ────────────────────────────────────
+
+const ROOMS = {
+    show_stage:         { who: ['Freddy', 'Chica','Bonnie'] },
+    dining_area:        { who: [] },
+    backstage:          { who: [] },
+    kitchen:            { who: [] },
+    restrooms:          { who: [] },
+    east_hall:          { who: [] },
+    east_hall_corner:   { who: [] },
+    west_hall:          { who: [] },
+    west_hall_corner:   { who: [] },
+    supply_closet:      { who: [] },
+    pirate_cove:        { who: [] },
+    office_left:        { who: [] },
+    office_right:       { who: [] },
+    office:             { who:[]  },
+};
+
+
+// ── Instances ─────────────────────────────────────────────────
+
+const freddy = new Freddy();
+const bonnie = new Bonnie();
+const chica  = new Chica();
+const foxy   = new Foxy();
+
+const ANIMATRONICS = [freddy, bonnie, chica, foxy];
+
+
 
 
 // ── Camera system ────────────────────────────────────────────
@@ -775,6 +920,7 @@ function initGameLogic() {
     setInterval(() => { if (foxy.valid)   foxy.tryMove();   }, ANIM_INTERVALS.foxy);
 
     // Expose globals the renderer needs
+
     window.foxyRunning  = false;
     window.isTabletOpen = false;
     window.activeCam    = null;    // set by cam selector when built — 'west_hall', etc.
