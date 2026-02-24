@@ -17,7 +17,7 @@
 // ── Night / time constants ────────────────────────────────────
 
 const HOURS         = ['12 AM','1 AM','2 AM','3 AM','4 AM','5 AM','6 AM'];
-const NIGHT_SECS    = 535;
+const NIGHT_SECS    = 100;
 const SECS_PER_HOUR = NIGHT_SECS / 6;
 
 // Power drained passively every N seconds (0 = no passive drain on night 1)
@@ -513,47 +513,32 @@ const base_ai_level = {
 }
 
 const boost_ai_level = {
-    AM12: {Freddy: 0, Bonnie:0, Chica:0, Foxy:0},
-    AM1: {Freddy: 0, Bonnie:0, Chica:0, Foxy:0},
-    AM2: {Freddy: 0, Bonnie:1, Chica:0, Foxy:0},
-    AM3: {Freddy: 0, Bonnie:1, Chica:1, Foxy:1},
-    AM4: {Freddy: 0, Bonnie:1, Chica:1, Foxy:1},
-    AM5: {Freddy: 0, Bonnie:0, Chica:0, Foxy:0},
+    '12 AM': {Freddy: 0, Bonnie:0, Chica:0, Foxy:0},
+    '1 AM':  {Freddy: 0, Bonnie:0, Chica:0, Foxy:0},
+    '2 AM':  {Freddy: 0, Bonnie:1, Chica:0, Foxy:0},
+    '3 AM':  {Freddy: 0, Bonnie:1, Chica:1, Foxy:1},
+    '4 AM':  {Freddy: 0, Bonnie:1, Chica:1, Foxy:1},
+    '5 AM':  {Freddy: 0, Bonnie:0, Chica:0, Foxy:0},
 }
 
 
 class Animatronic {
     constructor(name, rooms, startRoom = 'show_stage') {
-        this.name      = name;
-        this.rooms     = rooms;
-        this.room      = startRoom;
-        this.ai_level  = (base_ai_level[GameState.night][name] || 0) + (boost_ai_level[HOURS[GameState.getCurrentHour()]]?.[name] || 0);
-        this.moving    = false;
-        this.valid     = false;
+        this.name   = name;
+        this.rooms  = rooms;
+        this.room   = startRoom;
+        this.moving = false;
+        this.valid  = false;
     }
 
-    tryMove() {
-        /*
-        if (Math.random() * 20 >= this.ai_level) return;
-
-        const current = this.rooms[this.room];
-        if (!current) return;
-
-        const next = current.connections[Math.floor(Math.random() * current.connections.length)];
-        if (!next) return;
-
-        ROOMS[this.room].who = ROOMS[this.room].who.filter(n => n !== this.name);
-        this.room = next;
-        ROOMS[this.room].who.push(this.name);
-
-        console.log(`${this.name} → ${this.room}`);
-        */
-        return false;
+    get ai_level() {
+        const base  = (base_ai_level[GameState.night]?.[this.name]  || 0);
+        const boost = (boost_ai_level[HOURS[GameState.getCurrentHour()]]?.[this.name] || 0);
+        return base + boost;
     }
 
-    canAttack(side) {
-        return false;
-    }
+    tryMove()    { return false; }
+    canAttack()  { return false; }
 }
 
 function getRoom(name) {
@@ -574,6 +559,7 @@ class Freddy extends Animatronic {
     }
 
     tryMove() {
+        console.log("[Freddy] tries to move with an AI level of " + this.ai_level);
         if (Math.random() * 20 <= this.ai_level){
             console.log("FREDDY'S MOVING OMG")
         }
@@ -596,6 +582,7 @@ class Bonnie extends Animatronic {
     }
 
     tryMove() {
+        console.log("[Bonnie] tries to move with an AI level of " + this.ai_level);
         if (Math.random() * 20 <= this.ai_level) {
             const current = getRoom(this.name);
             const possibleMoves = BonnieRooms[current].connections;
@@ -624,6 +611,7 @@ class Chica extends Animatronic {
     }
 
     tryMove() {
+        console.log("[Chica] tries to move with an AI level of " + this.ai_level);
         if (Math.random() * 20 <= this.ai_level){
             console.log("CHICA'S MOVING OMG")
         }
@@ -663,7 +651,7 @@ class Foxy extends Animatronic {
         if (this._powerOutTriggered) return; // power out → auto-fail
         if (this.locked)          return;          // post-tablet lock → auto-fail
         if (window.isTabletOpen)  return;          // tablet open → auto-fail
-        console.log("Foxy tries to move...");
+        console.log("[Foxy] tries to move with an AI level of " + this.ai_level);
         if (Math.random() * 20 >= this.ai_level) return; // normal AI roll
 
         this.stage++;
