@@ -531,7 +531,7 @@ const BONNIE = true;
 const FOXY   = true;
 
 const base_ai_level = {
-    1:  { Freddy: 0,  Bonnie: 0, Chica: 0,  Foxy: 0  },
+    1:  { Freddy: 0,  Bonnie: 20, Chica: 20,  Foxy: 0  },
     2:  { Freddy: 0,  Bonnie: 3,  Chica: 1,  Foxy: 1  },
     3:  { Freddy: 1,  Bonnie: 0,  Chica: 5,  Foxy: 2  },
     41: { Freddy: 1,  Bonnie: 2,  Chica: 4,  Foxy: 6  },
@@ -645,6 +645,7 @@ class Bonnie extends Animatronic {
 
         const current       = getRoom(this.name);
         const possibleMoves = BonnieRooms[current]?.connections ?? [];
+        const inCloseSector = ['west_hall', 'supply closet','west_hall_corner'].includes(current);
         if (!possibleMoves.length) return;
 
         const nextRoom = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
@@ -667,9 +668,16 @@ class Bonnie extends Animatronic {
         // Déplacement classique
         if (!ROOMS[nextRoom] || ROOMS[nextRoom].who.length === 0) {
             moveToRoom(this.name, nextRoom);
+            if (inCloseSector) {
+                console.log('[Bonnie] entered close sector — chance to head to door');
+                const stepssfx = new Audio('../Assets/FNaF 1 Audio/deep steps.wav');
+                stepssfx.volume = 1;
+                stepssfx.play().catch(() => {});
+            }
         } else {
             console.log(`${nextRoom} NOT empty — stay`);
         }
+
     }
 
     // ── Planifie la tentative d'entrée (1 cycle de mouvement) ─
@@ -773,6 +781,7 @@ class Chica extends Animatronic {
         this._tabletWasOpen = false;
     }
 
+
 // ── Déplacement normal (appelé par setInterval) ───────────
     tryMove() {
         // Immobile si elle attend devant la porte ou qu'elle est déjà dans le bureau
@@ -784,6 +793,8 @@ class Chica extends Animatronic {
         const current       = getRoom(this.name);
         const possibleMoves = ChicaRooms[current]?.connections ?? [];
         if (!possibleMoves.length) return;
+        const inCloseSector = ['east_hall', 'kitchen','east_hall_corner'].includes(current);
+
 
         const nextRoom = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
         console.log(`Chica : ${current} → ${nextRoom}`);
@@ -805,6 +816,12 @@ class Chica extends Animatronic {
         // Déplacement classique
         if (!ROOMS[nextRoom] || ROOMS[nextRoom].who.length === 0) {
             moveToRoom(this.name, nextRoom);
+            if (inCloseSector) {
+                console.log('[Chica] entered close sector — chance to head to door');
+                const stepssfx = new Audio('../Assets/FNaF 1 Audio/deep steps.wav');
+                stepssfx.volume = 1;
+                stepssfx.play().catch(() => {});
+            }
         } else {
             console.log(`${nextRoom} NOT empty — stay`);
         }
@@ -1090,6 +1107,8 @@ function getCamImagePath(room) {
     const hasFreddy = who.includes('Freddy');
     const hasBonnie = who.includes('Bonnie');
     const hasChica  = who.includes('Chica');
+
+
 
     switch (room) {
         case 'show_stage':
