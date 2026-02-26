@@ -234,6 +234,12 @@
             window.onload = () => {
                 document.body.style.opacity = "1";
                 const a = new Audio('../Assets/FNaF 1 Audio/darkness music.wav');
+                const b = new Audio('../Assets/FNaF 1 Audio/static2.wav');
+                a.loop
+                b.loop
+                b.play()
+                    .then(() => console.log("Menu audio playing"))
+                    .catch((e) => console.error("Menu audio not found", e));
                 a.play()
                     .then(() => console.log("Menu audio playing"))
                     .catch((e) => console.error("Menu audio not found", e));
@@ -266,7 +272,7 @@
         </script>
 
         <script>
-            playAnimation(document.getElementById("anim"), LettryMenu);
+            playAnimation(document.getElementById("anim"), FreddyMenu);
             playAnimation(document.getElementById("animNoiseMenu"), noiseMenu, 0.4);
             playAnimation(document.getElementById("animWhiteMenu"), whiteMenu, 0.4);
 
