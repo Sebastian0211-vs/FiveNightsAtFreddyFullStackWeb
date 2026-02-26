@@ -459,11 +459,11 @@ function playNoiseMenu()             { playJumpscare(noiseMenu,               NO
 
 const FREDDY = true;
 const CHICA  = true;
-const BONNIE = true;
+const BONNIE = false;
 const FOXY   = true;
 
 const base_ai_level = {
-    1:  { Freddy: 0,  Bonnie: 20, Chica: 0,  Foxy: 0  },
+    1:  { Freddy: 0,  Bonnie: 20, Chica: 0,  Foxy: 20  },
     2:  { Freddy: 0,  Bonnie: 3,  Chica: 1,  Foxy: 1  },
     3:  { Freddy: 1,  Bonnie: 0,  Chica: 5,  Foxy: 2  },
     41: { Freddy: 1,  Bonnie: 2,  Chica: 4,  Foxy: 6  },
@@ -617,6 +617,7 @@ class Bonnie extends Animatronic {
             this._atDoor = false;
             window.bonnieAtDoor = false;
             this.room = Math.random() < 0.5 ? 'dining_area' : 'west_hall';
+            moveToRoom(this.name, this.room);
             console.log('[Bonnie] door closed, retreats to', this.room);
             return;
         }
