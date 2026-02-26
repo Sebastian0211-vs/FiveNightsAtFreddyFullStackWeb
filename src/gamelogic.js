@@ -607,7 +607,12 @@ class Bonnie extends Animatronic {
     // ── Planifie la tentative d'entrée (1 cycle de mouvement) ─
     _scheduleAttack() {
         if (this._doorTimer) clearTimeout(this._doorTimer);
-        this._doorTimer = setTimeout(() => this._tryEnterOffice(), ANIM_INTERVALS.bonnie);
+        this.doorTimer = setTimeout(() => {
+            if(this._6amTriggered) return;
+            if(this._powerOutTriggered) return;
+            this._tryEnterOffice();
+            },
+            ANIM_INTERVALS.bonnie);
     }
 
     // ── Résolution : Bonnie tente d'entrer ───────────────────
@@ -757,8 +762,14 @@ class Foxy extends Animatronic {
         if (this.sprintTimer || this._6amTriggered)  clearTimeout(this.sprintTimer);
         if (this._runSfxTimer || this._6amTriggered) clearTimeout(this._runSfxTimer);
 
-        this._runSfxTimer = setTimeout(() => this._playRunSfx(), 22000);
-        this.sprintTimer  = setTimeout(() => this._attack(),     25000);
+        this._runSfxTimer = setTimeout(() => {
+            if (this._6amTriggered) return;
+            this._playRunSfx();
+        }, 22000);
+        this.sprintTimer  = setTimeout(() => {
+            if (this._6amTriggered) return;
+            this._attack();
+        }, 25000);
     }
 
     _playRunSfx() {
@@ -774,7 +785,10 @@ class Foxy extends Animatronic {
         if (this.sprintTimer)  { clearTimeout(this.sprintTimer);  this.sprintTimer  = null; }
         if (this._runSfxTimer) { clearTimeout(this._runSfxTimer); this._runSfxTimer = null; }
         console.log('[Foxy] Seen running — 3 s to close door');
-        this.sprintTimer = setTimeout(() => this._attack(), 3000);
+        this.sprintTimer = setTimeout(() => {
+            if (this._6amTriggered) return;
+            this._attack();
+        }, 3000);
     }
 
     _attack() {
