@@ -235,8 +235,8 @@
                 document.body.style.opacity = "1";
                 const a = new Audio('../Assets/FNaF 1 Audio/darkness music.wav');
                 const b = new Audio('../Assets/FNaF 1 Audio/static2.wav');
-                a.loop
-                b.loop
+                a.loop = true
+                b.loop = true
                 b.play()
                     .then(() => console.log("Menu audio playing"))
                     .catch((e) => console.error("Menu audio not found", e));
