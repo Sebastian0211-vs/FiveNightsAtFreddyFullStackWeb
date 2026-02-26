@@ -17,7 +17,7 @@
 // ── Night / time constants ────────────────────────────────────
 
 const HOURS         = ['12 AM','1 AM','2 AM','3 AM','4 AM','5 AM','6 AM'];
-const NIGHT_SECS    = 50; //535
+const NIGHT_SECS    = 535; //535
 const SECS_PER_HOUR = NIGHT_SECS / 6;
 
 // Power drained passively every N seconds (0 = no passive drain on night 1)
@@ -38,7 +38,7 @@ const GameState = {
         if (state.right.door  === 'closed') u++;
         if (state.left.light  === 'on')     u++;
         if (state.right.light === 'on')     u++;
-        if (window.isTabletOpen) u++;
+        if (window.isTabletOpen ) u++;
         return Math.min(u, 5);
     },
 
@@ -421,6 +421,9 @@ const GameState = {
                                 if (a instanceof Bonnie) {
                                     a._resetOfficeState();
                                 }
+                                if (a instanceof Chica) {
+                                    a._resetOfficeState();
+                                }
                                 if (a.valid) {
                                     const cur = getRoom(a.name);
                                     if (cur) ROOMS[cur].who = ROOMS[cur].who.filter(n => n !== a.name);
@@ -542,12 +545,12 @@ const base_ai_level = {
 };
 
 const boost_ai_level = {
-    '12 AM': { Freddy: 0, Bonnie: 1, Chica: 1, Foxy: 1 },
-    '1 AM':  { Freddy: 0, Bonnie: 1, Chica: 1, Foxy: 1 },
-    '2 AM':  { Freddy: 0, Bonnie: 1, Chica: 1, Foxy: 2 },
-    '3 AM':  { Freddy: 0, Bonnie: 1, Chica: 1, Foxy: 2 },
-    '4 AM':  { Freddy: 0, Bonnie: 1, Chica: 1, Foxy: 2 },
-    '5 AM':  { Freddy: 0, Bonnie: 1, Chica: 1, Foxy: 2 },
+    '12 AM': { Freddy: 0, Bonnie: 0, Chica: 0, Foxy: 0 },
+    '1 AM':  { Freddy: 0, Bonnie: 0, Chica: 0, Foxy: 0 },
+    '2 AM':  { Freddy: 0, Bonnie: 1, Chica: 0, Foxy: 0 },
+    '3 AM':  { Freddy: 0, Bonnie: 1, Chica: 1, Foxy: 1 },
+    '4 AM':  { Freddy: 0, Bonnie: 1, Chica: 1, Foxy: 1 },
+    '5 AM':  { Freddy: 0, Bonnie: 0, Chica: 0, Foxy: 0 },
 };
 
 
@@ -558,27 +561,29 @@ class Animatronic {
         this.room   = startRoom;
         this.moving = false;
         this.valid  = false;
-        this.level = base_ai_level[GameState.night]?.[this.name]               || 0;
+        this.level = base_ai_level[GameState.night]?.[this.name]               || 0
         this.currentHour = GameState.getCurrentHour();
-        this._boostApplied =
+        this._boostApplied = false;
     }
 
     get ai_level() {
         const boost = boost_ai_level[HOURS[GameState.getCurrentHour()]]?.[this.name] || 0;
-
+        // only increment on hour change, not every tick, to prevent excessive volatility
+        if (GameState.getCurrentHour() !== this.currentHour) {
+            this.currentHour = GameState.getCurrentHour();
+            this._boostApplied = false; // reset boost flag for new hour
+        }
         if (boost > 0 && !this._boostApplied) {
             this._boostApplied = true;
+            console.log(`[${this.name}] AI boost applied: +${boost} (hour: ${HOURS[GameState.getCurrentHour()]})`);
             this.level += boost;
         }
-        return this.level + boost;
+        return this.level;
     }
-
-
 
     tryMove()   { return false; }
     canAttack() { return false; }
 }
-
 
 // ── Room helpers ──────────────────────────────────────────────
 
