@@ -123,6 +123,7 @@ const GameState = {
 
         // ── Freddy approaches ────────────────────────────────
         setTimeout(() => {
+            if(this._6amTriggered) return; // night over → abort sequence
             const steps1 = new Audio('../Assets/FNaF 1 Audio/deep steps.wav');
             steps1.volume = 0.15;
             steps1.play().catch(() => {});
@@ -133,6 +134,7 @@ const GameState = {
                 steps2.play().catch(() => {});
 
                 setTimeout(() => {
+                    if(this._6amTriggered) return; // night over → abort sequence
                     const steps3 = new Audio('../Assets/FNaF 1 Audio/deep steps.wav');
                     steps3.volume = 0.85;
                     steps3.play().catch(() => {});
@@ -191,13 +193,16 @@ const GameState = {
                         flickerPattern.forEach(e => schedule.push(e));
                         schedule.sort((a, b) => a.t - b.t);
                         schedule.forEach(({ img, t }) =>
-                            setTimeout(() => { window._powerOutEyeFrame = img; }, t)
+                            setTimeout(() => {
+                                if(this._6amTriggered) return; // night over → abort sequence
+                                window._powerOutEyeFrame = img; }, t)
                         );
 
                         musicBox.play().catch(() => {});
 
                         // ── After ~20 s: Freddy jumpscare ────────────────
                         setTimeout(() => {
+                            if(this._6amTriggered) return; // night over → abort sequence
                             musicBox.pause();
                             window._powerOutEyeFrame = 'black';
 
@@ -213,6 +218,7 @@ const GameState = {
                             let ft = 0;
                             flickSeq.forEach(({ play, duration }) => {
                                 setTimeout(() => {
+                                    if(this._6amTriggered) return; // night over → abort sequence
                                     if (play) {
                                         const buzz = new Audio('../Assets/FNaF 1 Audio/Buzz_Fan_Florescent2.wav');
                                         buzz.volume = 1;
@@ -227,6 +233,7 @@ const GameState = {
                             });
 
                             setTimeout(() => {
+                                if(this._6amTriggered) return; // night over → abort sequence
                                 window._powerOutEyeFrame = 'black';
                                 const steps4 = new Audio('../Assets/FNaF 1 Audio/deep steps.wav');
                                 steps4.volume = 1;
