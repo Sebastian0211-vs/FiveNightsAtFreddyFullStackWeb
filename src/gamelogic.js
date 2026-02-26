@@ -43,12 +43,8 @@ const GameState = {
 
     // ── Called every second ──────────────────────────────────
     tick() {
-        if (this.rawPower <= 0) {
-            this.rawPower = 0;
-            this.render();
-            this.onPowerOut();
-            return;
-        }
+        // Always drain power and advance time first so 6AM can fire even if
+        // power runs out on the same tick (or during the power-out sequence).
 
         // Active usage drain
         this.rawPower -= this.getUsage();
@@ -66,8 +62,16 @@ const GameState = {
         this.rawPower = Math.max(0, this.rawPower);
         this.secondsElapsed++;
 
+        // 6AM wins even if power is also 0 this tick
         if (this.secondsElapsed >= NIGHT_SECS) {
             this.on6AM();
+            return;
+        }
+
+        // Power out — kick off the sequence once, then keep returning each tick
+        if (this.rawPower <= 0) {
+            this.render();
+            this.onPowerOut();
             return;
         }
 
@@ -92,6 +96,11 @@ const GameState = {
     onPowerOut() {
         if (this._powerOutTriggered) return;
         this._powerOutTriggered = true;
+
+        // Collect every setTimeout ID spawned by this sequence so on6AM can
+        // cancel them all immediately instead of relying on guard checks.
+        this._powerOutTimers = [];
+        this._musicBox       = null;
 
         powerOut = true;
         window._powerOutEyeFrame = '304';
@@ -122,7 +131,7 @@ const GameState = {
         powerOutsfx.play().catch(() => {});
 
         // ── Freddy approaches ────────────────────────────────
-        setTimeout(() => {
+        this._powerOutTimers.push(setTimeout(() => {
             if(this._6amTriggered) return; // night over → abort sequence
             const steps1 = new Audio('../Assets/FNaF 1 Audio/deep steps.wav');
             steps1.volume = 0.15;
@@ -144,6 +153,8 @@ const GameState = {
                         // ── Freddy music-box + eye flicker ───────────────
                         const musicBox = new Audio('../Assets/FNaF 1 Audio/music box.wav');
                         window._powerOutEyeFrame = '304';
+
+                        this._musicBox = musicBox;
 
                         // Build flicker schedule
                         const schedule = [];
@@ -193,15 +204,17 @@ const GameState = {
                         flickerPattern.forEach(e => schedule.push(e));
                         schedule.sort((a, b) => a.t - b.t);
                         schedule.forEach(({ img, t }) =>
-                            setTimeout(() => {
-                                if(this._6amTriggered) return; // night over → abort sequence
-                                window._powerOutEyeFrame = img; }, t)
+                            this._powerOutTimers.push(
+                                setTimeout(() => {
+                                    if(this._6amTriggered) return;
+                                    window._powerOutEyeFrame = img; }, t)
+                            )
                         );
 
                         musicBox.play().catch(() => {});
 
                         // ── After ~20 s: Freddy jumpscare ────────────────
-                        setTimeout(() => {
+                        this._powerOutTimers.push(setTimeout(() => {
                             if(this._6amTriggered) return; // night over → abort sequence
                             musicBox.pause();
                             window._powerOutEyeFrame = 'black';
@@ -217,7 +230,7 @@ const GameState = {
                             ];
                             let ft = 0;
                             flickSeq.forEach(({ play, duration }) => {
-                                setTimeout(() => {
+                                this._powerOutTimers.push(setTimeout(() => {
                                     if(this._6amTriggered) return; // night over → abort sequence
                                     if (play) {
                                         const buzz = new Audio('../Assets/FNaF 1 Audio/Buzz_Fan_Florescent2.wav');
@@ -228,11 +241,11 @@ const GameState = {
                                     } else {
                                         window._powerOutEyeFrame = 'black';
                                     }
-                                }, ft);
+                                }, ft));
                                 ft += duration;
                             });
 
-                            setTimeout(() => {
+                            this._powerOutTimers.push(setTimeout(() => {
                                 if(this._6amTriggered) return; // night over → abort sequence
                                 window._powerOutEyeFrame = 'black';
                                 const steps4 = new Audio('../Assets/FNaF 1 Audio/deep steps.wav');
@@ -242,13 +255,13 @@ const GameState = {
                                     window._powerOutEyeFrame = 'jumpscare';
                                     playPowerOutJumpscare();
                                 });
-                            }, 500);
+                            }, 500));
 
-                        }, 20000);
+                        }, 20000));
                     });
                 }, 4000);
             });
-        }, 3000);
+        }, 3000));
     },
 
     // ── Night complete ───────────────────────────────────────
@@ -256,6 +269,24 @@ const GameState = {
         if (this._6amTriggered) return;
         this._6amTriggered = true;
         console.log('6 AM — night complete');
+
+        // ── Cancel every pending power-out timer ─────────────
+        if (this._powerOutTimers) {
+            this._powerOutTimers.forEach(id => clearTimeout(id));
+            this._powerOutTimers = [];
+        }
+
+        // ── Stop the Freddy music-box if it's playing ────────
+        if (this._musicBox) {
+            this._musicBox.pause();
+            this._musicBox.currentTime = 0;
+            this._musicBox = null;
+        }
+
+        // Reset power-out flags / eye frame
+        this._powerOutTriggered  = false;
+        powerOut                 = false;
+        window._powerOutEyeFrame = null;
 
         // Hide HUD and interactive elements
         document.getElementById('hud-top-right').style.display = 'none';
@@ -269,6 +300,36 @@ const GameState = {
             a.pause(); a.currentTime = 0;
         });
         stopCamVideo();
+
+
+        //kill Foxy timers to prevent him from attacking during the 6AM sequence or the next night
+        const foxy = ANIMATRONICS.find(a => a instanceof Foxy);
+        if (foxy) {
+            if (foxy.sprintTimer)  { clearTimeout(foxy.sprintTimer);  foxy.sprintTimer  = null; }
+            if (foxy._runSfxTimer) { clearTimeout(foxy._runSfxTimer); foxy._runSfxTimer = null; }
+            if (foxy.lockTimer)    { clearTimeout(foxy.lockTimer);     foxy.lockTimer    = null; }
+            foxy.locked = false;
+        }
+
+        // Kill Bonnie's door timer to prevent him from trying to enter the office during the 6AM sequence or the next night
+        const bonnie = ANIMATRONICS.find(a => a instanceof Bonnie);
+        if (bonnie && bonnie._doorTimer) {
+            clearTimeout(bonnie._doorTimer);
+            bonnie._doorTimer = null;
+        }
+
+        // Reset doors and lights to open/off for the next night
+        ['left', 'right'].forEach(side => {
+            if (state[side].door !== 'open') {
+                state[side].door = 'open';
+                startDoorAnim(side, -1);
+            }
+            state[side].light = 'off';
+        });
+
+        // Clear stable camera image cache so next night starts fresh
+        Object.keys(_camCache).forEach(k => delete _camCache[k]);
+
 
         // SFX
         new Audio('../Assets/FNaF 1 Audio/chimes 2.wav').play().catch(() => {});
@@ -344,7 +405,7 @@ const GameState = {
                                 return;
                             }
                             this.night++;
-                            this.rawPower       = 999;
+                            this.rawPower       = 10;
                             this.secondsElapsed = 0;
                             this.passiveAccum   = 0;
                             this._6amTriggered  = false;
@@ -614,10 +675,10 @@ class Bonnie extends Animatronic {
     // ── Planifie la tentative d'entrée (1 cycle de mouvement) ─
     _scheduleAttack() {
         if (this._doorTimer) clearTimeout(this._doorTimer);
-        this.doorTimer = setTimeout(() => {
-            if(this._6amTriggered) return;
-            if(this._powerOutTriggered) return;
-            this._tryEnterOffice();
+        this._doorTimer = setTimeout(() => {
+                if(this._6amTriggered) return;
+                if(this._powerOutTriggered) return;
+                this._tryEnterOffice();
             },
             ANIM_INTERVALS.bonnie);
     }
