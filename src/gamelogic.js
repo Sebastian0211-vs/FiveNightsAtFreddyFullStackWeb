@@ -617,6 +617,7 @@ class Bonnie extends Animatronic {
             this._atDoor = false;
             window.bonnieAtDoor = false;
             this.room = Math.random() < 0.5 ? 'dining_area' : 'west_hall';
+            moveToRoom(this.name, this.room)
             console.log('[Bonnie] door closed, retreats to', this.room);
             return;
         }
