@@ -446,7 +446,7 @@ const GO_NOISE = () => {
     setTimeout(() => { playJumpscare(noiseMenu, NOISE, GO_MENU); }, 500);
 };
 
-function playChicaJumpscare()        { playJumpscare(chicajumpscare,          SCREAM,  null,     JUMPSCARE_MAX_MS); }
+function playChicaJumpscare()        { playJumpscare(chicajumpscare,          SCREAM,  GO_NOISE,     JUMPSCARE_MAX_MS); }
 function playBonnieJumpscare()       { playJumpscare(bonnieJumpscare,         SCREAM,  GO_NOISE, JUMPSCARE_MAX_MS); }
 function playFoxyJumpscare()         { playJumpscare(foxyJumpscare,           SCREAM,  GO_NOISE, JUMPSCARE_MAX_MS); }
 function playFreddyJumpscare()       { playJumpscare(freddyJumpscare,         SCREAM,  null,     JUMPSCARE_MAX_MS); }
@@ -459,11 +459,11 @@ function playNoiseMenu()             { playJumpscare(noiseMenu,               NO
 
 const FREDDY = true;
 const CHICA  = true;
-const BONNIE = false;
+const BONNIE = true;
 const FOXY   = true;
 
 const base_ai_level = {
-    1:  { Freddy: 0,  Bonnie: 20, Chica: 0,  Foxy: 20  },
+    1:  { Freddy: 0,  Bonnie: 0, Chica: 0,  Foxy: 0  },
     2:  { Freddy: 0,  Bonnie: 3,  Chica: 1,  Foxy: 1  },
     3:  { Freddy: 1,  Bonnie: 0,  Chica: 5,  Foxy: 2  },
     41: { Freddy: 1,  Bonnie: 2,  Chica: 4,  Foxy: 6  },
@@ -694,20 +694,124 @@ class Chica extends Animatronic {
         super('Chica', ChicaRooms);
         this.room  = getRoom(this.name);
         this.valid = CHICA;
+        this.inOffice   = false;
+        this._atDoor    = false;
+        this._doorTimer = null;
+        this._tabletWasOpen = false;
     }
 
+// ── Déplacement normal (appelé par setInterval) ───────────
     tryMove() {
-        console.log('[Chica] tries to move — AI:', this.ai_level);
-        if (Math.random() * 20 <= this.ai_level) {
-            console.log("CHICA'S MOVING OMG");
+        // Immobile si elle attend devant la porte ou qu'elle est déjà dans le bureau
+        if (this._atDoor || this.inOffice) return;
+
+        console.log('[CHICA] tries to move — AI:', this.ai_level);
+        if (Math.random() * 20 > this.ai_level) return; // jet raté
+
+        const current       = getRoom(this.name);
+        const possibleMoves = ChicaRooms[current]?.connections ?? [];
+        if (!possibleMoves.length) return;
+
+        const nextRoom = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
+        console.log(`Chica : ${current} → ${nextRoom}`);
+
+        // Arrivée devant la porte gauche
+        if (nextRoom === 'office_right') {
+            if (!ROOMS[nextRoom] || ROOMS[nextRoom].who.length === 0) {
+                moveToRoom(this.name, nextRoom);
+                this._atDoor = true;
+                window.chicaAtDoor = true;
+                console.log('[CHICA] AT THE DOOR — waiting to attack');
+                this._scheduleAttack();
+            } else {
+                console.log(`${nextRoom} NOT empty — stay`);
+            }
+            return;
         }
-        return -1;
+
+        // Déplacement classique
+        if (!ROOMS[nextRoom] || ROOMS[nextRoom].who.length === 0) {
+            moveToRoom(this.name, nextRoom);
+        } else {
+            console.log(`${nextRoom} NOT empty — stay`);
+        }
     }
 
-    canAttack() {
-        return this.room === 'east_hall_corner'
-            && state.right.door === 'open';
+    _scheduleAttack() {
+        if (this._doorTimer) clearTimeout(this._doorTimer);
+        this._doorTimer = setTimeout(() => this._tryEnterOffice(), ANIM_INTERVALS.bonnie);
     }
+
+    _tryEnterOffice() {
+        if (state.right.door === 'closed') {
+            // Porte fermée → retreat
+            this._atDoor = false;
+            window.chicaAtDoor = false;
+            this.room = Math.random() < 0.5 ? 'dining_area' : 'east_hall';
+            moveToRoom(this.name, this.room);
+            console.log('[Chica] door closed, retreats to', this.room);
+            return;
+        }
+
+        // Porte ouverte → AI roll
+        if (Math.random() * 20 >= this.ai_level) {
+            // Échec → reste, réessaie dans 5s
+            console.log('[Chica] AI fail, stays at door');
+            return;
+        }
+
+        // Succès → lumière allumée = screamer immédiat, sinon entrée silencieuse
+        const rightlift = state.right.light === 'on';
+        if (rightlift) {
+            console.log('[Chica] caught in light — jumpscare!');
+            this._atDoor = false;
+            window.chicaAtDoor = false;
+            playChicaJumpscare();
+        } else {
+            console.log('[Chica] silent entry');
+            this._atDoor  = false;
+            this.inOffice = true;
+            window.chicaAtDoor  = false;
+            window.chicaInOffice = true;
+        }
+    }
+
+    onTabletOpen() {
+        if (this.inOffice) {
+            this._tabletWasOpen = true;
+            console.log('[Chica] Tablet opened while in office — will strike on close');
+        }
+    }
+
+    // Appelé par mainroom quand la tablette est REFERMÉE
+    onTabletClose() {
+        if (this.inOffice && this._tabletWasOpen) {
+            console.log('[Chica] Tablet closed — JUMPSCARE');
+            this._tabletWasOpen   = false;
+            this.inOffice         = false;
+            window.chicaInOffice = false;
+            this._resetOfficeState();
+            playChicaJumpscare();
+            return;
+        }
+        // Reset le flag au cas où
+        if (!this.inOffice) this._tabletWasOpen = false;
+    }
+
+    _resetOfficeState() {
+        if (this._doorTimer) { clearTimeout(this._doorTimer); this._doorTimer = null; }
+        this._atDoor          = false;
+        this.inOffice         = false;
+        this._tabletWasOpen   = false;
+        window.chicaAtDoor   = false;
+        window.chicaInOffice = false;
+    }
+
+    canAttack() { return false; } // attaque gérée en interne
+
+    // Getters pour le renderer / minimap
+    get isAtDoor()   { return this._atDoor;  }
+    get isInOffice() { return this.inOffice; }
 }
 
 
@@ -832,7 +936,7 @@ const ChicaRooms = {
     restrooms:        { label: 'Restrooms',          connections: ['kitchen', 'east_hall']                   },
     kitchen:          { label: 'Kitchen',            connections: ['restrooms', 'east_hall']                 },
     east_hall:        { label: 'East Hall',          connections: ['dining_area', 'east_hall_corner']        },
-    east_hall_corner: { label: 'East Hall Corner',   connections: ['east_hall']                              },
+    east_hall_corner: { label: 'East Hall Corner',   connections: ['east_hall', 'office_right']                              },
     office_right:     { label: 'Office (Right)',      connections: []                                         },
 };
 
@@ -840,7 +944,7 @@ const ChicaRooms = {
 // ── Global room map ───────────────────────────────────────────
 
 const ROOMS = {
-    show_stage:       { who: ['Freddy', 'Chica'] },
+    show_stage:       { who: ['Freddy', 'Bonnie', 'Chica'] },
     dining_area:      { who: [] },
     backstage:        { who: [] },
     kitchen:          { who: [] },
@@ -848,7 +952,7 @@ const ROOMS = {
     east_hall:        { who: [] },
     east_hall_corner: { who: [] },
     west_hall:        { who: [] },
-    west_hall_corner: { who: ['Bonnie'] },
+    west_hall_corner: { who: [] },
     supply_closet:    { who: [] },
     pirate_cove:      { who: [] },
     office_left:      { who: [] },
@@ -990,6 +1094,8 @@ function initGameLogic() {
     window.foxyRunning    = false;
     window.bonnieAtDoor   = false;   // lu par mainroom pour afficher l'image de Bonnie
     window.bonnieInOffice = false;   // lu par mainroom si besoin
+    window.chicaAtDoor   = false;   // lu par mainroom pour afficher l'image de Bonnie
+    window.chicaInOffice = false;   // lu par mainroom si besoin
     window.isTabletOpen   = false;
     window.activeCam      = null;
 }
