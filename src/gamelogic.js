@@ -17,7 +17,7 @@
 // ── Night / time constants ────────────────────────────────────
 
 const HOURS         = ['12 AM','1 AM','2 AM','3 AM','4 AM','5 AM','6 AM'];
-const NIGHT_SECS    = 50; //535
+const NIGHT_SECS    = 535; //535
 const SECS_PER_HOUR = NIGHT_SECS / 6;
 
 // Power drained passively every N seconds (0 = no passive drain on night 1)
