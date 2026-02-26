@@ -455,6 +455,13 @@ const chicajumpscare = {
         "../assets/Chica/239.png",
         "../assets/Chica/279.png",
         "../assets/Chica/281.png",
+        "../assets/Chica/279.png",
+        "../assets/Chica/239.png",
+        "../assets/Chica/237.png",
+        "../assets/Chica/236.png",
+        "../assets/Chica/235.png",
+        "../assets/Chica/234.png",
+
     ],
     fps: 30,
     scale: 1.0,
