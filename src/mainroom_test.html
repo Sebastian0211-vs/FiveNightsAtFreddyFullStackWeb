@@ -396,6 +396,12 @@
                 if (!window._bonnieDoorImg) {
                     window._bonnieDoorImg = new Image();
                     window._bonnieDoorImg.src = '../Assets/Main Room/225.png';
+
+                    const windowscaresfx = new Audio('../Assets/FNaF 1 Audio/windowscare.wav');
+                    windowscaresfx.volume = 1;
+                    window._bonnieDoorImg.onload = () => {
+                        windowscaresfx.play().catch(() => {});
+                    };
                 }
                 if (window._bonnieDoorImg.complete && window._bonnieDoorImg.naturalWidth) {
                     return window._bonnieDoorImg;
