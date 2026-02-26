@@ -412,6 +412,9 @@ const GameState = {
                             this._6amTriggered  = false;
 
                             ANIMATRONICS.forEach(a => {
+                                a.level = base_ai_level[this.night]?.[a.name] || 0;
+                                a._boostApplied = false;
+
                                 if (a instanceof Foxy) {
                                     a.stage     = 1;
                                     a.bangCount = 0;
