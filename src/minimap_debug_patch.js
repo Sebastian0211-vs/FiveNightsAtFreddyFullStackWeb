@@ -1,26 +1,26 @@
 // ============================================================
-//  minimap_hud.js
-//  <script src="minimap_hud.js"></script> après gamelogic.js
-//  Appuie sur M pour afficher/masquer la mini-map
+//  minimap_debug_patch.js  (v3)
+//  S'affiche en bas-droite uniquement quand la tablette est ouverte.
+//  Zones cliquables = petits rectangles avec image cam dedans.
+//  M = masquer/afficher dots + infos Foxy (caché par défaut).
 // ============================================================
 
 (function () {
 
     const ROOM_LAYOUT = {
-        show_stage:         { x:  128, y:  45,  w: 105,  h:30,  label: 'Show Stage'  },
-        dining_area:        { x:  60, y:  75,  w: 240, h: 145, label: 'Dining Area' },
-        backstage:          { x:   10, y:  78,  w: 35,  h: 70,  label: 'Backstage'   },
-        pirate_cove:        { x:   22, y: 160,  w: 42,  h: 50,  label: 'Pirate Cove' },
-        kitchen:            { x:  265, y:  230,  w: 80,  h: 70,  label: 'Kitchen'     },
-        east_hall:          { x:  210, y: 230,  w: 40,  h: 55,  label: 'E.Hall'      },
-        east_hall_corner:   { x:  210, y: 290,  w: 40,  h: 55,  label: 'E.Corner'    },
-        supply_closet:      { x:  55, y: 250,  w: 40,  h: 70,  label: 'Supply'      },
-        west_hall:          { x:   105   , y: 230,  w: 40,  h: 55,  label: 'W.Hall'      },
-        west_hall_corner:   { x:   105, y: 290,  w: 40,  h: 55,  label: 'W.Corner'    },
-        restrooms:          { x:  310, y: 100,  w: 30,  h: 115,  label: 'Restrooms'   },
-        office_left:        {    x:  160, y: 295,  w: 10,  h: 65,  label: 'Left Office'         },
-        office_right:        {    x:  190, y: 295,  w: 10,  h: 65,  label: 'Right Office'         },
-
+        show_stage:         { x:  80, y:  25,  w: 105,  h:  30, label: 'Show Stage',    camId: '1A' },
+        dining_area:        { x:   60, y:  75,  w: 240,  h: 145, label: 'Dining Area',   camId: '1B' },
+        backstage:          { x:   10, y:  78,  w:  35,  h:  70, label: 'Backstage',     camId: '3'  },
+        pirate_cove:        { x:   22, y: 160,  w:  42,  h:  50, label: "Pirate's Cove", camId: '1C' },
+        kitchen:            { x:  265, y: 230,  w:  80,  h:  70, label: 'Kitchen',       camId: '6'  },
+        east_hall:          { x:  210, y: 230,  w:  40,  h:  55, label: 'E. Hall',       camId: '4A' },
+        east_hall_corner:   { x:  210, y: 290,  w:  40,  h:  55, label: 'E. Corner',     camId: '4B' },
+        supply_closet:      { x:   55, y: 250,  w:  40,  h:  70, label: 'Supply',        camId: '5'  },
+        west_hall:          { x:  105, y: 230,  w:  40,  h:  55, label: 'W. Hall',       camId: '2A' },
+        west_hall_corner:   { x:  105, y: 290,  w:  40,  h:  55, label: 'W. Corner',     camId: '2B' },
+        restrooms:          { x:  310, y: 100,  w:  30,  h: 115, label: 'Restrooms',     camId: '7'  },
+        office_left:        { x:  160, y: 295,  w:  10,  h:  65, label: 'Office L',      camId: null },
+        office_right:       { x:  190, y: 295,  w:  10,  h:  65, label: 'Office R',      camId: null },
     };
 
     const ANIM_CFG = {
@@ -30,141 +30,251 @@
         Foxy:   { color: '#ee4400', short: 'Fx' },
     };
 
-    const IMG_SIZE = 400;
-    const MAP_DISPLAY = 420; // taille affichée en px
+    const CAM_THUMB = {
+        '1A': '../Assets/Text_Box/cam_1a_trans.png',
+        '1B': '../Assets/Text_Box/cam_1b_trans.png',
+        '1C': '../Assets/Text_Box/cam_1c_trans.png',
+        '2A': '../Assets/Text_Box/cam_2a_trans.png',
+        '2B': '../Assets/Text_Box/cam_2b_trans.png',
+        '3':  '../Assets/Text_Box/cam_3_trans.png',
+        '4A': '../Assets/Text_Box/cam_4a_trans.png',
+        '4B': '../Assets/Text_Box/cam_4b.png',
+        '5':  '../Assets/Text_Box/cam_5_trans.png',
+        '6':  '../Assets/Text_Box/cam_6_trans.png',
+        '7':  '../Assets/Text_Box/cam_7_trans.png',
+    };
 
-    // ── Création de l'overlay ───────────────────────────────────
-    const overlay = document.createElement('div');
-    overlay.id = 'minimap-hud';
-    overlay.style.cssText = `
+    // Rectangle cliquable (contenant)
+    const THUMB_W = 38;
+    const THUMB_H = 24;
+    // Image à l'intérieur (plus petite)
+    const IMG_W   = 21;
+    const IMG_H   = 19;
+
+    const IMG_SIZE    = 400;
+    const MAP_DISPLAY = 260;
+    const scX = MAP_DISPLAY / IMG_SIZE;
+    const scY = MAP_DISPLAY / IMG_SIZE;
+
+    // ── Container principal ─────────────────────────────────────
+    const container = document.createElement('div');
+    container.id = 'minimap-tablet';
+    container.style.cssText = `
         position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 900;
+        bottom: 50px;
+        right: 14px;
+        z-index: 200;
         display: none;
         flex-direction: column;
-        align-items: center;
-        gap: 8px;
-        background: rgba(0,0,0,0.88);
-        border: 2px solid #0f0;
-        padding: 14px;
-        font-family: 'FNAF', 'Courier New', monospace;
+        align-items: flex-end;
+        gap: 3px;
+        pointer-events: auto;
     `;
 
-    overlay.innerHTML = `
-        <div style="color:#0f0;font-size:14px;letter-spacing:0.1em;">CAMERA MAP</div>
-        <div style="position:relative;width:${MAP_DISPLAY}px;height:${MAP_DISPLAY}px;">
-            <img id="mm-hud-bg" src="../assets/map/145.png"
-                style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;">
-            <canvas id="mm-hud-canvas" width="${MAP_DISPLAY}" height="${MAP_DISPLAY}"
-                style="position:absolute;inset:0;width:100%;height:100%;"></canvas>
-        </div>
-        <div id="mm-hud-legend" style="display:flex;gap:10px;font-size:11px;"></div>
-        <div id="mm-hud-foxy" style="font-size:11px;color:#ee4400;min-height:14px;"></div>
-        <div style="color:#444;font-size:10px;letter-spacing:0.08em;">[ M ] FERMER</div>
+    // ── Wrapper carte ───────────────────────────────────────────
+    const inner = document.createElement('div');
+    inner.style.cssText = `
+        position: relative;
+        width: ${MAP_DISPLAY}px;
+        height: ${MAP_DISPLAY}px;
+        background: transparent;
+        overflow: hidden;
     `;
 
-    document.body.appendChild(overlay);
+    // Image de fond — opacité pleine, pas de fond coloré
+    const bgImg = document.createElement('img');
+    bgImg.src = '../assets/map/145.png';
+    bgImg.style.cssText = `
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        object-fit: contain; pointer-events: none; opacity: 1;
+    `;
+    inner.appendChild(bgImg);
 
-    // Légende
-    const legend = document.getElementById('mm-hud-legend');
-    Object.entries(ANIM_CFG).forEach(([name, cfg]) => {
-        const span = document.createElement('span');
-        span.style.color = cfg.color;
-        span.textContent = `■ ${name}`;
-        legend.appendChild(span);
+    // ── Zones par salle ─────────────────────────────────────────
+    const roomZones = {};
+
+    Object.entries(ROOM_LAYOUT).forEach(([id, r]) => {
+        if (!r.camId) return; // offices : pas de zone
+
+        // Centré sur la salle
+        const cx = (r.x + r.w / 2) * scX;
+        const cy = (r.y + r.h / 2) * scY;
+
+        const zone = document.createElement('div');
+        zone.style.cssText = `
+            position: absolute;
+            left:   ${cx - THUMB_W / 2}px;
+            top:    ${cy - THUMB_H / 2}px;
+            width:  ${THUMB_W}px;
+            height: ${THUMB_H}px;
+            box-sizing: border-box;
+            border: 2px solid rgba(251,254,249,1);
+            background: rgb(66,66,66);
+            cursor: pointer;
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+        `;
+        zone.title = r.label + ' [CAM ' + r.camId + ']';
+
+        // Image centrée, plus petite que le rectangle
+        const thumb = document.createElement('img');
+        thumb.src = CAM_THUMB[r.camId] || '';
+        thumb.style.cssText = `
+            width: ${IMG_W}px;
+            height: ${IMG_H}px;
+            margin-left: 2px;
+            object-fit: contain;
+            display: block;
+            pointer-events: none;
+            flex-shrink: 0;
+        `;
+        zone.appendChild(thumb);
+
+        // Hover
+        zone.addEventListener('mouseenter', () => {
+            zone.style.borderColor = 'rgba(255,255,255,1)';
+        });
+        zone.addEventListener('mouseleave', () => {
+            // reset géré par drawMap
+        });
+
+        // Clic → sélectionner la caméra
+        zone.addEventListener('click', () => {
+            if (typeof CAMS === 'undefined') return;
+            const cam = CAMS.find(c => c.id === r.camId);
+            if (!cam) return;
+            if (typeof selectCam === 'function') {
+                selectCam(cam.room, cam.label);
+            } else {
+                window.activeCam = cam.room;
+            }
+        });
+
+        inner.appendChild(zone);
+        roomZones[id] = zone;
     });
 
+    // ── Canvas pour les dots animatroniques ─────────────────────
+    const mc = document.createElement('canvas');
+    mc.width  = MAP_DISPLAY;
+    mc.height = MAP_DISPLAY;
+    mc.style.cssText = `
+        position: absolute; inset: 0; width: 100%; height: 100%;
+        pointer-events: none; z-index: 10;
+        display: none;
+    `;
+    inner.appendChild(mc);
+    const dotCtx = mc.getContext('2d');
+
+    container.appendChild(inner);
+
+    // Label Foxy sous la carte — caché par défaut
+    const foxyLabel = document.createElement('div');
+    foxyLabel.style.cssText = `
+        font-family: 'Courier New', monospace; font-size: 9px;
+        color: #ee4400; min-height: 12px; text-align: right;
+        text-shadow: 0 0 4px #ee4400;
+        display: none;
+    `;
+    container.appendChild(foxyLabel);
+
+    document.body.appendChild(container);
+
+    // ── Source of truth : ROOMS[x].who ──────────────────────────
+    function getRoom(name) {
+        if (typeof ROOMS === 'undefined') return null;
+        return Object.keys(ROOMS).find(key => ROOMS[key].who && ROOMS[key].who.includes(name)) || null;
+    }
+
     // ── Dessin ──────────────────────────────────────────────────
-    const mc  = document.getElementById('mm-hud-canvas');
-    const ctx = mc.getContext('2d');
-
     function drawMap() {
-        const scaleX = MAP_DISPLAY / IMG_SIZE;
-        const scaleY = MAP_DISPLAY / IMG_SIZE;
+        dotCtx.clearRect(0, 0, MAP_DISPLAY, MAP_DISPLAY);
 
-        ctx.clearRect(0, 0, MAP_DISPLAY, MAP_DISPLAY);
-
-        // Positions par salle
+        // Construire byRoom
         const byRoom = {};
-        function place(name) {
+        ['Freddy','Bonnie','Chica'].forEach(name => {
             const key = getRoom(name);
-            if (!key) return;
-            (byRoom[key] = byRoom[key] || []).push(name);
-        }
-
-        place('Freddy');
-        place('Bonnie');
-        place('Chica');
-
+            if (key) (byRoom[key] = byRoom[key] || []).push(name);
+        });
         if (typeof foxy !== 'undefined' && foxy.valid) {
             const foxyRoom = foxy.stage >= 4 ? 'west_hall' : 'pirate_cove';
             (byRoom[foxyRoom] = byRoom[foxyRoom] || []).push('Foxy');
         }
-        // Salles + dots
-        Object.entries(ROOM_LAYOUT).forEach(([id, r]) => {
-            const rx = r.x * scaleX, ry = r.y * scaleY;
-            const rw = r.w * scaleX, rh = r.h * scaleY;
-            const names = byRoom[id] || [];
 
-            // Highlight si occupé
-            if (names.length > 0) {
-                ctx.fillStyle = 'rgba(255,255,255,0.07)';
-                ctx.fillRect(rx, ry, rw, rh);
-            }
+        // Dots — placés sous le rectangle thumbnail
+        Object.entries(byRoom).forEach(([roomId, names]) => {
+            const r = ROOM_LAYOUT[roomId];
+            if (!r || !names.length) return;
 
-            // Bordures rouges de repérage — retire ces 3 lignes une fois les coords OK
-            ctx.strokeStyle = 'red';
-            ctx.lineWidth   = 1.5;
-            ctx.strokeRect(rx, ry, rw, rh);
+            const cx = (r.x + r.w / 2) * scX;
+            const cy = (r.y + r.h / 2) * scY;
 
-            // Label
-            ctx.fillStyle    = names.length > 0 ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.2)';
-            ctx.font         = '10px monospace';
-            ctx.textAlign    = 'center';
-            ctx.textBaseline = 'top';
-            ctx.fillText(r.label, rx + rw / 2, ry + 3);
-
-            // Dots
-            const DOT = 11, GAP = 3;
+            const DOT = 7, GAP = 2;
             const totalW = names.length * DOT + (names.length - 1) * GAP;
-            let sx = rx + rw / 2 - totalW / 2;
-            const sy = ry + rh - DOT - 4;
+            let sx = cx - totalW / 2;
+            const sy = cy + THUMB_H / 2 + 3;
+
             names.forEach(name => {
                 const cfg = ANIM_CFG[name];
-                ctx.fillStyle = cfg.color;
-                ctx.fillRect(sx, sy, DOT, DOT);
-                ctx.fillStyle    = '#fff';
-                ctx.font         = '7px monospace';
-                ctx.textAlign    = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText(cfg.short, sx + DOT / 2, sy + DOT / 2 + 0.5);
+                dotCtx.shadowColor  = cfg.color;
+                dotCtx.shadowBlur   = 4;
+                dotCtx.fillStyle    = cfg.color;
+                dotCtx.fillRect(sx, sy, DOT, DOT);
+                dotCtx.shadowBlur   = 0;
+                dotCtx.fillStyle    = '#fff';
+                dotCtx.font         = 'bold 5px monospace';
+                dotCtx.textAlign    = 'center';
+                dotCtx.textBaseline = 'middle';
+                dotCtx.fillText(cfg.short, sx + DOT / 2, sy + DOT / 2 + 0.5);
                 sx += DOT + GAP;
             });
         });
 
-        // Foxy stage
-        const foxyEl = document.getElementById('mm-hud-foxy');
-        if (foxyEl && typeof foxy !== 'undefined' && foxy.valid) {
-            const labels = { 1:'Cove closed', 2:'Peeking', 3:'Out of cove', 4:'🦊 RUNNING!' };
-            foxyEl.textContent = `Foxy — stage ${foxy.stage}: ${labels[foxy.stage] || '?'}`;
+        // Foxy label
+        if (typeof foxy !== 'undefined' && foxy.valid) {
+            const lbls = { 1:'Cove closed', 2:'Peeking', 3:'Out of cove', 4:'🦊 RUNNING!' };
+            foxyLabel.textContent = 'Foxy: ' + (lbls[foxy.stage] || '?');
         }
     }
 
-    // ── Toggle M ────────────────────────────────────────────────
-    let visible = false;
+    // ── Sync visibilité avec tablette ───────────────────────────
+    function syncVisibility() {
+        const camCanvas = document.getElementById('tablet-cam');
+        const isOpen = camCanvas && camCanvas.style.display !== 'none';
+        container.style.display = isOpen ? 'flex' : 'none';
+    }
+    setInterval(syncVisibility, 100);
 
-    window.addEventListener('keydown', e => {
+    // ── M = masquer/afficher dots + infos Foxy (caché par défaut) ──
+    let showAnimInfo = false;
+    window.addEventListener('keydown', function (e) {
         if (e.key !== 'm' && e.key !== 'M') return;
-        visible = !visible;
-        overlay.style.display = visible ? 'flex' : 'none';
+        showAnimInfo = !showAnimInfo;
+        mc.style.display        = showAnimInfo ? 'block' : 'none';
+        foxyLabel.style.display = showAnimInfo ? 'block' : 'none';
     });
 
-    // ── Boucle de rendu ─────────────────────────────────────────
+
+    function updateHighlight() {
+        const activeCam = window.activeCam;
+        Object.entries(ROOM_LAYOUT).forEach(([id]) => {
+            const zone = roomZones[id];
+            if (!zone) return;
+            const isActive = (activeCam === id);
+            zone.style.borderColor     = isActive ? 'rgba(255,255,255,1)' : 'rgba(255,255,255,0.55)';
+            zone.style.boxShadow       = isActive ? '0 0 5px 1px rgba(255,255,255,0.6)' : '';
+            zone.style.backgroundColor = isActive ? 'rgba(139,170,1,1)' : 'rgb(66,66,66)';
+        });
+    }
+
+    // ── Boucle de rendu (10 fps) ─────────────────────────────────
     function tick() {
-        if (visible) drawMap();
-        setTimeout(tick, 125);
+        if (container.style.display !== 'none') {
+            updateHighlight();
+            if (showAnimInfo) drawMap();
+        }
+        setTimeout(tick, 100);
     }
     tick();
 
