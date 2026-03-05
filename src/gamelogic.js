@@ -17,7 +17,7 @@
 // ── Night / time constants ────────────────────────────────────
 
 const HOURS         = ['12 AM','1 AM','2 AM','3 AM','4 AM','5 AM','6 AM'];
-const NIGHT_SECS    = 500; //535
+const NIGHT_SECS    = 535; //535
 const SECS_PER_HOUR = NIGHT_SECS / 6;
 
 // Power drained passively every N seconds (0 = no passive drain on night 1)
@@ -540,7 +540,7 @@ const BONNIE = false;
 const FOXY   = false;
 
 const base_ai_level = {
-    1:  { Freddy: 9,  Bonnie: 0, Chica: 10,  Foxy: 0  },
+    1:  { Freddy: 0,  Bonnie: 0, Chica: 0,  Foxy: 0  },
     2:  { Freddy: 0,  Bonnie: 3,  Chica: 1,  Foxy: 1  },
     3:  { Freddy: 1,  Bonnie: 0,  Chica: 5,  Foxy: 2  },
     41: { Freddy: 1,  Bonnie: 2,  Chica: 4,  Foxy: 6  },
