@@ -526,7 +526,7 @@ const GO_NOISE = () => {
 function playChicaJumpscare()        { playJumpscare(chicajumpscare,          SCREAM,  GO_NOISE,     JUMPSCARE_MAX_MS); }
 function playBonnieJumpscare()       { playJumpscare(bonnieJumpscare,         SCREAM,  GO_NOISE, JUMPSCARE_MAX_MS); }
 function playFoxyJumpscare()         { playJumpscare(foxyJumpscare,           SCREAM,  GO_NOISE, JUMPSCARE_MAX_MS); }
-function playFreddyJumpscare()       { playJumpscare(freddyJumpscare,         SCREAM,  null,     JUMPSCARE_MAX_MS); }
+function playFreddyJumpscare()       { playJumpscare(freddyJumpscare,         SCREAM,  GO_NOISE,     JUMPSCARE_MAX_MS); }
 function playGoldenFreddyJumpscare() { playJumpscare(goldenFreddyJumpscare,   SCREAM2, null,     JUMPSCARE_MAX_MS); }
 function playPowerOutJumpscare()     { playJumpscare(freddyJumpscarePowerOut, SCREAM,  GO_NOISE, JUMPSCARE_MAX_MS); }
 function playNoiseMenu()             { playJumpscare(noiseMenu,               NOISE,   GO_MENU,  JUMPSCARE_MAX_MS); }
@@ -534,13 +534,13 @@ function playNoiseMenu()             { playJumpscare(noiseMenu,               NO
 
 // ── Animatronics ──────────────────────────────────────────────
 
-const FREDDY = false;
-const CHICA  = true;
+const FREDDY = true;
+const CHICA  = false;
 const BONNIE = false;
 const FOXY   = false;
 
 const base_ai_level = {
-    1:  { Freddy: 10,  Bonnie: 0, Chica: 10,  Foxy: 0  },
+    1:  { Freddy: 9,  Bonnie: 0, Chica: 0,  Foxy: 0  },
     2:  { Freddy: 0,  Bonnie: 3,  Chica: 1,  Foxy: 1  },
     3:  { Freddy: 1,  Bonnie: 0,  Chica: 5,  Foxy: 2  },
     41: { Freddy: 1,  Bonnie: 2,  Chica: 4,  Foxy: 6  },
@@ -613,28 +613,41 @@ class Freddy extends Animatronic {
         this.inOffice   = false;
         this._atDoor    = false;
         this._doorTimer = null;
+        this.phase2 = false;
         this._tabletWasOpen = false; // surveille le cycle open→close
     }
 
     tryMove() {
-        // Immobile si elle attend devant la porte ou qu'elle est déjà dans le bureau
         if (this._atDoor || this.inOffice) return;
+
+        const current = getRoom(this.name);
+
+        if (current === 'east_hall_corner') {
+            console.log("FREDDY INTO PHASE 2")
+            this.phase2 = true;
+            this._atDoor = true;        // ← bloque les tryMove suivants
+            console.log("FREDDY IS IN THE CORNER PLANIFIY ATTACK")
+            this._scheduleAttack();
+            return;
+        }
+
+        console.log("Is cam active ? ", window.isTabletOpen)
+        console.log("ACTIVE CAM : ", window.activeCam, " FREDDY'S ROOM : ", current)
+        if (window.isTabletOpen && window.activeCam === current && ((this.ai_level < 10 && !this.phase2) || (this.phase2)))  { //&& ((this.ai_level < 10 && !this.phase2) || (this.phase2)))
+            console.log('[Freddy] being watched — no move', this.phase2);
+            return;
+        }
 
         console.log('[FREDDY] tries to move — AI:', this.ai_level);
         if (Math.random() * 20 > this.ai_level) return; // jet raté
 
-        const current       = getRoom(this.name);
         const possibleMoves = FreddyRooms[current]?.connections ?? [];
         if (!possibleMoves.length) return;
-        const inCloseSector = ['east_hall', 'kitchen','east_hall_corner'].includes(current);
         const isInKitchen = current === 'kitchen';
 
         const nextRoom = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
         console.log(`Freddy : ${current} → ${nextRoom}`);
 
-        if (nextRoom === 'office_right') {
-            this._scheduleAttack();
-        }
 
         const SOUNDS = [
             '../Assets/FNaF 1 Audio/Laugh_Giggle_Girl_1.wav',
@@ -684,11 +697,19 @@ class Freddy extends Animatronic {
     }
 
     _scheduleAttack() {
+        console.log("FREDDY'S SCHEDULING")
         if (this._doorTimer) clearTimeout(this._doorTimer);
-        this._doorTimer = setTimeout(() => this._tryEnterOffice(), ANIM_INTERVALS.bonnie);
+        this._doorTimer = setTimeout(() => this._tryEnterOffice(), ANIM_INTERVALS.freddy);
     }
 
     _tryEnterOffice() {
+        console.log("FREDDY TRY TO ENTER THE OFFICE")
+
+        if (window.isTabletOpen && window.activeCam === 'east_hall_corner') {
+            console.log('[Freddy] being watched at door — retry later');
+            this._scheduleAttack();
+            return;
+        }
         if (state.right.door === 'closed') {
             this._atDoor = false;
             this.room = 'east_hall';
@@ -700,10 +721,15 @@ class Freddy extends Animatronic {
         // Porte ouverte → AI roll
         if (Math.random() * 20 >= this.ai_level) {
             console.log('[Freddy] AI fail, stays at door');
+            this._scheduleAttack()
             return;
         }
 
+        console.log('[Freddy] is in -> JUMPSCARE')
+        playFreddyJumpscare();
+
         // Succès → lumière allumée = screamer immédiat, sinon entrée silencieuse
+        /*
         const rightlift = state.right.light === 'on';
         if (rightlift) {
             console.log('[Chica] caught in light — jumpscare!');
@@ -717,30 +743,8 @@ class Freddy extends Animatronic {
             window.chicaAtDoor  = false;
             window.chicaInOffice = true;
         }
-    }
 
-    // ── Appelé par mainroom quand la tablette est OUVERTE ─────
-    //    On enregistre que la tablette a été ouverte pendant qu'il est dans le bureau
-    onTabletOpen() {
-        if (this.inOffice) {
-            this._tabletWasOpen = true;
-            console.log('[Bonnie] Tablet opened while in office — will strike on close');
-        }
-    }
-
-    // ── Appelé par mainroom quand la tablette est REFERMÉE ────
-    onTabletClose() {
-        if (this.inOffice && this._tabletWasOpen) {
-            console.log('[Bonnie] Tablet closed — JUMPSCARE');
-            this._tabletWasOpen   = false;
-            this.inOffice         = false;
-            window.bonnieInOffice = false;
-            this._resetOfficeState();
-            playBonnieJumpscare();
-            return;
-        }
-        // Reset le flag au cas où
-        if (!this.inOffice) this._tabletWasOpen = false;
+        */
     }
 
     // ── Reset complet (utilisé aussi par on6AM) ───────────────
@@ -1191,8 +1195,7 @@ const ChicaRooms = {
     restrooms:        { label: 'Restrooms',          connections: ['kitchen', 'east_hall']                   },
     kitchen:          { label: 'Kitchen',            connections: ['restrooms', 'east_hall']                 },
     east_hall:        { label: 'East Hall',          connections: ['dining_area', 'east_hall_corner']        },
-    //east_hall_corner: { label: 'East Hall Corner',   connections: ['east_hall', 'office_right']                              },
-    east_hall_corner: { label: 'East Hall Corner',   connections: ['office_right']                              },
+    east_hall_corner: { label: 'East Hall Corner',   connections: ['east_hall', 'office_right']                              },
     office_right:     { label: 'Office (Right)',      connections: []                                         },
 };
 
@@ -1200,13 +1203,13 @@ const ChicaRooms = {
 // ── Global room map ───────────────────────────────────────────
 
 const ROOMS = {
-    show_stage:       { who: ['Freddy', 'Bonnie', 'Chica'] },
+    show_stage:       { who: ['Bonnie', 'Chica'] },
     dining_area:      { who: [] },
     backstage:        { who: [] },
     kitchen:          { who: [] },
     restrooms:        { who: [] },
     east_hall:        { who: [] },
-    east_hall_corner: { who: [] },
+    east_hall_corner: { who: ['Freddy'] },
     west_hall:        { who: [] },
     west_hall_corner: { who: [] },
     supply_closet:    { who: [] },
