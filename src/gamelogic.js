@@ -535,12 +535,12 @@ function playNoiseMenu()             { playJumpscare(noiseMenu,               NO
 // ── Animatronics ──────────────────────────────────────────────
 
 const FREDDY = true;
-const CHICA  = false;
+const CHICA  = true;
 const BONNIE = false;
 const FOXY   = false;
 
 const base_ai_level = {
-    1:  { Freddy: 9,  Bonnie: 0, Chica: 0,  Foxy: 0  },
+    1:  { Freddy: 9,  Bonnie: 0, Chica: 10,  Foxy: 0  },
     2:  { Freddy: 0,  Bonnie: 3,  Chica: 1,  Foxy: 1  },
     3:  { Freddy: 1,  Bonnie: 0,  Chica: 5,  Foxy: 2  },
     41: { Freddy: 1,  Bonnie: 2,  Chica: 4,  Foxy: 6  },
@@ -661,7 +661,7 @@ class Freddy extends Animatronic {
         }
 
         // Déplacement classique
-        if (!ROOMS[nextRoom] || ROOMS[nextRoom].who.length === 0) {
+        if (!ROOMS[nextRoom] || ROOMS[nextRoom].who.length === 0 || ROOMS[nextRoom].who.includes('Chica')) {
             moveToRoom(this.name, nextRoom);
             if (isInKitchen) {
                 console.log('[Freddy] is in kitchen - playing sound')
@@ -960,7 +960,7 @@ class Chica extends Animatronic {
 
         // Arrivée devant la porte gauche
         if (nextRoom === 'office_right') {
-            if (!ROOMS[nextRoom] || ROOMS[nextRoom].who.length === 0) {
+            if (!ROOMS[nextRoom] || ROOMS[nextRoom].who.length === 0 || ROOMS[nextRoom].who.includes('Freddy')) {
                 moveToRoom(this.name, nextRoom);
                 this._atDoor = true;
                 window.chicaAtDoor = true;
@@ -973,7 +973,7 @@ class Chica extends Animatronic {
         }
 
         // Déplacement classique
-        if (!ROOMS[nextRoom] || ROOMS[nextRoom].who.length === 0) {
+        if (!ROOMS[nextRoom] || ROOMS[nextRoom].who.length === 0 || ROOMS[nextRoom].who.includes('Freddy')) {
             moveToRoom(this.name, nextRoom);
             if (inCloseSector) {
                 console.log('[Chica] entered close sector — chance to head to door');
@@ -1203,13 +1203,13 @@ const ChicaRooms = {
 // ── Global room map ───────────────────────────────────────────
 
 const ROOMS = {
-    show_stage:       { who: ['Bonnie', 'Chica'] },
+    show_stage:       { who: ['Bonnie','Freddy', 'Chica' ] },
     dining_area:      { who: [] },
     backstage:        { who: [] },
     kitchen:          { who: [] },
     restrooms:        { who: [] },
     east_hall:        { who: [] },
-    east_hall_corner: { who: ['Freddy'] },
+    east_hall_corner: { who: [] },
     west_hall:        { who: [] },
     west_hall_corner: { who: [] },
     supply_closet:    { who: [] },
@@ -1283,6 +1283,7 @@ function getCamImagePath(room) {
             if (hasBonnie) return _stablePick(room, ['Bonnie_1.png', 'Bonnie_2.png']).replace(/^/, CAM_BASE + 'Dining Area/');
             if (hasChica)  return _stablePick(room, ['Chica_1.png',  'Chica_2.png']).replace(/^/, CAM_BASE + 'Dining Area/');
             if (hasFreddy) return CAM_BASE + 'Dining Area/Freddy.png';
+            if (hasFreddy && hasChica)  return _stablePick(room, ['Chica_1.png',  'Chica_2.png']).replace(/^/, CAM_BASE + 'Dining Area/');
             return CAM_BASE + 'Dining Area/Empty.png';
 
         case 'pirate_cove': {
@@ -1309,16 +1310,20 @@ function getCamImagePath(room) {
         case 'east_hall':
             if (hasChica)  return _stablePick(room, ['Chica_1.png', 'Chica_2.png']).replace(/^/, CAM_BASE + 'East Hall/');
             if (hasFreddy) return CAM_BASE + 'East Hall/Freddy.png';
+            if (hasFreddy && hasChica)  return _stablePick(room, ['Chica_1.png', 'Chica_2.png']).replace(/^/, CAM_BASE + 'East Hall/');
             return _stablePick(room, ['Empty_1.png', 'Empty_2.png', 'Empty_3.png']).replace(/^/, CAM_BASE + 'East Hall/');
 
         case 'east_hall_corner':
             if (hasChica)  return _stablePick(room, ['Chica_1.png', 'Chica_2.png', 'Chica_3.png']).replace(/^/, CAM_BASE + 'East Hall Corner/');
             if (hasFreddy) return CAM_BASE + 'East Hall Corner/Freddy.png';
+            if (hasFreddy && hasChica)  return _stablePick(room, ['Chica_1.png', 'Chica_2.png', 'Chica_3.png']).replace(/^/, CAM_BASE + 'East Hall Corner/');
             return _stablePick(room, ['Empty_1.png', 'Empty_2.png', 'Empty_3.png', 'Empty_4.png', 'Empty_5.png']).replace(/^/, CAM_BASE + 'East Hall Corner/');
 
         case 'restrooms':
             if (hasChica)  return _stablePick(room, ['Chica_1.png', 'Chica_2.png']).replace(/^/, CAM_BASE + 'Restrooms/');
             if (hasFreddy) return CAM_BASE + 'Restrooms/Freddy.png';
+            if (hasFreddy && hasChica)  return _stablePick(room, ['Chica_1.png', 'Chica_2.png']).replace(/^/, CAM_BASE + 'Restrooms/');
+
             return CAM_BASE + 'Restrooms/Empty.png';
 
         case 'supply_closet':
