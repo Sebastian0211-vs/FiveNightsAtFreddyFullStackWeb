@@ -17,7 +17,7 @@
 // ── Night / time constants ────────────────────────────────────
 
 const HOURS         = ['12 AM','1 AM','2 AM','3 AM','4 AM','5 AM','6 AM'];
-const NIGHT_SECS    = 500; //535
+const NIGHT_SECS    =           535; //535
 const SECS_PER_HOUR = NIGHT_SECS / 6;
 
 // Power drained passively every N seconds (0 = no passive drain on night 1)
@@ -270,6 +270,11 @@ const GameState = {
         if (this._6amTriggered) return;
         this._6amTriggered = true;
         console.log('6 AM — night complete');
+
+
+        if (typeof closeTablet === 'function' && tabletState === 'open') {
+            closeTablet();
+        }
 
         // ── Cancel every pending power-out timer ─────────────
         if (this._powerOutTimers) {
@@ -534,13 +539,13 @@ function playNoiseMenu()             { playJumpscare(noiseMenu,               NO
 
 // ── Animatronics ──────────────────────────────────────────────
 
-const FREDDY = false;
+const FREDDY = true;
 const CHICA  = true;
-const BONNIE = false;
-const FOXY   = false;
+const BONNIE = true;
+const FOXY   = true;
 
 const base_ai_level = {
-    1:  { Freddy: 10,  Bonnie: 0, Chica: 10,  Foxy: 0  },
+    1:  { Freddy: 0,  Bonnie: 0, Chica: 0,  Foxy: 0  },
     2:  { Freddy: 0,  Bonnie: 3,  Chica: 1,  Foxy: 1  },
     3:  { Freddy: 1,  Bonnie: 0,  Chica: 5,  Foxy: 2  },
     41: { Freddy: 1,  Bonnie: 2,  Chica: 4,  Foxy: 6  },
@@ -793,8 +798,6 @@ class Bonnie extends Animatronic {
     // ── Déplacement normal (appelé par setInterval) ───────────
     tryMove() {
         // Immobile s'il attend devant la porte ou qu'il est déjà dans le bureau
-        //if (this._atDoor || this.inOffice) return;
-
         if (this._atDoor || this.inOffice) return;
 
         console.log('[Bonnie] tries to move — AI:', this.ai_level);
@@ -851,6 +854,7 @@ class Bonnie extends Animatronic {
     // ── Résolution : Bonnie tente d'entrer ───────────────────
     _tryEnterOffice() {
         if (state.left.door === 'closed') {
+            // Porte fermée → retreat
             this._atDoor = false;
             window.bonnieAtDoor = false;
             this.room = Math.random() < 0.5 ? 'dining_area' : 'west_hall';
@@ -859,6 +863,7 @@ class Bonnie extends Animatronic {
             return;
         }
 
+        // Porte ouverte → AI roll
         if (Math.random() * 20 >= this.ai_level) {
             console.log('[Bonnie] AI fail, stays at door — retrying');
             this._scheduleAttack();
@@ -887,6 +892,14 @@ class Bonnie extends Animatronic {
         if (this.inOffice) {
             this._tabletWasOpen = true;
             console.log('[Bonnie] Tablet opened while in office — will strike on close');
+
+            this._forcejumpscare_timer = setTimeout(() => {
+                    if (typeof closeTablet === 'function' && tabletState === 'open') {
+                        console.log("30 seconds before closing tablet")
+                        closeTablet();
+                    }
+                },
+                30000);
         }
     }
 
@@ -897,6 +910,7 @@ class Bonnie extends Animatronic {
             this._tabletWasOpen   = false;
             this.inOffice         = false;
             window.bonnieInOffice = false;
+            clearTimeout(this._forcejumpscare_timer);
             this._resetOfficeState();
             playBonnieJumpscare();
             return;
@@ -1001,6 +1015,7 @@ class Chica extends Animatronic {
 
         // Porte ouverte → AI roll
         if (Math.random() * 20 >= this.ai_level) {
+            // Échec → reste, réessaie dans 5s
             console.log('[Chica] AI fail, stays at door');
             this._scheduleAttack();
             return;
@@ -1026,6 +1041,13 @@ class Chica extends Animatronic {
         if (this.inOffice) {
             this._tabletWasOpen = true;
             console.log('[Chica] Tablet opened while in office — will strike on close');
+
+            this._forcejumpscare_timer = setTimeout(() => {
+                    if (typeof closeTablet === 'function' && tabletState === 'open') {
+                        closeTablet();
+                    }
+                },
+                30000);
         }
     }
 
@@ -1035,6 +1057,7 @@ class Chica extends Animatronic {
             console.log('[Chica] Tablet closed — JUMPSCARE');
             this._tabletWasOpen   = false;
             this.inOffice         = false;
+            clearTimeout(this._forcejumpscare_timer);
             window.chicaInOffice = false;
             this._resetOfficeState();
             playChicaJumpscare();
@@ -1191,8 +1214,7 @@ const ChicaRooms = {
     restrooms:        { label: 'Restrooms',          connections: ['kitchen', 'east_hall']                   },
     kitchen:          { label: 'Kitchen',            connections: ['restrooms', 'east_hall']                 },
     east_hall:        { label: 'East Hall',          connections: ['dining_area', 'east_hall_corner']        },
-    //east_hall_corner: { label: 'East Hall Corner',   connections: ['east_hall', 'office_right']                              },
-    east_hall_corner: { label: 'East Hall Corner',   connections: ['office_right']                              },
+    east_hall_corner: { label: 'East Hall Corner',   connections: ['east_hall', 'office_right']                              },
     office_right:     { label: 'Office (Right)',      connections: []                                         },
 };
 
