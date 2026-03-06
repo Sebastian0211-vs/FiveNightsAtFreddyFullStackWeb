@@ -9,7 +9,7 @@
 
         @font-face {
             font-family: 'FNAF';
-            src: url('../Assets/Fonts/five-nights-at-freddys.otf') format('opentype');
+            src: url('../../assets/Fonts/five-nights-at-freddys.otf') format('opentype');
         }
 
         body {
@@ -154,11 +154,11 @@
 <!-- HUD usage: label + battery image -->
 <div id="hud-usage">
     <span>Usage :</span>
-    <img id="hud-battery-img" src="../Assets/Battery/212.png" alt="battery">
+    <img id="hud-battery-img" src="../../assets/Battery/212.png" alt="battery">
 </div>
 
 <div id="tablet-bar">
-    <img src="../Assets/Tablette/open_tablette_icon.png" alt="tablet">
+    <img src="../../assets/Tablette/open_tablette_icon.png" alt="tablet">
 </div>
 
 <!-- Cam label top-left, visible quand tablette ouverte -->
@@ -166,12 +166,20 @@
 <canvas id="tablet-anim-canvas" style="display:none;position:fixed;inset:0;width:100%;height:100%;z-index:45;"></canvas>
 <canvas id="tablet-cam" style="display:none;position:fixed;inset:0;z-index:44;background:#000;width:100%;height:100%;"></canvas>
 <!-- Hidden video element for kitchen cam -->
-<video id="kitchen-video" src="../Assets/Freddy/puppet.mp4"
+<video id="kitchen-video" src="../../assets/Freddy/puppet.mp4"
        loop playsinline
        style="display:none;position:absolute;pointer-events:none;"></video>
 
-<script src="animations.js"></script>
-<script src="gamelogic.js"></script>
+<script src="../data/animations.js"></script>
+<script src="../constants/nightConfig.js"></script>
+<script src="../data/rooms.js"></script>
+<script src="../engine/jumpscare.js"></script>
+<script src="../engine/animatronics/Animatronic.js"></script>
+<script src="../engine/animatronics/Freddy.js"></script>
+<script src="../engine/animatronics/Bonnie.js"></script>
+<script src="../engine/animatronics/Chica.js"></script>
+<script src="../engine/animatronics/Foxy.js"></script>
+<script src="../engine/gameState.js"></script>
 <script>
     const canvas = document.getElementById('c');
     const ctx = canvas.getContext('2d');
@@ -185,7 +193,7 @@
     window.addEventListener('resize', resize);
 
     // --- Audio ---
-    const audioBase = '../Assets/FNaF 1 Audio/';
+    const audioBase = '../../assets/FNaF 1 Audio/';
     var sfxFan   = new Audio(audioBase + 'Buzz_Fan_Florescent2.wav');
     sfxFan.loop = true; sfxFan.volume = 0.2;
     var sfxPhone = new Audio(audioBase + 'voiceover1c.wav');
@@ -211,16 +219,16 @@
 
     // --- Background images ---
     const bg = new Image();
-    bg.src = '../assets/Main Room/39.png';
+    bg.src = '../../assets/Main Room/39.png';
 
     const bgLit = { left: new Image(), right: new Image() };
-    bgLit.left.src  = '../Assets/Main Room/main_room_left_open_lit.png';
-    bgLit.right.src = '../Assets/Main Room/main_room_right_open_lit.png';
+    bgLit.left.src  = '../../assets/Main Room/main_room_left_open_lit.png';
+    bgLit.right.src = '../../assets/Main Room/main_room_right_open_lit.png';
 
     const bgPoweredDown = new Image();
-    bgPoweredDown.src = '../Assets/Main Room/304.png';
+    bgPoweredDown.src = '../../assets/Main Room/304.png';
     const bgFreddyEyesImg = new Image();
-    bgFreddyEyesImg.src = '../Assets/Main Room/305.png';
+    bgFreddyEyesImg.src = '../../assets/Main Room/305.png';
 
     // ── Light flicker ─────────────────────────────────────────────
     const FLICKER_SEQUENCE = [
@@ -263,9 +271,9 @@
             if (leftLit) {
                 if (!window._bonnieDoorImg) {
                     window._bonnieDoorImg = new Image();
-                    window._bonnieDoorImg.src = '../Assets/Main Room/225.png';
+                    window._bonnieDoorImg.src = '../../assets/Main Room/225.png';
 
-                    const windowscaresfx = new Audio('../Assets/FNaF 1 Audio/windowscare.wav');
+                    const windowscaresfx = new Audio('../../assets/FNaF 1 Audio/windowscare.wav');
                     windowscaresfx.volume = 1;
                     window._bonnieDoorImg.onload = () => {
                         windowscaresfx.play().catch(() => {});
@@ -281,9 +289,9 @@
             if(rightLit){
                 if (!window._chicaDoorImg) {
                     window._chicaDoorImg = new Image();
-                    window._chicaDoorImg.src = '../Assets/Main Room/227.png'
+                    window._chicaDoorImg.src = '../../assets/Main Room/227.png'
 
-                    const windowscaresfx = new Audio('../Assets/FNaF 1 Audio/windowscare.wav');
+                    const windowscaresfx = new Audio('../../assets/FNaF 1 Audio/windowscare.wav');
                     windowscaresfx.volume = 1;
                     window._chicaDoorImg.onload = () => {
                         windowscaresfx.play().catch(() => {})
@@ -321,9 +329,9 @@
     });
 
     // --- Doors ---
-    const sfxDoor  = new Audio('../Assets/FNaF 1 Audio/SFXBible_12478.wav');
+    const sfxDoor  = new Audio('../../assets/FNaF 1 Audio/SFXBible_12478.wav');
     sfxDoor.volume = 0.8;
-    var sfxLight = new Audio('../Assets/FNaF 1 Audio/BallastHumMedium2.wav');
+    var sfxLight = new Audio('../../assets/FNaF 1 Audio/BallastHumMedium2.wav');
     sfxLight.loop = true; sfxLight.volume = 0.6;
 
     function updateLightAudio() {
@@ -375,7 +383,7 @@
     }
 
     // --- Buttons ---
-    const btnBase = '../Assets/Door_Buttons/';
+    const btnBase = '../../assets/Door_Buttons/';
     function loadBtn(side, light, door) {
         const img = new Image(); img.src = `${btnBase}Button_${side}_light_${light}_${door}.png`; return img;
     }
@@ -499,9 +507,9 @@
     });
 
     // --- Tablet audio ---
-    const sfxCameraUp   = new Audio('../Assets/FNaF 1 Audio/CAMERA_VIDEO_LOA_60105303.wav');
-    const sfxCameraDown = new Audio('../Assets/FNaF 1 Audio/put down.wav');
-    var sfxCameraLoop = new Audio('../Assets/FNaF 1 Audio/MiniDV_Tape_Eject_1.wav');
+    const sfxCameraUp   = new Audio('../../assets/FNaF 1 Audio/CAMERA_VIDEO_LOA_60105303.wav');
+    const sfxCameraDown = new Audio('../../assets/FNaF 1 Audio/put down.wav');
+    var sfxCameraLoop = new Audio('../../assets/FNaF 1 Audio/MiniDV_Tape_Eject_1.wav');
     sfxCameraUp.volume = 0.5; sfxCameraDown.volume = 0.5;
     sfxCameraLoop.loop = true; sfxCameraLoop.volume = 0.4;
 
@@ -624,8 +632,8 @@
     const CAM_PAN_SPEED = 0.000065;
 
     // --- Camera GUI overlay ---
-    const camFrameImg  = new Image(); camFrameImg.src  = '../Assets/Cam_views/11.png';
-    const camRedDotImg = new Image(); camRedDotImg.src = '../Assets/Cam_views/7.png';
+    const camFrameImg  = new Image(); camFrameImg.src  = '../../assets/Cam_views/11.png';
+    const camRedDotImg = new Image(); camRedDotImg.src = '../../assets/Cam_views/7.png';
 
     const RED_DOT_ON = 900, RED_DOT_OFF = 400, RED_DOT_PERIOD = 1300;
     function isRedDotVisible() { return (performance.now() % RED_DOT_PERIOD) < RED_DOT_ON; }
@@ -860,6 +868,6 @@
     initGameLogic();
 
 </script>
-<script src="minimap_debug_patch.js"></script>
+<script src="../camera/minimap.js"></script>
 </body>
 </html>
