@@ -156,21 +156,21 @@
     <div id="page-fade"></div>
 
     <div class="container">
-        <img id="anim" src="../assets/menu/1.png">
-        <img id="animNoiseMenu" src="../assets/menu/noise1.png">
-        <img id="animWhiteMenu" src="../assets/menu/whiteNoise1.png">
-        <img class="slide" src="../assets/menu/452.png">
-        <img id="title" class="FNAFtitle" src="../assets/menu/444-trans.png">
+        <img id="anim" src="../../assets/menu/1.png">
+        <img id="animNoiseMenu" src="../../assets/menu/noise1.png">
+        <img id="animWhiteMenu" src="../../assets/menu/whiteNoise1.png">
+        <img class="slide" src="../../assets/menu/452.png">
+        <img id="title" class="FNAFtitle" src="../../assets/menu/444-trans.png">
         <div class="menu-buttons">
-            <img id="selector" src="../assets/menu/arrow_trans.png">
-            <img class="menu-btn" src="../assets/menu/new_game_trans.png" onclick="onNewGame()">
-            <img class="menu-btn" src="../assets/menu/continue_trans.png" onclick="onContinue()">
+            <img id="selector" src="../../assets/menu/arrow_trans.png">
+            <img class="menu-btn" src="../../assets/menu/new_game_trans.png" onclick="onNewGame()">
+            <img class="menu-btn" src="../../assets/menu/continue_trans.png" onclick="onContinue()">
         </div>
     </div>
 
 <!-- Full-screen transition overlay -->
 <div id="transition-overlay">
-    <img id="transition-img" src="../Assets/Menu/574.png">
+    <img id="transition-img" src="../../assets/Menu/574.png">
 </div>
 
 
@@ -220,21 +220,21 @@
                 await wait(500);
 
                 // 6. Navigate — mainroom will fade in on load
-                window.location.href = 'mainroom_test.html';
+                window.location.href = 'MainRoom.html';
             }
             function onContinue(){
                 console.log("CONTINUE")
             }
         </script>
 
-<script src="./animations.js"></script>
-<script src="./player.js"></script>
+<script src="../data/animations.js"></script>
+<script src="player.js"></script>
 
         <script>
             window.onload = () => {
                 document.body.style.opacity = "1";
-                const a = new Audio('../Assets/FNaF 1 Audio/darkness music.wav');
-                const b = new Audio('../Assets/FNaF 1 Audio/static2.wav');
+                const a = new Audio('../../assets/FNaF 1 Audio/darkness music.wav');
+                const b = new Audio('../../assets/FNaF 1 Audio/static2.wav');
                 a.loop = true
                 b.loop = true
                 b.play()
