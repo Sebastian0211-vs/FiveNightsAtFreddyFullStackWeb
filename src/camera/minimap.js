@@ -31,17 +31,17 @@
     };
 
     const CAM_THUMB = {
-        '1A': '../Assets/Text_Box/cam_1a_trans.png',
-        '1B': '../Assets/Text_Box/cam_1b_trans.png',
-        '1C': '../Assets/Text_Box/cam_1c_trans.png',
-        '2A': '../Assets/Text_Box/cam_2a_trans.png',
-        '2B': '../Assets/Text_Box/cam_2b_trans.png',
-        '3':  '../Assets/Text_Box/cam_3_trans.png',
-        '4A': '../Assets/Text_Box/cam_4a_trans.png',
-        '4B': '../Assets/Text_Box/cam_4b.png',
-        '5':  '../Assets/Text_Box/cam_5_trans.png',
-        '6':  '../Assets/Text_Box/cam_6_trans.png',
-        '7':  '../Assets/Text_Box/cam_7_trans.png',
+        '1A': '../../assets/Text_Box/cam_1a_trans.png',
+        '1B': '../../assets/Text_Box/cam_1b_trans.png',
+        '1C': '../../assets/Text_Box/cam_1c_trans.png',
+        '2A': '../../assets/Text_Box/cam_2a_trans.png',
+        '2B': '../../assets/Text_Box/cam_2b_trans.png',
+        '3':  '../../assets/Text_Box/cam_3_trans.png',
+        '4A': '../../assets/Text_Box/cam_4a_trans.png',
+        '4B': '../../assets/Text_Box/cam_4b.png',
+        '5':  '../../assets/Text_Box/cam_5_trans.png',
+        '6':  '../../assets/Text_Box/cam_6_trans.png',
+        '7':  '../../assets/Text_Box/cam_7_trans.png',
     };
 
     // Rectangle cliquable (contenant)
@@ -83,7 +83,7 @@
 
     // Image de fond — opacité pleine, pas de fond coloré
     const bgImg = document.createElement('img');
-    bgImg.src = '../assets/map/145.png';
+    bgImg.src = '../../assets/map/145.png';
     bgImg.style.cssText = `
         position: absolute; inset: 0; width: 100%; height: 100%;
         object-fit: contain; pointer-events: none; opacity: 1;
