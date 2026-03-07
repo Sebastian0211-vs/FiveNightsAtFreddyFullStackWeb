@@ -133,7 +133,7 @@
             position: fixed;
             inset: 0;
             z-index: 100;
-            background: black;        /* ← ça cache le menu */
+            background: black;
             opacity: 0;
             transition: opacity 0.7s ease;
         }
@@ -148,25 +148,57 @@
             z-index:1;
             transition: opacity 0.6s ease;
         }
+
+        /* ── Login button ──────────────────────────────────────── */
+        @font-face {
+            font-family: 'FNAF';
+            src: url('../../assets/Fonts/five-nights-at-freddys.otf') format('opentype');
+        }
+
+        #login-btn {
+            position: fixed;
+            bottom: 28px;
+            right: 36px;
+            z-index: 50;
+            font-family: 'FNAF', 'Courier New', monospace;
+            font-size: clamp(9px, 1.1vw, 13px);
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: rgba(200, 160, 120, 0.65);
+            background: transparent;
+            border: 1px solid rgba(180, 120, 60, 0.3);
+            padding: 8px 18px;
+            cursor: pointer;
+            transition: color 0.25s, border-color 0.25s, text-shadow 0.25s;
+            text-shadow: none;
+        }
+        #login-btn:hover {
+            color: rgba(255, 200, 140, 0.95);
+            border-color: rgba(220, 140, 60, 0.7);
+            text-shadow: 0 0 10px rgba(220, 120, 40, 0.5);
+        }
     </style>
 </head>
 
-    <body>
+<body>
 
-    <div id="page-fade"></div>
+<div id="page-fade"></div>
 
-    <div class="container">
-        <img id="anim" src="../../assets/menu/1.png">
-        <img id="animNoiseMenu" src="../../assets/menu/noise1.png">
-        <img id="animWhiteMenu" src="../../assets/menu/whiteNoise1.png">
-        <img class="slide" src="../../assets/menu/452.png">
-        <img id="title" class="FNAFtitle" src="../../assets/menu/444-trans.png">
-        <div class="menu-buttons">
-            <img id="selector" src="../../assets/menu/arrow_trans.png">
-            <img class="menu-btn" src="../../assets/menu/new_game_trans.png" onclick="onNewGame()">
-            <img class="menu-btn" src="../../assets/menu/continue_trans.png" onclick="onContinue()">
-        </div>
+<div class="container">
+    <img id="anim" src="../../assets/menu/1.png">
+    <img id="animNoiseMenu" src="../../assets/menu/noise1.png">
+    <img id="animWhiteMenu" src="../../assets/menu/whiteNoise1.png">
+    <img class="slide" src="../../assets/menu/452.png">
+    <img id="title" class="FNAFtitle" src="../../assets/menu/444-trans.png">
+    <div class="menu-buttons">
+        <img id="selector" src="../../assets/menu/arrow_trans.png">
+        <img class="menu-btn" src="../../assets/menu/new_game_trans.png" onclick="onNewGame()">
+        <img class="menu-btn" src="../../assets/menu/continue_trans.png" onclick="onContinue()">
     </div>
+</div>
+
+<!-- Login button — bottom right, links to the React/Vite app -->
+<button id="login-btn" onclick="goToLogin()">Employee Login</button>
 
 <!-- Full-screen transition overlay -->
 <div id="transition-overlay">
@@ -174,116 +206,116 @@
 </div>
 
 
-        <script>
+<script>
 
-            function fadeTo(el, from, to, duration) {
-                return new Promise(resolve => {
-                    el.style.transition = `opacity ${duration}ms ease`;
-                    el.style.opacity = from;
-                    void el.offsetWidth; // force reflow so start value is painted
-                    el.style.opacity = to;
-                    setTimeout(resolve, duration);
-                });
-            }
+    function fadeTo(el, from, to, duration) {
+        return new Promise(resolve => {
+            el.style.transition = `opacity ${duration}ms ease`;
+            el.style.opacity = from;
+            void el.offsetWidth;
+            el.style.opacity = to;
+            setTimeout(resolve, duration);
+        });
+    }
 
-            function wait(ms) {
-                return new Promise(r => setTimeout(r, ms));
-            }
+    function wait(ms) {
+        return new Promise(r => setTimeout(r, ms));
+    }
 
-            function goTo(url) {
-                document.body.style.transition = "opacity 2s";
-                document.body.style.opacity = "0";
-                setTimeout(() => {
-                    window.location.href = url;
-                }, 2000);
-            }
+    function goTo(url) {
+        document.body.style.transition = "opacity 2s";
+        document.body.style.opacity = "0";
+        setTimeout(() => {
+            window.location.href = url;
+        }, 2000);
+    }
 
-            async function onNewGame() {
-                const overlay = document.getElementById('transition-overlay');
-                const img     = document.getElementById('transition-img');
+    async function onNewGame() {
+        const overlay = document.getElementById('transition-overlay');
+        const img     = document.getElementById('transition-img');
 
-                overlay.classList.add('active');
+        overlay.classList.add('active');
 
-                // 1. Fade scene to black
-                await fadeTo(overlay, 0, 1, 700);
+        await fadeTo(overlay, 0, 1, 700);
+        await fadeTo(img, 0, 1, 800);
+        await wait(3500);
+        await fadeTo(img, 1, 0, 800);
+        await wait(500);
 
-                // 2. Fade in 574.png over the black
-                await fadeTo(img, 0, 1, 800);
+        window.location.href = 'MainRoom.html';
+    }
 
-                // 3. Hold on 574.png
-                await wait(3500);
+    function onContinue(){
+        console.log("CONTINUE")
+    }
 
-                // 4. Fade 574.png back out to black
-                await fadeTo(img, 1, 0, 800);
-
-                // 5. Brief pause on black
-                await wait(500);
-
-                // 6. Navigate — mainroom will fade in on load
-                window.location.href = 'MainRoom.html';
-            }
-            function onContinue(){
-                console.log("CONTINUE")
-            }
-        </script>
+    function goToLogin() {
+        document.body.style.transition = "opacity 0.8s";
+        document.body.style.opacity = "0";
+        setTimeout(() => {
+            // Points to the Vite dev server — update to your deployed URL in production
+            window.location.href = 'http://localhost:5173/login';
+        }, 800);
+    }
+</script>
 
 <script src="../data/animations.js"></script>
 <script src="player.js"></script>
 
-        <script>
-            window.onload = () => {
-                document.body.style.opacity = "1";
-                const a = new Audio('../../assets/FNaF 1 Audio/darkness music.wav');
-                const b = new Audio('../../assets/FNaF 1 Audio/static2.wav');
-                a.loop = true
-                b.loop = true
-                b.play()
-                    .then(() => console.log("Menu audio playing"))
-                    .catch((e) => console.error("Menu audio not found", e));
-                a.play()
-                    .then(() => console.log("Menu audio playing"))
-                    .catch((e) => console.error("Menu audio not found", e));
-            }
+<script>
+    window.onload = () => {
+        document.body.style.opacity = "1";
+        const a = new Audio('../../assets/FNaF 1 Audio/darkness music.wav');
+        const b = new Audio('../../assets/FNaF 1 Audio/static2.wav');
+        a.loop = true
+        b.loop = true
+        b.play()
+            .then(() => console.log("Menu audio playing"))
+            .catch((e) => console.error("Menu audio not found", e));
+        a.play()
+            .then(() => console.log("Menu audio playing"))
+            .catch((e) => console.error("Menu audio not found", e));
+    }
 
-        </script>
+</script>
 
-        <script>
-            const buttons = document.querySelectorAll(".menu-btn");
-            const selector = document.getElementById("selector");
-            let selectedIndex = 0;
+<script>
+    const buttons = document.querySelectorAll(".menu-btn");
+    const selector = document.getElementById("selector");
+    let selectedIndex = 0;
 
-            function moveSelector(index) {
-                selectedIndex = index;
-                const btn = buttons[index];
-                selector.style.top = btn.offsetTop + btn.offsetHeight / 2 - selector.offsetHeight / 2 + "px";
-            }
+    function moveSelector(index) {
+        selectedIndex = index;
+        const btn = buttons[index];
+        selector.style.top = btn.offsetTop + btn.offsetHeight / 2 - selector.offsetHeight / 2 + "px";
+    }
 
-            buttons.forEach((btn, i) => {
-                btn.addEventListener("mouseenter", () => moveSelector(i));
-            });
+    buttons.forEach((btn, i) => {
+        btn.addEventListener("mouseenter", () => moveSelector(i));
+    });
 
-            document.addEventListener("keydown", (e) => {
-                if (e.key === "ArrowDown") moveSelector((selectedIndex + 1) % buttons.length);
-                if (e.key === "ArrowUp") moveSelector((selectedIndex - 1 + buttons.length) % buttons.length);
-                if (e.key === "Enter") buttons[selectedIndex].click();
-            });
+    document.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown") moveSelector((selectedIndex + 1) % buttons.length);
+        if (e.key === "ArrowUp") moveSelector((selectedIndex - 1 + buttons.length) % buttons.length);
+        if (e.key === "Enter") buttons[selectedIndex].click();
+    });
 
-            moveSelector(0);
-        </script>
+    moveSelector(0);
+</script>
 
-        <script>
-            playAnimation(document.getElementById("anim"), FatMenu);
-            playAnimation(document.getElementById("animNoiseMenu"), noiseMenu, 0.4);
-            playAnimation(document.getElementById("animWhiteMenu"), whiteMenu, 0.4);
+<script>
+    playAnimation(document.getElementById("anim"), FreddyMenu);
+    playAnimation(document.getElementById("animNoiseMenu"), noiseMenu, 0.4);
+    playAnimation(document.getElementById("animWhiteMenu"), whiteMenu, 0.4);
 
-            const slide = document.querySelector(".slide");
+    const slide = document.querySelector(".slide");
 
-            slide.addEventListener("animationend", () => {
-                slide.style.animation = "none";
-                void slide.offsetWidth;
-                slide.style.animation = "slideDown 10s linear forwards";
-            });
-        </script>
+    slide.addEventListener("animationend", () => {
+        slide.style.animation = "none";
+        void slide.offsetWidth;
+        slide.style.animation = "slideDown 10s linear forwards";
+    });
+</script>
 
 </body>
 </html>
