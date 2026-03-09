@@ -675,7 +675,7 @@ const foxyRun = {
 const tabletAnimation = {
     frameCount: 11,                        // frame_1.png … frame_11.png
     basePath:   '../../assets/Tablette/frame_',
-    frameDelay: 50,                        // ms per frame
+    frameDelay: 20,                        // ms per frame
 };
 
 function preloadFrames(def) {
