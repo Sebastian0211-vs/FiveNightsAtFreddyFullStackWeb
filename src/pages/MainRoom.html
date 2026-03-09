@@ -693,11 +693,14 @@
             }
         }
 
+
+        let noiseB = Math.floor(Math.random() * 3);
+        setInterval(() => { noiseB = Math.floor(Math.random() * 3); }, 1000);
         const noiseFrame = noiseMenuReady ? noiseMenuFrames[noiseIndex] : null;
         if (noiseFrame && noiseFrame.complete && noiseFrame.naturalWidth) {
             camCtx.save();
             camCtx.globalCompositeOperation = 'screen';
-            camCtx.globalAlpha = 0.55;
+            camCtx.globalAlpha = ((150 + Math.random() * 50 + noiseB * 15) / 245)*0.7;
             const scale = Math.max(cw / noiseFrame.naturalWidth, ch / noiseFrame.naturalHeight);
             camCtx.drawImage(noiseFrame, (cw - noiseFrame.naturalWidth * scale) / 2, (ch - noiseFrame.naturalHeight * scale) / 2, noiseFrame.naturalWidth * scale, noiseFrame.naturalHeight * scale);
             camCtx.restore();
