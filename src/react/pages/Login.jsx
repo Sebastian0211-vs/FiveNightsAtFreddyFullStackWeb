@@ -1,22 +1,22 @@
 import { useNavigate } from 'react-router-dom';
 import React, { useEffect, useState, useRef } from 'react';
-import overlay      from '../../../assets/FNaF 6/night_assets/986.png';
-import light_bulb   from '../../../assets/FNaF 6/night_assets/1009.png';
-import frame_969c   from '../../../assets/FNaF 6/night_assets/Baby/table_baby/969_cleared.png';
-import frame_970    from '../../../assets/FNaF 6/night_assets/Baby/table_baby/970.png';
-import frame_971    from '../../../assets/FNaF 6/night_assets/Baby/table_baby/971.png';
-import frame_972    from '../../../assets/FNaF 6/night_assets/Baby/table_baby/972.png';
-import frame_973    from '../../../assets/FNaF 6/night_assets/Baby/table_baby/973.png';
-import frame_983    from '../../../assets/FNaF 6/night_assets/Baby/table_baby/983.png';
-import frame_984    from '../../../assets/FNaF 6/night_assets/Baby/table_baby/984.png';
-import frame_985    from '../../../assets/FNaF 6/night_assets/Baby/table_baby/985.png';
-import shh2              from '../../../assets/FNaF 6 Audio/Shh2.mp3';
-import shouldhaveknown1  from '../../../assets/FNaF 6 Audio/shouldhaveknown1.mp3';
+import overlay      from '../Assets/FNaF 6/night_assets/986.png';
+import light_bulb   from '../Assets/FNaF 6/night_assets/1009.png';
+import frame_969c   from '../Assets/FNaF 6/night_assets/Baby/table_baby/969_cleared.png';
+import frame_970    from '../Assets/FNaF 6/night_assets/Baby/table_baby/970.png';
+import frame_971    from '../Assets/FNaF 6/night_assets/Baby/table_baby/971.png';
+import frame_972    from '../Assets/FNaF 6/night_assets/Baby/table_baby/972.png';
+import frame_973    from '../Assets/FNaF 6/night_assets/Baby/table_baby/973.png';
+import frame_983    from '../Assets/FNaF 6/night_assets/Baby/table_baby/983.png';
+import frame_984    from '../Assets/FNaF 6/night_assets/Baby/table_baby/984.png';
+import frame_985    from '../Assets/FNaF 6/night_assets/Baby/table_baby/985.png';
+import shh2              from '../Assets/FNaF 6 Audio/Shh2.mp3';
+import shouldhaveknown1  from '../Assets/FNaF 6 Audio/shouldhaveknown1.mp3';
 
-import winds        from '../../../assets/FNaF 6 Audio/winds.mp3';
-import crickets     from '../../../assets/FNaF 6 Audio/crickets01.mp3';
-import swallow_void from '../../../assets/FNaF 6 Audio/Swallowed By The Void.mp3';
-import countdown    from '../../../assets/FNaF 6 Audio/countdown_mod.wav';
+import winds        from '../Assets/FNaF 6 Audio/winds.mp3';
+import crickets     from '../Assets/FNaF 6 Audio/crickets01.mp3';
+import swallow_void from '../Assets/FNaF 6 Audio/Swallowed By The Void.mp3';
+import countdown    from '../Assets/FNaF 6 Audio/countdown_mod.wav';
 
 const TABLE_FRAMES = [
     '../../../assets/FNaF 6/night_assets/Baby/table_baby/632.png',

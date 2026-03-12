@@ -2,114 +2,114 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // ── Static assets ─────────────────────────────────────────────
-import overlay    from '../../../assets/FNaF 6/night_assets/986.png';
-import light_bulb from '../../../assets/FNaF 6/night_assets/1009.png';
-import hint_open  from '../../../assets/FNaF 6/night_assets/1998.png';
-import hint_close from '../../../assets/FNaF 6/night_assets/1999.png';
-import paper_blur from '../../../assets/FNaF 6/night_assets/1439.png';
-import paper_idle from '../../../assets/FNaF 6/night_assets/1438_cleared.png';
-import taser      from '../../../assets/FNaF 6/night_assets/1442.png';
+import overlay    from '../Assets/FNaF 6/night_assets/986.png';
+import light_bulb from '../Assets/FNaF 6/night_assets/1009.png';
+import hint_open  from '../Assets/FNaF 6/night_assets/1998.png';
+import hint_close from '../Assets/FNaF 6/night_assets/1999.png';
+import paper_blur from '../Assets/FNaF 6/night_assets/1439.png';
+import paper_idle from '../Assets/FNaF 6/night_assets/1438_cleared.png';
+import taser      from '../Assets/FNaF 6/night_assets/1442.png';
 
 // ── idle poses ──────────────────────────────────────────
-import a_idle_0 from '../../../assets/FNaF 6/night_assets/Afton/1423.png';
-import a_idle_1 from '../../../assets/FNaF 6/night_assets/Afton/1430.png';
-import a_idle_2 from '../../../assets/FNaF 6/night_assets/Afton/1431.png';
+import a_idle_0 from '../Assets/FNaF 6/night_assets/Afton/1423.png';
+import a_idle_1 from '../Assets/FNaF 6/night_assets/Afton/1430.png';
+import a_idle_2 from '../Assets/FNaF 6/night_assets/Afton/1431.png';
 
-import f_idle_0 from '../../../assets/FNaF 6/night_assets/Freddy/1421.png';
-import f_idle_1 from '../../../assets/FNaF 6/night_assets/Freddy/1428.png';
-import f_idle_2 from '../../../assets/FNaF 6/night_assets/Freddy/1429.png';
+import f_idle_0 from '../Assets/FNaF 6/night_assets/Freddy/1421.png';
+import f_idle_1 from '../Assets/FNaF 6/night_assets/Freddy/1428.png';
+import f_idle_2 from '../Assets/FNaF 6/night_assets/Freddy/1429.png';
 
-import b_idle_0 from '../../../assets/FNaF 6/night_assets/Baby/1425.png';
-import b_idle_1 from '../../../assets/FNaF 6/night_assets/Baby/1432.png';
-import b_idle_2 from '../../../assets/FNaF 6/night_assets/Baby/1433.png';
+import b_idle_0 from '../Assets/FNaF 6/night_assets/Baby/1425.png';
+import b_idle_1 from '../Assets/FNaF 6/night_assets/Baby/1432.png';
+import b_idle_2 from '../Assets/FNaF 6/night_assets/Baby/1433.png';
 
-import l_idle_0 from '../../../assets/FNaF 6/night_assets/Lefty/1426.png';
-import l_idle_1 from '../../../assets/FNaF 6/night_assets/Lefty/1434.png';
-import l_idle_2 from '../../../assets/FNaF 6/night_assets/Lefty/1435.png';
+import l_idle_0 from '../Assets/FNaF 6/night_assets/Lefty/1426.png';
+import l_idle_1 from '../Assets/FNaF 6/night_assets/Lefty/1434.png';
+import l_idle_2 from '../Assets/FNaF 6/night_assets/Lefty/1435.png';
 
 
 // ── jumpscare frames ────────────────────────────────────
-import a_js_0  from '../../../assets/FNaF 6/night_assets/Afton/1499.png';
-import a_js_1  from '../../../assets/FNaF 6/night_assets/Afton/1500.png';
-import a_js_2  from '../../../assets/FNaF 6/night_assets/Afton/1501.png';
-import a_js_3  from '../../../assets/FNaF 6/night_assets/Afton/1502.png';
-import a_js_4  from '../../../assets/FNaF 6/night_assets/Afton/1503.png';
-import a_js_5  from '../../../assets/FNaF 6/night_assets/Afton/1504.png';
-import a_js_6  from '../../../assets/FNaF 6/night_assets/Afton/1505.png';
-import a_js_7  from '../../../assets/FNaF 6/night_assets/Afton/1507.png';
-import a_js_8  from '../../../assets/FNaF 6/night_assets/Afton/1508.png';
-import a_js_9  from '../../../assets/FNaF 6/night_assets/Afton/1509.png';
-import a_js_10 from '../../../assets/FNaF 6/night_assets/Afton/1510.png';
-import a_js_11 from '../../../assets/FNaF 6/night_assets/Afton/1511.png';
-import a_js_12 from '../../../assets/FNaF 6/night_assets/Afton/1512.png';
-import a_js_13 from '../../../assets/FNaF 6/night_assets/Afton/1513.png';
-import a_js_14 from '../../../assets/FNaF 6/night_assets/Afton/1514.png';
+import a_js_0  from '../Assets/FNaF 6/night_assets/Afton/1499.png';
+import a_js_1  from '../Assets/FNaF 6/night_assets/Afton/1500.png';
+import a_js_2  from '../Assets/FNaF 6/night_assets/Afton/1501.png';
+import a_js_3  from '../Assets/FNaF 6/night_assets/Afton/1502.png';
+import a_js_4  from '../Assets/FNaF 6/night_assets/Afton/1503.png';
+import a_js_5  from '../Assets/FNaF 6/night_assets/Afton/1504.png';
+import a_js_6  from '../Assets/FNaF 6/night_assets/Afton/1505.png';
+import a_js_7  from '../Assets/FNaF 6/night_assets/Afton/1507.png';
+import a_js_8  from '../Assets/FNaF 6/night_assets/Afton/1508.png';
+import a_js_9  from '../Assets/FNaF 6/night_assets/Afton/1509.png';
+import a_js_10 from '../Assets/FNaF 6/night_assets/Afton/1510.png';
+import a_js_11 from '../Assets/FNaF 6/night_assets/Afton/1511.png';
+import a_js_12 from '../Assets/FNaF 6/night_assets/Afton/1512.png';
+import a_js_13 from '../Assets/FNaF 6/night_assets/Afton/1513.png';
+import a_js_14 from '../Assets/FNaF 6/night_assets/Afton/1514.png';
 
 
-import b_js_0 from '../../../assets/FNaF 6/night_assets/Baby/1483.png';
-import b_js_1 from '../../../assets/FNaF 6/night_assets/Baby/1484.png';
-import b_js_2 from '../../../assets/FNaF 6/night_assets/Baby/1485.png';
-import b_js_3 from '../../../assets/FNaF 6/night_assets/Baby/1486.png';
-import b_js_4 from '../../../assets/FNaF 6/night_assets/Baby/1487.png';
-import b_js_5 from '../../../assets/FNaF 6/night_assets/Baby/1488.png';
-import b_js_6 from '../../../assets/FNaF 6/night_assets/Baby/1489.png';
-import b_js_7 from '../../../assets/FNaF 6/night_assets/Baby/1490.png';
-import b_js_8 from '../../../assets/FNaF 6/night_assets/Baby/1491.png';
-import b_js_9 from '../../../assets/FNaF 6/night_assets/Baby/1492.png';
-import b_js_10 from '../../../assets/FNaF 6/night_assets/Baby/1493.png';
-import b_js_11 from '../../../assets/FNaF 6/night_assets/Baby/1494.png';
-import b_js_12 from '../../../assets/FNaF 6/night_assets/Baby/1495.png';
-import b_js_13 from '../../../assets/FNaF 6/night_assets/Baby/1496.png';
-import b_js_14 from '../../../assets/FNaF 6/night_assets/Baby/1497.png';
-import b_js_15 from '../../../assets/FNaF 6/night_assets/Baby/1498.png';
+import b_js_0 from '../Assets/FNaF 6/night_assets/Baby/1483.png';
+import b_js_1 from '../Assets/FNaF 6/night_assets/Baby/1484.png';
+import b_js_2 from '../Assets/FNaF 6/night_assets/Baby/1485.png';
+import b_js_3 from '../Assets/FNaF 6/night_assets/Baby/1486.png';
+import b_js_4 from '../Assets/FNaF 6/night_assets/Baby/1487.png';
+import b_js_5 from '../Assets/FNaF 6/night_assets/Baby/1488.png';
+import b_js_6 from '../Assets/FNaF 6/night_assets/Baby/1489.png';
+import b_js_7 from '../Assets/FNaF 6/night_assets/Baby/1490.png';
+import b_js_8 from '../Assets/FNaF 6/night_assets/Baby/1491.png';
+import b_js_9 from '../Assets/FNaF 6/night_assets/Baby/1492.png';
+import b_js_10 from '../Assets/FNaF 6/night_assets/Baby/1493.png';
+import b_js_11 from '../Assets/FNaF 6/night_assets/Baby/1494.png';
+import b_js_12 from '../Assets/FNaF 6/night_assets/Baby/1495.png';
+import b_js_13 from '../Assets/FNaF 6/night_assets/Baby/1496.png';
+import b_js_14 from '../Assets/FNaF 6/night_assets/Baby/1497.png';
+import b_js_15 from '../Assets/FNaF 6/night_assets/Baby/1498.png';
 
-import f_js_0 from '../../../assets/FNaF 6/night_assets/Freddy/1515.png';
-import f_js_1 from '../../../assets/FNaF 6/night_assets/Freddy/1516.png';
-import f_js_2 from '../../../assets/FNaF 6/night_assets/Freddy/1517.png';
-import f_js_3 from '../../../assets/FNaF 6/night_assets/Freddy/1518.png';
-import f_js_4 from '../../../assets/FNaF 6/night_assets/Freddy/1519.png';
-import f_js_5 from '../../../assets/FNaF 6/night_assets/Freddy/1520.png';
-import f_js_6 from '../../../assets/FNaF 6/night_assets/Freddy/1521.png';
-import f_js_7 from '../../../assets/FNaF 6/night_assets/Freddy/1522.png';
-import f_js_8 from '../../../assets/FNaF 6/night_assets/Freddy/1523.png';
-import f_js_9 from '../../../assets/FNaF 6/night_assets/Freddy/1524.png';
-import f_js_10 from '../../../assets/FNaF 6/night_assets/Freddy/1525.png';
-import f_js_11 from '../../../assets/FNaF 6/night_assets/Freddy/1526.png';
-import f_js_12 from '../../../assets/FNaF 6/night_assets/Freddy/1527.png';
-import f_js_13 from '../../../assets/FNaF 6/night_assets/Freddy/1528.png';
-import f_js_14 from '../../../assets/FNaF 6/night_assets/Freddy/1529.png';
-import f_js_15 from '../../../assets/FNaF 6/night_assets/Freddy/1530.png';
+import f_js_0 from '../Assets/FNaF 6/night_assets/Freddy/1515.png';
+import f_js_1 from '../Assets/FNaF 6/night_assets/Freddy/1516.png';
+import f_js_2 from '../Assets/FNaF 6/night_assets/Freddy/1517.png';
+import f_js_3 from '../Assets/FNaF 6/night_assets/Freddy/1518.png';
+import f_js_4 from '../Assets/FNaF 6/night_assets/Freddy/1519.png';
+import f_js_5 from '../Assets/FNaF 6/night_assets/Freddy/1520.png';
+import f_js_6 from '../Assets/FNaF 6/night_assets/Freddy/1521.png';
+import f_js_7 from '../Assets/FNaF 6/night_assets/Freddy/1522.png';
+import f_js_8 from '../Assets/FNaF 6/night_assets/Freddy/1523.png';
+import f_js_9 from '../Assets/FNaF 6/night_assets/Freddy/1524.png';
+import f_js_10 from '../Assets/FNaF 6/night_assets/Freddy/1525.png';
+import f_js_11 from '../Assets/FNaF 6/night_assets/Freddy/1526.png';
+import f_js_12 from '../Assets/FNaF 6/night_assets/Freddy/1527.png';
+import f_js_13 from '../Assets/FNaF 6/night_assets/Freddy/1528.png';
+import f_js_14 from '../Assets/FNaF 6/night_assets/Freddy/1529.png';
+import f_js_15 from '../Assets/FNaF 6/night_assets/Freddy/1530.png';
 
-import l_js_0 from '../../../assets/FNaF 6/night_assets/Lefty/1531.png';
-import l_js_1 from '../../../assets/FNaF 6/night_assets/Lefty/1532.png';
-import l_js_2 from '../../../assets/FNaF 6/night_assets/Lefty/1533.png';
-import l_js_3 from '../../../assets/FNaF 6/night_assets/Lefty/1534.png';
-import l_js_4 from '../../../assets/FNaF 6/night_assets/Lefty/1535.png';
-import l_js_5 from '../../../assets/FNaF 6/night_assets/Lefty/1536.png';
-import l_js_6 from '../../../assets/FNaF 6/night_assets/Lefty/1537.png';
-import l_js_7 from '../../../assets/FNaF 6/night_assets/Lefty/1538.png';
-import l_js_8 from '../../../assets/FNaF 6/night_assets/Lefty/1539.png';
-import l_js_9 from '../../../assets/FNaF 6/night_assets/Lefty/1540.png';
-import l_js_10 from '../../../assets/FNaF 6/night_assets/Lefty/1541.png';
-import l_js_11 from '../../../assets/FNaF 6/night_assets/Lefty/1542.png';
-import l_js_12 from '../../../assets/FNaF 6/night_assets/Lefty/1543.png';
-import l_js_13 from '../../../assets/FNaF 6/night_assets/Lefty/1544.png';
-import l_js_14 from '../../../assets/FNaF 6/night_assets/Lefty/1545.png';
-import l_js_15 from '../../../assets/FNaF 6/night_assets/Lefty/1546.png';
+import l_js_0 from '../Assets/FNaF 6/night_assets/Lefty/1531.png';
+import l_js_1 from '../Assets/FNaF 6/night_assets/Lefty/1532.png';
+import l_js_2 from '../Assets/FNaF 6/night_assets/Lefty/1533.png';
+import l_js_3 from '../Assets/FNaF 6/night_assets/Lefty/1534.png';
+import l_js_4 from '../Assets/FNaF 6/night_assets/Lefty/1535.png';
+import l_js_5 from '../Assets/FNaF 6/night_assets/Lefty/1536.png';
+import l_js_6 from '../Assets/FNaF 6/night_assets/Lefty/1537.png';
+import l_js_7 from '../Assets/FNaF 6/night_assets/Lefty/1538.png';
+import l_js_8 from '../Assets/FNaF 6/night_assets/Lefty/1539.png';
+import l_js_9 from '../Assets/FNaF 6/night_assets/Lefty/1540.png';
+import l_js_10 from '../Assets/FNaF 6/night_assets/Lefty/1541.png';
+import l_js_11 from '../Assets/FNaF 6/night_assets/Lefty/1542.png';
+import l_js_12 from '../Assets/FNaF 6/night_assets/Lefty/1543.png';
+import l_js_13 from '../Assets/FNaF 6/night_assets/Lefty/1544.png';
+import l_js_14 from '../Assets/FNaF 6/night_assets/Lefty/1545.png';
+import l_js_15 from '../Assets/FNaF 6/night_assets/Lefty/1546.png';
 
 
 
 // ── Audio ─────────────────────────────────────────────────────
-import swallow_void  from '../../../assets/FNaF 6 Audio/Swallowed By The Void.mp3';
-import prompt1       from '../../../assets/FNaF 6 Audio/prompt1_cut.wav';
-import pageturn      from '../../../assets/FNaF 6 Audio/pageturn1.mp3';
-import pageturn_2    from '../../../assets/FNaF 6 Audio/pageturn2.mp3';
-import shock_sfx     from '../../../assets/FNaF 6 Audio/shock.mp3';
-import jumpscare_sfx from '../../../assets/FNaF 6 Audio/Jumpscare 9B.wav';
-import complete_sfx  from '../../../assets/FNaF 6 Audio/complete.mp3';
-import stop4_sfx     from '../../../assets/FNaF 6 Audio/stop4.mp3';
+import swallow_void  from '../Assets/FNaF 6 Audio/Swallowed By The Void.mp3';
+import prompt1       from '../Assets/FNaF 6 Audio/prompt1_cut.wav';
+import pageturn      from '../Assets/FNaF 6 Audio/pageturn1.mp3';
+import pageturn_2    from '../Assets/FNaF 6 Audio/pageturn2.mp3';
+import shock_sfx     from '../Assets/FNaF 6 Audio/shock.mp3';
+import jumpscare_sfx from '../Assets/FNaF 6 Audio/Jumpscare 9B.wav';
+import complete_sfx  from '../Assets/FNaF 6 Audio/complete.mp3';
+import stop4_sfx     from '../Assets/FNaF 6 Audio/stop4.mp3';
 import {useJumpscareCapture} from "../../hooks/useJumpscareCapture.jsx";
-import typewriter_sfx from '../../../Assets/audio/typewrite.mp3'
+import typewriter_sfx from '../Assets/audio/typewrite.mp3'
 
 // ── Animatronic definitions ───────────────────────────────────
 // For each animatronic provide: idle poses, jumpscare frames,
