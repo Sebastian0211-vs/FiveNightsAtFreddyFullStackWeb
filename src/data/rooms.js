@@ -16,6 +16,8 @@ const BonnieRooms = {
     west_hall:        { label: 'West Hall',          connections: ['dining_area', 'west_hall_corner', 'supply_closet'] },
     supply_closet:    { label: 'Supply Closet',      connections: ['office_left', 'west_hall', 'dining_area'] },
     west_hall_corner: { label: 'West Hall Corner',   connections: ['supply_closet', 'office_left', 'dining_area'] },
+    //west_hall_corner: { label: 'West Hall Corner',   connections: [] },
+
     office_left:      { label: 'Office (Left)',       connections: []                                         },
 };
 
@@ -26,6 +28,8 @@ const ChicaRooms = {
     kitchen:          { label: 'Kitchen',            connections: ['restrooms', 'east_hall']                 },
     east_hall:        { label: 'East Hall',          connections: ['dining_area', 'east_hall_corner']        },
     east_hall_corner: { label: 'East Hall Corner',   connections: ['east_hall', 'office_right']                              },
+    //east_hall_corner: { label: 'East Hall Corner',   connections: []                              },
+
     office_right:     { label: 'Office (Right)',      connections: []                                         },
 };
 
@@ -33,7 +37,7 @@ const ChicaRooms = {
 // ── Global room map ───────────────────────────────────────────
 
 const ROOMS = {
-    show_stage:       { who: ['Bonnie','Freddy', 'Chica' ] },
+    show_stage:       { who: ['Freddy', 'Chica' ,'Bonnie'] },
     dining_area:      { who: [] },
     backstage:        { who: [] },
     kitchen:          { who: [] },

@@ -228,7 +228,7 @@
         </script>
 
 <script src="../data/animations.js"></script>
-<script src="player.js"></script>
+<script src="../pages/player.js"></script>
 
         <script>
             window.onload = () => {
@@ -272,8 +272,8 @@
         </script>
 
         <script>
-            playAnimation(document.getElementById("anim"), FreddyMenu);
-            playAnimation(document.getElementById("animNoiseMenu"), noiseMenu, 0.4);
+            playFreddyMenu(document.getElementById("anim"), FredMenu);
+            playNoise(document.getElementById("animNoiseMenu"), noiseMenu, 0.4);
             playNoise(document.getElementById("animNoiseMenu"), noiseMenu);
             playAnimation(document.getElementById("animWhiteMenu"), whiteMenu, 0.4);
 
