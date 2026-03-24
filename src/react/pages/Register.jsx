@@ -108,6 +108,8 @@ import shock_sfx     from '../../../assets/FNaF 6 Audio/shock.mp3';
 import jumpscare_sfx from '../../../assets/FNaF 6 Audio/Jumpscare 9B.wav';
 import complete_sfx  from '../../../assets/FNaF 6 Audio/complete.mp3';
 import stop4_sfx     from '../../../assets/FNaF 6 Audio/stop4.mp3';
+import {useJumpscareCapture} from "../../hooks/useJumpscareCapture.jsx";
+import typewriter_sfx from '../../../Assets/audio/typewrite.mp3'
 
 // ── Animatronic definitions ───────────────────────────────────
 // For each animatronic provide: idle poses, jumpscare frames,
@@ -174,6 +176,21 @@ function rollWindows() {
     ];
 }
 
+
+// ── Shared typewriter audio pool (avoids delay from creating new Audio each time)
+const TYPEWRITER_POOL = Array.from({ length: 5 }, () => {
+    const a = new Audio(typewriter_sfx);
+    a.volume = 0.35;
+    return a;
+});
+let typewriterPoolIndex = 0;
+function playTypewriter() {
+    const audio = TYPEWRITER_POOL[typewriterPoolIndex % TYPEWRITER_POOL.length];
+    typewriterPoolIndex++;
+    audio.currentTime = 0;
+    audio.play().catch(() => {});
+}
+
 // ── Slow-type input hook ──────────────────────────────────────
 function useSlowInput(initialValue = '') {
     const [value, setValue] = useState(initialValue);
@@ -184,6 +201,7 @@ function useSlowInput(initialValue = '') {
         const now = Date.now();
         if (now - lastKey.current < TYPE_DELAY_MS) { e.preventDefault(); return; }
         lastKey.current = now;
+        playTypewriter();
     };
     const onPaste  = (e) => e.preventDefault();
     const onChange = (e) => setValue(e.target.value);
@@ -345,6 +363,7 @@ export default function Register() {
     const heartbeatRef  = useRef(null); // Audio instance for heartbeat
 
     const navigate = useNavigate();
+    const {capture } = useJumpscareCapture();
     const hintLock = useRef(false);
 
     const allFilled = username.value.trim().length > 0
@@ -462,9 +481,11 @@ export default function Register() {
             setTimeout(() => {
                 setPaperState('closed');
                 paperStateRef.current = 'closed';
+                capture({ animatronicName: CHOSEN.name });
                 playJumpscare();
             }, SLIDE_MS);
         } else {
+            capture({ animatronicName: CHOSEN.name });
             playJumpscare();
         }
     }
