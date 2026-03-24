@@ -15,7 +15,7 @@
 
 const GameState = {
     night:          1,
-    rawPower:       1,
+    rawPower:       999,
     secondsElapsed: 0,
     passiveAccum:   0,
 
