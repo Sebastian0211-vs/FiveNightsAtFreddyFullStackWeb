@@ -1,18 +1,14 @@
 {
   "name": "fivenightsatfreddyfullstackweb",
   "version": "1.0.0",
-  "description": "",
+  "description": "Five Nights at Freddy's — Full Web Edition",
   "type": "module",
+  "private": true,
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Sebastian0211-vs/FiveNightsAtFreddyFullStackWeb"
-  },
-  "private": true,
   "dependencies": {
     "face-api.js": "^0.22.2",
     "react": "^18.3.1",
