@@ -1,7 +1,7 @@
 import { Animatronic, getRoom, moveToRoom, BONNIE } from './Animatronic.js';
 import { BonnieRooms, ROOMS } from '../../data/rooms.js';
 import { ANIM_INTERVALS } from '../../constants/nightConfig.js';
-import { gameCtx } from '../../../../../Downloads/gameContext.js';
+import { gameCtx } from '../gameContext.js';
 
 export class Bonnie extends Animatronic {
   constructor() {

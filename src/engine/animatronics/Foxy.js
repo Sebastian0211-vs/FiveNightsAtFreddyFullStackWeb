@@ -1,5 +1,5 @@
 import { Animatronic, FOXY } from './Animatronic.js';
-import { gameCtx } from '../../../../../Downloads/gameContext.js';
+import { gameCtx } from '../gameContext.js';
 import { ANIM_INTERVALS } from '../../constants/nightConfig.js';
 
 export class Foxy extends Animatronic {

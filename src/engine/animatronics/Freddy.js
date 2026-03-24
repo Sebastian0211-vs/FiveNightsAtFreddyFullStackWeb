@@ -1,7 +1,7 @@
 import { Animatronic, getRoom, moveToRoom, FREDDY } from './Animatronic.js';
 import { FreddyRooms, ROOMS } from '../../data/rooms.js';
 import { ANIM_INTERVALS } from '../../constants/nightConfig.js';
-import { gameCtx } from '../../../../../Downloads/gameContext.js';
+import { gameCtx } from '../gameContext.js';
 
 export class Freddy extends Animatronic {
   constructor() {

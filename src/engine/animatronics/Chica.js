@@ -1,7 +1,7 @@
 import { Animatronic, getRoom, moveToRoom, CHICA } from './Animatronic.js';
 import { ChicaRooms, ROOMS } from '../../data/rooms.js';
 import { ANIM_INTERVALS } from '../../constants/nightConfig.js';
-import { gameCtx } from '../../../../../Downloads/gameContext.js';
+import { gameCtx } from '../gameContext.js';
 
 export class Chica extends Animatronic {
   constructor() {
