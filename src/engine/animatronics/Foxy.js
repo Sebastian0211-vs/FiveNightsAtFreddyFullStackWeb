@@ -88,7 +88,7 @@ export class Foxy extends Animatronic {
     const pct      = Math.min(1 + this.bangCount * 6, 13);
     const rawDrain = pct * 10;
     // Access GameState via the GameState module (safe — called at runtime)
-    import('../../../../../Downloads/gameState.js').then(({ GameState }) => {
+    import('../gameState.js').then(({ GameState }) => {
       GameState.rawPower = Math.max(0, GameState.rawPower - rawDrain);
     });
     this.bangCount++;

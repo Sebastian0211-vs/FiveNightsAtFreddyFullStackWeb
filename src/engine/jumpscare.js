@@ -1,4 +1,4 @@
-import { gameCtx } from '../../../../Downloads/files (6)/gameContext.js';
+import { gameCtx } from './gameContext.js';
 
 // ── Core jumpscare engine ─────────────────────────────────────
 
