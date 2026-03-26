@@ -43,8 +43,10 @@ const MAX_OPACITY = 0.4;
 // Baby look-up sequence (plays over frame 0 when idle, rare event)
 const LOOK_UP_FRAMES = [frame_970, frame_971, frame_972, frame_973, frame_983, frame_984, frame_985];
 const LOOK_UP_FPS    = 10;
-// Chance per second of triggering the event while idle at frame 0
-const LOOK_UP_CHANCE = 0.01; // 4% per second → roughly every ~25s on average
+const LOOK_UP_CHANCE = 0.01;
+
+// Minimum swipe distance in px to trigger the animation
+const SWIPE_THRESHOLD = 40;
 
 TABLE_FRAMES.slice(0, -1).forEach(src => { const i = new Image(); i.src = src; });
 
@@ -125,16 +127,17 @@ export default function Login() {
         sfx.play().catch(() => {});
         setFading(true);
         sfx.addEventListener('ended', () => navigate('/register'));
-        setTimeout(() => navigate('/register'), 6000); // fallback
+        setTimeout(() => navigate('/register'), 6000);
     }
 
     const stateRef     = useRef('idle');
     const frameRef     = useRef(0);
     const animTimer    = useRef(null);
     const scrollLocked = useRef(false);
+    const touchStartY  = useRef(null);
 
     // ── Rare look-up event ────────────────────────────────────
-    const [lookUpFrame,   setLookUpFrame]   = useState(null); // null = not playing
+    const [lookUpFrame,   setLookUpFrame]   = useState(null);
     const lookUpTimer  = useRef(null);
     const lookUpActive = useRef(false);
 
@@ -244,26 +247,65 @@ export default function Login() {
         );
     }
 
-    // ── Scroll ────────────────────────────────────────────────
-    useEffect(() => {
-        function onWheel(e) {
-            if (lookUpActive.current) {
-                clearInterval(lookUpTimer.current);
-                lookUpTimer.current = null;
-                setLookUpFrame(null);
-                lookUpActive.current = false;
-            }
-            if (scrollLocked.current) return;
-            scrollLocked.current = true;
-            setTimeout(() => { scrollLocked.current = false; }, 600);
+    // ── Shared trigger (used by both wheel and swipe) ─────────
+    function triggerScroll(directionUp) {
+        if (lookUpActive.current) {
+            clearInterval(lookUpTimer.current);
+            lookUpTimer.current = null;
+            setLookUpFrame(null);
+            lookUpActive.current = false;
+        }
+
+        if (scrollLocked.current) return;
+        scrollLocked.current = true;
+        setTimeout(() => { scrollLocked.current = false; }, 3000);
+
+        if (directionUp) {
+            // swipe up = scroll up = open
             if (stateRef.current === 'idle' || stateRef.current === 'closing') {
                 stateRef.current = 'opening'; startAnim('forward');
-            } else if (stateRef.current === 'open' || stateRef.current === 'opening') {
+            }
+        } else {
+            // swipe down = scroll down = close
+            if (stateRef.current === 'open' || stateRef.current === 'opening') {
                 stateRef.current = 'closing'; startAnim('backward');
             }
         }
+    }
+
+    // ── Scroll (mouse wheel) ──────────────────────────────────
+    useEffect(() => {
+        function onWheel(e) {
+            // deltaY > 0 = scrolling down = opening (moving up toward camera)
+            triggerScroll(e.deltaY > 0);
+        }
         window.addEventListener('wheel', onWheel, { passive: true });
         return () => window.removeEventListener('wheel', onWheel);
+    }, []);
+
+    // ── Touch (mobile swipe) ──────────────────────────────────
+    useEffect(() => {
+        function onTouchStart(e) {
+            touchStartY.current = e.touches[0].clientY;
+        }
+
+        function onTouchEnd(e) {
+            if (touchStartY.current === null) return;
+            const deltaY = touchStartY.current - e.changedTouches[0].clientY;
+            touchStartY.current = null;
+
+            if (Math.abs(deltaY) < SWIPE_THRESHOLD) return; // too small, ignore
+
+            // swipe up (finger moves up) = deltaY positive = open
+            triggerScroll(deltaY > 0);
+        }
+
+        window.addEventListener('touchstart', onTouchStart, { passive: true });
+        window.addEventListener('touchend',   onTouchEnd,   { passive: true });
+        return () => {
+            window.removeEventListener('touchstart', onTouchStart);
+            window.removeEventListener('touchend',   onTouchEnd);
+        };
     }, []);
 
     return (
@@ -278,7 +320,7 @@ export default function Login() {
                 zIndex: 0, pointerEvents: 'none',
             }} />
 
-            {/* z-index 0 — Baby look-up rare event (replaces frame 0 only) */}
+            {/* z-index 0 — Baby look-up rare event */}
             {lookUpFrame && (
                 <img src={lookUpFrame} style={{
                     position: 'absolute', inset: 0,
