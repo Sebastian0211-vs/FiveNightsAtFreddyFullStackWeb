@@ -294,10 +294,30 @@ export default function Login() {
             const deltaY = touchStartY.current - e.changedTouches[0].clientY;
             touchStartY.current = null;
 
-            if (Math.abs(deltaY) < SWIPE_THRESHOLD) return; // too small, ignore
+            if (Math.abs(deltaY) < SWIPE_THRESHOLD) return;
 
-            // swipe up (finger moves up) = deltaY positive = open
-            triggerScroll(deltaY > 0);
+            // Cancel look-up if active
+            if (lookUpActive.current) {
+                clearInterval(lookUpTimer.current);
+                lookUpTimer.current = null;
+                setLookUpFrame(null);
+                lookUpActive.current = false;
+            }
+
+            if (scrollLocked.current) return;
+            scrollLocked.current = true;
+            setTimeout(() => { scrollLocked.current = false; }, 3000);
+
+            const swipingUp = deltaY > 0; // finger moved up = open
+            if (swipingUp) {
+                if (stateRef.current === 'idle' || stateRef.current === 'closing') {
+                    stateRef.current = 'opening'; startAnim('forward');
+                }
+            } else {
+                if (stateRef.current === 'open' || stateRef.current === 'opening') {
+                    stateRef.current = 'closing'; startAnim('backward');
+                }
+            }
         }
 
         window.addEventListener('touchstart', onTouchStart, { passive: true });
