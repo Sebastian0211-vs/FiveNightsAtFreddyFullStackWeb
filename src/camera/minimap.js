@@ -1,8 +1,9 @@
 // ============================================================
-//  minimap_debug_patch.js  (v3)
+//  minimap.js
 //  S'affiche en bas-droite uniquement quand la tablette est ouverte.
 //  Zones cliquables = petits rectangles avec image cam dedans.
 //  M = masquer/afficher dots + infos Foxy (caché par défaut).
+//  Entièrement responsive.
 // ============================================================
 
 (function () {
@@ -44,25 +45,29 @@
         '7':  '../../assets/Text_Box/cam_7_trans.png',
     };
 
-    // Rectangle cliquable (contenant)
-    const THUMB_W = 38;
-    const THUMB_H = 24;
-    // Image à l'intérieur (plus petite)
-    const IMG_W   = 21;
-    const IMG_H   = 19;
+    const IMG_SIZE = 400;
 
-    const IMG_SIZE    = 400;
-    const MAP_DISPLAY = 260;
-    const scX = MAP_DISPLAY / IMG_SIZE;
-    const scY = MAP_DISPLAY / IMG_SIZE;
+    // ── Tailles dynamiques ──────────────────────────────────────
+    function getMapDisplay() {
+        return Math.min(window.innerWidth * 0.30, window.innerHeight * 0.50);
+    }
+
+    let MAP_DISPLAY = getMapDisplay();
+    let scX = MAP_DISPLAY / IMG_SIZE;
+    let scY = MAP_DISPLAY / IMG_SIZE;
+
+    function getThumbW() { return MAP_DISPLAY * 0.145; }
+    function getThumbH() { return MAP_DISPLAY * 0.092; }
+    function getImgW()   { return getThumbW() * 0.55;  }
+    function getImgH()   { return getThumbH() * 0.79;  }
 
     // ── Container principal ─────────────────────────────────────
     const container = document.createElement('div');
     container.id = 'minimap-tablet';
     container.style.cssText = `
         position: fixed;
-        bottom: 50px;
-        right: 14px;
+        bottom: 2vh;
+        right: 1vw;
         z-index: 200;
         display: none;
         flex-direction: column;
@@ -81,7 +86,7 @@
         overflow: hidden;
     `;
 
-    // Image de fond — opacité pleine, pas de fond coloré
+    // Image de fond
     const bgImg = document.createElement('img');
     bgImg.src = '../../assets/map/145.png';
     bgImg.style.cssText = `
@@ -94,19 +99,11 @@
     const roomZones = {};
 
     Object.entries(ROOM_LAYOUT).forEach(([id, r]) => {
-        if (!r.camId) return; // offices : pas de zone
-
-        // Centré sur la salle
-        const cx = (r.x + r.w / 2) * scX;
-        const cy = (r.y + r.h / 2) * scY;
+        if (!r.camId) return;
 
         const zone = document.createElement('div');
         zone.style.cssText = `
             position: absolute;
-            left:   ${cx - THUMB_W / 2}px;
-            top:    ${cy - THUMB_H / 2}px;
-            width:  ${THUMB_W}px;
-            height: ${THUMB_H}px;
             box-sizing: border-box;
             border: 2px solid rgba(251,254,249,1);
             background: rgb(66,66,66);
@@ -117,12 +114,9 @@
         `;
         zone.title = r.label + ' [CAM ' + r.camId + ']';
 
-        // Image centrée, plus petite que le rectangle
         const thumb = document.createElement('img');
         thumb.src = CAM_THUMB[r.camId] || '';
         thumb.style.cssText = `
-            width: ${IMG_W}px;
-            height: ${IMG_H}px;
             margin-left: 2px;
             object-fit: contain;
             display: block;
@@ -131,15 +125,10 @@
         `;
         zone.appendChild(thumb);
 
-        // Hover
         zone.addEventListener('mouseenter', () => {
             zone.style.borderColor = 'rgba(255,255,255,1)';
         });
-        zone.addEventListener('mouseleave', () => {
-            // reset géré par drawMap
-        });
 
-        // Clic → sélectionner la caméra
         zone.addEventListener('click', () => {
             if (typeof CAMS === 'undefined') return;
             const cam = CAMS.find(c => c.id === r.camId);
@@ -157,8 +146,6 @@
 
     // ── Canvas pour les dots animatroniques ─────────────────────
     const mc = document.createElement('canvas');
-    mc.width  = MAP_DISPLAY;
-    mc.height = MAP_DISPLAY;
     mc.style.cssText = `
         position: absolute; inset: 0; width: 100%; height: 100%;
         pointer-events: none; z-index: 10;
@@ -172,7 +159,7 @@
     // Label Foxy sous la carte — caché par défaut
     const foxyLabel = document.createElement('div');
     foxyLabel.style.cssText = `
-        font-family: 'Courier New', monospace; font-size: 9px;
+        font-family: 'Courier New', monospace;
         color: #ee4400; min-height: 12px; text-align: right;
         text-shadow: 0 0 4px #ee4400;
         display: none;
@@ -180,6 +167,46 @@
     container.appendChild(foxyLabel);
 
     document.body.appendChild(container);
+
+    // ── Resize ──────────────────────────────────────────────────
+    function resizeMinimap() {
+        MAP_DISPLAY = getMapDisplay();
+        scX = MAP_DISPLAY / IMG_SIZE;
+        scY = MAP_DISPLAY / IMG_SIZE;
+
+        inner.style.width  = MAP_DISPLAY + 'px';
+        inner.style.height = MAP_DISPLAY + 'px';
+
+        mc.width  = MAP_DISPLAY;
+        mc.height = MAP_DISPLAY;
+
+        const tw = getThumbW();
+        const th = getThumbH();
+        const iw = getImgW();
+        const ih = getImgH();
+        const fontSize = Math.max(7, MAP_DISPLAY * 0.032);
+
+        foxyLabel.style.fontSize = fontSize + 'px';
+
+        Object.entries(ROOM_LAYOUT).forEach(([id, r]) => {
+            const zone = roomZones[id];
+            if (!zone) return;
+            const cx = (r.x + r.w / 2) * scX;
+            const cy = (r.y + r.h / 2) * scY;
+            zone.style.left   = (cx - tw / 2) + 'px';
+            zone.style.top    = (cy - th / 2) + 'px';
+            zone.style.width  = tw + 'px';
+            zone.style.height = th + 'px';
+
+            const thumb = zone.querySelector('img');
+            if (thumb) {
+                thumb.style.width  = iw + 'px';
+                thumb.style.height = ih + 'px';
+            }
+        });
+    }
+
+    window.addEventListener('resize', resizeMinimap);
 
     // ── Source of truth : ROOMS[x].who ──────────────────────────
     function getRoom(name) {
@@ -191,7 +218,6 @@
     function drawMap() {
         dotCtx.clearRect(0, 0, MAP_DISPLAY, MAP_DISPLAY);
 
-        // Construire byRoom
         const byRoom = {};
         ['Freddy','Bonnie','Chica'].forEach(name => {
             const key = getRoom(name);
@@ -202,7 +228,10 @@
             (byRoom[foxyRoom] = byRoom[foxyRoom] || []).push('Foxy');
         }
 
-        // Dots — placés sous le rectangle thumbnail
+        const th = getThumbH();
+        const DOT = Math.max(4, MAP_DISPLAY * 0.027);
+        const GAP = Math.max(1, MAP_DISPLAY * 0.008);
+
         Object.entries(byRoom).forEach(([roomId, names]) => {
             const r = ROOM_LAYOUT[roomId];
             if (!r || !names.length) return;
@@ -210,10 +239,9 @@
             const cx = (r.x + r.w / 2) * scX;
             const cy = (r.y + r.h / 2) * scY;
 
-            const DOT = 7, GAP = 2;
             const totalW = names.length * DOT + (names.length - 1) * GAP;
             let sx = cx - totalW / 2;
-            const sy = cy + THUMB_H / 2 + 3;
+            const sy = cy + th / 2 + 3;
 
             names.forEach(name => {
                 const cfg = ANIM_CFG[name];
@@ -223,7 +251,7 @@
                 dotCtx.fillRect(sx, sy, DOT, DOT);
                 dotCtx.shadowBlur   = 0;
                 dotCtx.fillStyle    = '#fff';
-                dotCtx.font         = 'bold 5px monospace';
+                dotCtx.font         = `bold ${Math.max(4, DOT * 0.75)}px monospace`;
                 dotCtx.textAlign    = 'center';
                 dotCtx.textBaseline = 'middle';
                 dotCtx.fillText(cfg.short, sx + DOT / 2, sy + DOT / 2 + 0.5);
@@ -231,7 +259,6 @@
             });
         });
 
-        // Foxy label
         if (typeof foxy !== 'undefined' && foxy.valid) {
             const lbls = { 1:'Cove closed', 2:'Peeking', 3:'Out of cove', 4:'🦊 RUNNING!' };
             foxyLabel.textContent = 'Foxy: ' + (lbls[foxy.stage] || '?');
@@ -246,7 +273,7 @@
     }
     setInterval(syncVisibility, 100);
 
-    // ── M = masquer/afficher dots + infos Foxy (caché par défaut) ──
+    // ── M = masquer/afficher dots + infos Foxy ──────────────────
     let showAnimInfo = false;
     window.addEventListener('keydown', function (e) {
         if (e.key !== 'm' && e.key !== 'M') return;
@@ -255,7 +282,7 @@
         foxyLabel.style.display = showAnimInfo ? 'block' : 'none';
     });
 
-
+    // ── Highlight caméra active ──────────────────────────────────
     function updateHighlight() {
         const activeCam = window.activeCam;
         Object.entries(ROOM_LAYOUT).forEach(([id]) => {
@@ -276,6 +303,9 @@
         }
         setTimeout(tick, 100);
     }
+
+    // ── Init ─────────────────────────────────────────────────────
+    resizeMinimap();
     tick();
 
 })();

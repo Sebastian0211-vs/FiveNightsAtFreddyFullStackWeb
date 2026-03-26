@@ -2,8 +2,8 @@
 
 const FREDDY = true;
 const CHICA  = true;
-const BONNIE = false;
-const FOXY   = false;
+const BONNIE = true;
+const FOXY   = true;
 
 class Animatronic {
     constructor(name, rooms, startRoom = 'show_stage') {

@@ -12,10 +12,9 @@
 //    renderPaused     — boolean, pauses the canvas render loop
 //    ctx, W, H        — canvas context + dimensions
 // ============================================================
-
 const GameState = {
     night:          1,
-    rawPower:       1,
+    rawPower:       999,
     secondsElapsed: 0,
     passiveAccum:   0,
 
@@ -247,12 +246,14 @@ const GameState = {
                                 });
                             }, 500));
 
+
                         }, 20000));
                     });
                 }, 4000);
             });
         }, 3000));
     },
+
 
     // ── Night complete ───────────────────────────────────────
     on6AM() {
@@ -469,6 +470,18 @@ function _stablePick(room, arr, extraKey) {
     return path;
 }
 
+//Roll for bonnie and chica different image
+let _chicaEHCornerRoll = 1;
+setInterval(() => {
+    _chicaEHCornerRoll = Math.floor(Math.random() * 30) + 1;
+}, 50);
+
+let _bonnieWHCornerRoll = 1;
+setInterval(() => {
+    _bonnieWHCornerRoll = Math.floor(Math.random() * 30) + 1;
+}, 50);
+
+
 function getCamImagePath(room) {
     const who       = (ROOMS[room] && ROOMS[room].who) ? ROOMS[room].who : [];
     const hasFreddy = who.includes('Freddy');
@@ -505,8 +518,19 @@ function getCamImagePath(room) {
             return CAM_BASE + 'West Hall/empty_lightson.png';
 
         case 'west_hall_corner':
-            if (hasBonnie) return _stablePick(room, ['Bonnie_1.png', 'Bonnie_2.png', 'Bonnie_3.png']).replace(/^/, CAM_BASE + 'West Hall Corner/');
-            if (hasFreddy) return CAM_BASE + 'West Hall Corner/Golden_Freddy.png';
+            if (GameState.night >= 3){
+                if (hasBonnie) {
+                    let bonnieImg;
+                    if (_bonnieWHCornerRoll >= 25 && _bonnieWHCornerRoll <= 28) bonnieImg = 'Bonnie_2.png';
+                    else if (_bonnieWHCornerRoll >= 29) bonnieImg = 'Bonnie_3.png';
+                    else bonnieImg = 'Bonnie_1.png';
+                    return CAM_BASE + 'West Hall Corner/' + bonnieImg;
+                } else if (hasFreddy) return CAM_BASE + 'West Hall Corner/Golden_Freddy.png';
+            } else {
+                if (hasBonnie) return CAM_BASE + 'West Hall Corner/Bonnie_1.png'
+                if (hasFreddy) return CAM_BASE + 'West Hall Corner/Golden_Freddy.png';
+            }
+
             return _stablePick(room, ['Empty_1.png', 'Empty_2.png']).replace(/^/, CAM_BASE + 'West Hall Corner/');
 
         case 'backstage':
@@ -521,9 +545,27 @@ function getCamImagePath(room) {
             return _stablePick(room, ['Empty_1.png', 'Empty_2.png', 'Empty_3.png']).replace(/^/, CAM_BASE + 'East Hall/');
 
         case 'east_hall_corner':
-            if (hasChica)  return _stablePick(room, ['Chica_1.png', 'Chica_2.png', 'Chica_3.png']).replace(/^/, CAM_BASE + 'East Hall Corner/');
-            if (hasFreddy) return CAM_BASE + 'East Hall Corner/Freddy.png';
-            if (hasFreddy && hasChica)  return _stablePick(room, ['Chica_1.png', 'Chica_2.png', 'Chica_3.png']).replace(/^/, CAM_BASE + 'East Hall Corner/');
+            if (GameState.night >= 3){
+                if (hasChica) {
+                    let chicaImg;
+                    if (_chicaEHCornerRoll >= 25 && _chicaEHCornerRoll <= 28) chicaImg = 'Chica_2.png';
+                    else if (_chicaEHCornerRoll >= 29) chicaImg = 'Chica_3.png';
+                    else chicaImg = 'Chica_1.png';
+                    return CAM_BASE + 'East Hall Corner/' + chicaImg;
+                } else if (hasFreddy && hasChica) {
+                    let chicaImg;
+                    if (_chicaEHCornerRoll >= 25 && _chicaEHCornerRoll <= 28) chicaImg = 'Chica_2.png';
+                    else if (_chicaEHCornerRoll >= 29) chicaImg = 'Chica_3.png';
+                    else chicaImg = 'Chica_1.png';
+                    return CAM_BASE + 'East Hall Corner/' + chicaImg;
+                } else {
+                    if (hasFreddy) return CAM_BASE + 'East Hall Corner/Freddy.png';
+                }
+            } else {
+                if (hasChica) return CAM_BASE + 'East Hall Corner/Chica_1.png'
+                if (hasFreddy) return CAM_BASE + 'East Hall Corner/Freddy.png';
+                if (hasFreddy && hasChica) return CAM_BASE + 'East Hall Corner/Chica_1.png'
+            }
             return _stablePick(room, ['Empty_1.png', 'Empty_2.png', 'Empty_3.png', 'Empty_4.png', 'Empty_5.png']).replace(/^/, CAM_BASE + 'East Hall Corner/');
 
         case 'restrooms':
@@ -544,6 +586,15 @@ function getCamImagePath(room) {
 
 
 // ── Start the game loop ───────────────────────────────────────
+const _foxyPirateAudio = new Audio('../../assets/FNaF 1 Audio/pirate song2.wav');
+const _circusAudio     = new Audio('../../assets/FNaF 1 Audio/circus.wav');
+_kitchenAudio1 = new Audio('../../assets/FNaF 1 Audio/OVEN-DRA_1_GEN-HDF18119.wav');
+_kitchenAudio2 = new Audio('../../assets/FNaF 1 Audio/OVEN-DRA_2_GEN-HDF18120.wav');
+_kitchenAudio3 = new Audio('../../assets/FNaF 1 Audio/OVEN-DRA_7_GEN-HDF18121.wav');
+_kitchenAudio4 = new Audio('../../assets/FNaF 1 Audio/OVEN-DRAWE_GEN-HDF18122.wav');
+
+
+
 
 function initGameLogic() {
     setInterval(() => GameState.tick(), 1000);
@@ -555,10 +606,71 @@ function initGameLogic() {
     setInterval(() => { if (foxy.valid)   foxy.tryMove();   }, ANIM_INTERVALS.foxy);
 
     window.foxyRunning    = false;
-    window.bonnieAtDoor   = false;   // lu par mainroom pour afficher l'image de Bonnie
-    window.bonnieInOffice = false;   // lu par mainroom si besoin
-    window.chicaAtDoor   = false;   // lu par mainroom pour afficher l'image de Chica
-    window.chicaInOffice = false;   // lu par mainroom si besoin
+    window.bonnieAtDoor   = false;
+    window.bonnieInOffice = false;
+    window.chicaAtDoor   = false;
+    window.chicaInOffice = false;
     window.isTabletOpen   = false;
     window.activeCam      = null;
+
+    let _chicaKitchenSound = 0;
+    setInterval(() => {
+        if (ROOMS['kitchen'].who.includes('Chica') && (!GameState._6amTriggered || !GameState._powerOutTriggered)) {
+            //console.log("SOUND CHICA KITCHEN")
+            _chicaKitchenSound = Math.floor(Math.random() * 30) + 1;
+            switch (_chicaKitchenSound) {
+                case 1:
+                    _kitchenAudio1.currentTime = 0;
+                    _kitchenAudio1.play().catch(() => {});
+                    _kitchenAudio1.volume = window.activeCam === 'kitchen' ? 0.6 : 0.2;
+                    return
+                case 2:
+                    _kitchenAudio2.currentTime = 0;
+                    _kitchenAudio2.play().catch(() => {});
+                    _kitchenAudio2.volume = window.activeCam === 'kitchen' ? 0.6 : 0.2;
+                    return
+                case 3:
+                    _kitchenAudio3.currentTime = 0;
+                    _kitchenAudio3.play().catch(() => {});
+                    _kitchenAudio3.volume = window.activeCam === 'kitchen' ? 0.6 : 0.2;
+                    return
+                case 4:
+                    _kitchenAudio4.currentTime = 0;
+                    _kitchenAudio4.play().catch(() => {});
+                    _kitchenAudio4.volume = window.activeCam === 'kitchen' ? 0.6 : 0.2;
+                    return
+                default:
+                    return null;
+
+            }
+        }
+    }, 4000);
+
+    let _foxyPirateMusic = 0;
+    setInterval(() => {
+        if (GameState._6amTriggered || GameState._powerOutTriggered) return;
+        _foxyPirateMusic = Math.floor(Math.random() * 30) + 1;
+        if (_foxyPirateMusic === 1) {
+            _foxyPirateAudio.currentTime = 0;
+            _foxyPirateAudio.play().catch(() => {});
+            _foxyPirateAudio.volume = window.activeCam === 'pirate_cove' ? 0.3 : 0.1;
+        }
+    }, 4000);
+
+    let _circusMusic = 0;
+    setInterval(() => {
+        if (GameState._6amTriggered || GameState._powerOutTriggered) return;
+        _circusMusic = Math.floor(Math.random() * 30) + 1;
+        if (_circusMusic ===1 ) {
+            _circusAudio.currentTime = 0;
+            _circusAudio.play().catch(() => {});
+            _circusAudio.volume = 0.3;
+
+        }
+    }, 5000);
 }
+
+
+
+
+

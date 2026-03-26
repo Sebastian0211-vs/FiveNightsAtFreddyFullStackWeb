@@ -125,16 +125,19 @@
         #cam-label-overlay {
             display: none;
             position: fixed;
-            top: 14px;
-            left: 14px;
+            bottom: calc(2vh + 260px); /* 260px = hauteur de la minimap */
+            right: 1vw;
+            left: auto;
+            top: auto;
             z-index: 200;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            color: #aaffaa;
-            letter-spacing: 0.10em;
+            font-family: 'FNAF', monospace;
+            font-size: 1vw;
+            color: #fff;
+            letter-spacing: 0.08em;
             text-transform: uppercase;
-            text-shadow: 0 0 6px rgba(0,255,0,0.5);
+            text-shadow: 0 0 6px rgba(255,255,255,0.4);
             pointer-events: none;
+            text-align: right;
         }
     </style>
 </head>
@@ -166,7 +169,7 @@
 <canvas id="tablet-anim-canvas" style="display:none;position:fixed;inset:0;width:100%;height:100%;z-index:45;"></canvas>
 <canvas id="tablet-cam" style="display:none;position:fixed;inset:0;z-index:44;background:#000;width:100%;height:100%;"></canvas>
 <!-- Hidden video element for kitchen cam -->
-<video id="kitchen-video" src="../../assets/Freddy/puppet.mp4"
+<video id="kitchen-video" src=""
        loop playsinline
        style="display:none;position:absolute;pointer-events:none;"></video>
 
@@ -473,6 +476,7 @@
         const pof = window._powerOutEyeFrame;
         if (pof === 'black' || pof === 'jumpscare') return;
         drawStripLayer(getActiveBg(), imgW, imgH, scale, offsetX);
+
         if (!powerOut) drawSprite(fanFrames[fanIndex], { x: fanAnimation.imgX, y: fanAnimation.imgY, scale: fanAnimation.scale }, scale, offsetX);
         ['left', 'right'].forEach(side => {
             const anim = doorAnim[side], frames = doorFrames[side], pos = doorPos[side];
@@ -482,6 +486,12 @@
         if (!powerOut) {
             drawSprite(getBtnImg('left'),  btnPos.left,  scale, offsetX);
             drawSprite(getBtnImg('right'), btnPos.right, scale, offsetX);
+            if (_officeFreddyAnim && _officeFreddyAnim.show) {
+                const img = officeFreddyFrames[_officeFreddyAnim.index];
+                if (img && img.complete && img.naturalWidth) {
+                    ctx.drawImage(img, 0, 0, W, H);
+                }
+            }
             updateButtonZones();
         }
 
@@ -493,6 +503,23 @@
         if (!isDragging) { velocity *= 0.85; targetScroll += velocity; }
         targetScroll = clamp(targetScroll, 0, 1);
         scroll += (targetScroll - scroll) * 0.12;
+        if (_officeFreddyAnim) {
+            const now = performance.now();
+            const msPerFrame = 1000 / officeFreddy.fps;
+            if (now - _officeFreddyAnim.lastTime >= msPerFrame) {
+                _officeFreddyAnim.lastTime = now;
+                _officeFreddyAnim.show = Math.floor(Math.random() * 10) === 1;
+                _officeFreddyAnim.index++;
+                if (_officeFreddyAnim.index >= officeFreddyFrames.length) {
+                    if (_officeFreddyAnimSfx) {
+                        _officeFreddyAnimSfx.pause();
+                        _officeFreddyAnimSfx.currentTime = 0;
+                        _officeFreddyAnimSfx = null;
+                    }
+                    _officeFreddyAnim = null;
+                }
+            }
+        }
         draw();
     }
 
@@ -549,7 +576,7 @@
     function selectCam(room, camLabel) {
         window.activeCam = room;
         if (camLabelOverlay) {
-            camLabelOverlay.textContent = (camLabel || room) + ' — ' + (CAM_LABELS[room] || room);
+            camLabelOverlay.textContent = CAM_LABELS[room] || room;
         }
         camPan = 0.5; camPanDir = 1;
         if (room === 'kitchen') {
@@ -591,6 +618,29 @@
     // stopCamVideo / startCamVideo — drive the kitchen video element
     var camAudio = { pause() {}, play() { return Promise.resolve(); }, currentTime: 0 };
     const kitchenVideo = document.getElementById('kitchen-video');
+
+    const officeFreddyFrames = officeFreddy.frames.map(src => {
+        const img = new Image(); img.src = src; return img;
+    });
+    let _officeFreddyAnim = null;
+
+    let _officeFreddyAnimSfx = null;
+
+    if(!GameState._6amTriggered || !GameState._powerOutTriggered){
+        setInterval(() => {
+            if (_officeFreddyAnim) return;
+            if (window.isTabletOpen) return;
+            if (renderPaused) return;
+            if (Math.floor(Math.random() * 1000) !== 1) return;
+
+            _officeFreddyAnimSfx = new Audio('../../assets/FNaF 1 Audio/robotvoice.wav');
+            _officeFreddyAnimSfx.volume = 0.7;
+            _officeFreddyAnimSfx.play().catch(() => {});
+
+            _officeFreddyAnim = { index: 0, lastTime: performance.now(), show: false };
+        }, 1000);
+    }
+
 
     function startCamVideo() {
         if (window.activeCam === 'kitchen') {
@@ -693,11 +743,14 @@
             }
         }
 
+
+        let noiseB = Math.floor(Math.random() * 3);
+        setInterval(() => { noiseB = Math.floor(Math.random() * 3); }, 1000);
         const noiseFrame = noiseMenuReady ? noiseMenuFrames[noiseIndex] : null;
         if (noiseFrame && noiseFrame.complete && noiseFrame.naturalWidth) {
             camCtx.save();
             camCtx.globalCompositeOperation = 'screen';
-            camCtx.globalAlpha = 0.55;
+            camCtx.globalAlpha = ((150 + Math.random() * 50 + noiseB * 15) / 245)*0.7;
             const scale = Math.max(cw / noiseFrame.naturalWidth, ch / noiseFrame.naturalHeight);
             camCtx.drawImage(noiseFrame, (cw - noiseFrame.naturalWidth * scale) / 2, (ch - noiseFrame.naturalHeight * scale) / 2, noiseFrame.naturalWidth * scale, noiseFrame.naturalHeight * scale);
             camCtx.restore();
@@ -846,8 +899,10 @@
     tabletBar.addEventListener('click', openTablet);
     window.addEventListener('mousemove', e => {
         const fromBottom = window.innerHeight - e.clientY;
-        if (fromBottom < 60 && tabletState === 'closed') openTablet();
-        if (fromBottom < 60 && tabletState === 'open')   closeTablet();
+        const minimap = document.getElementById('minimap-tablet');
+        const onMinimap = minimap && minimap.matches(':hover');
+        if (fromBottom < 60 && !onMinimap && tabletState === 'closed') openTablet();
+        if (fromBottom < 60 && !onMinimap && tabletState === 'open')   closeTablet();
     });
 
     // --- Mouse/touch pan ---

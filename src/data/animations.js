@@ -58,6 +58,16 @@ const LettryMenu = {
     ],
     fps: 15,
 }
+const FredMenu = {
+    frames :[
+        "../../assets/menu/1.png",
+        "../../assets/menu/2.png",
+        "../../assets/menu/3.png",
+        "../../assets/menu/4.png",
+        ],
+    fps:30,
+}
+
 const FreddyMenu = {
     frames : [
         "../../assets/menu/1.png",
@@ -614,13 +624,110 @@ const freddyJumpscarePowerOut = {
     scale: 1.0,
     loop: false,   // don't loop the jumpscare animation
 }
+
+const officeFreddy = {
+    frames: [
+        "../../assets/artifacts/543.png", // it's me droite
+        "../../assets/artifacts/520.png", // bonnie blanc
+        "../../assets/artifacts/544.png", // it's me gauche
+        "../../assets/artifacts/544.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/520.png",
+        "../../assets/artifacts/525.png", // freddy
+        "../../assets/artifacts/525.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/520.png",
+        "../../assets/artifacts/544.png",
+        "../../assets/artifacts/544.png",
+        "../../assets/artifacts/525.png",
+        "../../assets/artifacts/520.png",
+        "../../assets/artifacts/520.png",
+        "../../assets/artifacts/544.png",
+        "../../assets/artifacts/544.png",
+        "../../assets/artifacts/525.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/520.png",
+        "../../assets/artifacts/544.png",
+        "../../assets/artifacts/525.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/544.png",
+        "../../assets/artifacts/544.png",
+        "../../assets/artifacts/525.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/520.png",
+        "../../assets/artifacts/520.png",
+        "../../assets/artifacts/520.png",
+        "../../assets/artifacts/544.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/520.png",
+        "../../assets/artifacts/525.png",
+        "../../assets/artifacts/525.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/544.png",
+        "../../assets/artifacts/544.png",
+        "../../assets/artifacts/544.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/520.png",
+        "../../assets/artifacts/520.png",
+        "../../assets/artifacts/525.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/544.png",
+        "../../assets/artifacts/544.png",
+        "../../assets/artifacts/525.png",
+        "../../assets/artifacts/525.png",
+        "../../assets/artifacts/520.png",
+        "../../assets/artifacts/520.png",
+        "../../assets/artifacts/544.png",
+        "../../assets/artifacts/544.png",
+        "../../assets/artifacts/525.png",
+        "../../assets/artifacts/525.png",
+        "../../assets/artifacts/520.png",
+        "../../assets/artifacts/544.png",
+        "../../assets/artifacts/544.png",
+        "../../assets/artifacts/525.png",
+        "../../assets/artifacts/525.png",
+        "../../assets/artifacts/520.png",
+        "../../assets/artifacts/520.png",
+        "../../assets/artifacts/520.png",
+        "../../assets/artifacts/525.png",
+        "../../assets/artifacts/525.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/520.png",
+        "../../assets/artifacts/520.png",
+        "../../assets/artifacts/525.png",
+        "../../assets/artifacts/525.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/520.png",
+        "../../assets/artifacts/544.png",
+        "../../assets/artifacts/525.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/543.png",
+        "../../assets/artifacts/520.png",
+    ],
+    fps: 60,
+    scale: 1.0,
+    loop: false,
+}
 // ── Fan animation ─────────────────────────────────────────────
 
 const fanAnimation = {
     frames: [
-        '../assets/ventilateur/57.png',
-        '../assets/ventilateur/59.png',
-        '../assets/ventilateur/60.png',
+        '../../assets/ventilateur/57.png',
+        '../../assets/ventilateur/59.png',
+        '../../assets/ventilateur/60.png',
     ],
     fps: 12,
     // Position in source-image pixel space
@@ -675,7 +782,7 @@ const foxyRun = {
 const tabletAnimation = {
     frameCount: 11,                        // frame_1.png … frame_11.png
     basePath:   '../../assets/Tablette/frame_',
-    frameDelay: 50,                        // ms per frame
+    frameDelay: 20,                        // ms per frame
 };
 
 function preloadFrames(def) {

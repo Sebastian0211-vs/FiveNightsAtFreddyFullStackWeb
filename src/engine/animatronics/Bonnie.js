@@ -73,7 +73,7 @@ class Bonnie extends Animatronic {
 
     }
 
-    // ── Planifie la tentative d'entrée (1 cycle de mouvement) ─
+    // Planifie la tentative d'entrée (1 cycle de mouvement) ─
     _scheduleAttack() {
         if (this._doorTimer) clearTimeout(this._doorTimer);
         this._doorTimer = setTimeout(() => {
