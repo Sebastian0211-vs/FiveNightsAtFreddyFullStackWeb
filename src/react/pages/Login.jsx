@@ -48,6 +48,7 @@ const LOOK_UP_CHANCE = 0.01; // 4% per second → roughly every ~25s on average
 
 TABLE_FRAMES.slice(0, -1).forEach(src => { const i = new Image(); i.src = src; });
 
+
 const STYLES = `
     .tw-input {
         background: transparent;
@@ -55,7 +56,7 @@ const STYLES = `
         border-bottom: 1px solid rgba(60,30,10,0.55);
         outline: none;
         font-family: "Courier New", Courier, monospace;
-        font-size: clamp(20px, 1.1vw, 14px);
+        font-size: clamp(12px, 1vw + 0.5vh, 18px);
         color: rgba(30, 15, 3, 0.95);
         width: 100%;
         padding: 3px 0;
@@ -66,30 +67,30 @@ const STYLES = `
     }
     .tw-input::placeholder { color: rgba(60,30,10,0.35); }
     .tw-label {
-        font-size: clamp(20px, 0.8vw, 11px);
+        font-size: clamp(1vw, 0.8vw, 1vw);
         color: rgba(30,15,3,0.7);
         letter-spacing: 0.14em;
         text-transform: uppercase;
-        margin-bottom: 2px;
+        margin-bottom: 0.1vw;
     }
     .tw-btn {
         background: transparent;
-        border: 1px solid rgba(40,20,5,0.5);
+        border: 0.05vw solid rgba(40,20,5,0.5);
         font-family: "Courier New", Courier, monospace;
-        font-size: clamp(9px, 0.9vw, 13px);
+        font-size: clamp(0.5vw, 0.9vw, 1vw);
         color: rgba(30,15,3,0.9);
         letter-spacing: 0.15em;
         text-transform: uppercase;
-        padding: 6px 0;
+        padding: 0.5vw 0;
         cursor: pointer;
         width: 100%;
-        margin-top: 4px;
+        margin-top: 05.vw;
         transition: background 0.15s;
         pointer-events: auto;
     }
     .tw-btn:hover { background: rgba(40,20,5,0.12); }
     .tw-link {
-        font-size: clamp(15px, 0.72vw, 11px);
+        font-size: clamp(1vw, 0.72vw, 0.5vw);
         color: rgba(40,20,5,0.55);
         letter-spacing: 0.08em;
         text-align: center;
@@ -103,7 +104,7 @@ const STYLES = `
     .tw-link:hover { color: rgba(40,20,5,0.9); }
     .tw-link.register { color: rgba(140,20,10,0.8); }
     .tw-link.register:hover { color: rgba(190,30,10,1); }
-    .tw-divider { border: none; border-top: 1px solid rgba(40,20,5,0.18); margin: 3px 0; }
+    .tw-divider { border: none; border-top: 0.05vw solid rgba(40,20,5,0.18); margin: 0.15vw 0; }
 `;
 
 export default function Login() {
@@ -246,6 +247,12 @@ export default function Login() {
     // ── Scroll ────────────────────────────────────────────────
     useEffect(() => {
         function onWheel(e) {
+            if (lookUpActive.current) {
+                clearInterval(lookUpTimer.current);
+                lookUpTimer.current = null;
+                setLookUpFrame(null);
+                lookUpActive.current = false;
+            }
             if (scrollLocked.current) return;
             scrollLocked.current = true;
             setTimeout(() => { scrollLocked.current = false; }, 600);
