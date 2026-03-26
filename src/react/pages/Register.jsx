@@ -266,7 +266,7 @@ const STYLES = `
         0%,100% { opacity: 0.9; filter: drop-shadow(0 0 4px rgba(160,210,255,0.5)); }
         50%      { opacity: 1;   filter: drop-shadow(0 0 12px rgba(160,210,255,1)); }
     }
-    .taser-ready { animation: taserPulse 1.2s ease-in-out infinite; cursor: pointer; pointer-events: auto; }
+    .taser-ready { animation: taserPulse 1.2s ease-in-out infinite; cursor: pointer; pointer-events: auto;}
     .taser-empty { opacity: 0.25; cursor: not-allowed; filter: grayscale(1); pointer-events: auto; }
 
     @keyframes failedFadeIn {
@@ -878,7 +878,7 @@ export default function Register() {
                 style={{
                     position: 'fixed', bottom: 0, left: '50%',
                     transform: 'translateX(-50%)',
-                    width: 'auto', height: 'auto',
+                    width: '40%', height: 'auto',
                     zIndex: 10, cursor: 'pointer', opacity: 0.85,
                     display: isDead ? 'none' : 'block',
                 }}
@@ -895,7 +895,7 @@ export default function Register() {
                         src={taser}
                         onClick={shock}
                         className={taserClass}
-                        style={{ width: 'auto', height: 'auto', pointerEvents: 'auto' }}
+                        style={{ width: '40%', height: 'auto', pointerEvents: 'auto' }}
                     />
                     <span style={{
                         fontFamily: '"Courier New", Courier, monospace',
