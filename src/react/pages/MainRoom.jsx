@@ -9,7 +9,7 @@ import { playChicaJumpscare, playBonnieJumpscare, playFoxyJumpscare,
 import { ROOMS, CAMS } from '../../data/rooms.js';
 import Minimap from '../components/Minimap.jsx';
 
-// ── Animation definitions (local to this file) ────────────────
+// ── Animation definitions ────────────────────────────────────────────────────
 
 const fanAnimation = {
   frames: ['/assets/ventilateur/57.png', '/assets/ventilateur/59.png', '/assets/ventilateur/60.png'],
@@ -67,44 +67,39 @@ const CAM_LABELS = {
   supply_closet:'Supply Closet', restrooms:'Restrooms',
 };
 
-// ── Component ─────────────────────────────────────────────────
+// ── Component ────────────────────────────────────────────────────────────────
 
 export default function MainRoom() {
   const navigate = useNavigate();
 
-  // ── Refs for all canvas / DOM elements ───────────────────────
-  const canvasRef        = useRef(null);
-  const tabletAnimRef    = useRef(null);
-  const tabletCamRef     = useRef(null);
-  const kitchenVideoRef  = useRef(null);
-  const hudTimeRef       = useRef(null);
-  const hudNightRef      = useRef(null);
-  const hudPowerRef      = useRef(null);
-  const hudBatteryRef    = useRef(null);
-  const hudTopRightRef   = useRef(null);
-  const hudPowerDivRef   = useRef(null);
-  const hudUsageRef      = useRef(null);
-  const tabletBarRef     = useRef(null);
-  const tabletCloseBtnRef = useRef(null);
-  const btnZonesRef      = useRef([]);
-  const camLabelRef      = useRef(null);
+  const canvasRef           = useRef(null);
+  const tabletAnimRef       = useRef(null);
+  const tabletCamRef        = useRef(null);
+  const kitchenVideoRef     = useRef(null);
+  const hudTimeRef          = useRef(null);
+  const hudNightRef         = useRef(null);
+  const hudPowerRef         = useRef(null);
+  const hudBatteryRef       = useRef(null);
+  const hudTopRightRef      = useRef(null);
+  const hudPowerDivRef      = useRef(null);
+  const hudUsageRef         = useRef(null);
+  const tabletBarRef        = useRef(null);
+  const tabletCloseBtnRef   = useRef(null);
+  const camLabelRef         = useRef(null);
 
-  // ── Game state refs (mutable, not React state for performance) ─
-  const stateRef         = useRef({ left: { door: 'open', light: 'off' }, right: { door: 'open', light: 'off' } });
-  const scrollRef        = useRef(0.5);
-  const targetScrollRef  = useRef(0.5);
-  const isDraggingRef    = useRef(false);
-  const lastXRef         = useRef(0);
-  const velocityRef      = useRef(0);
-  const renderPausedRef  = useRef(false);
-  const powerOutRef      = useRef(false);
-  const powerOutEyeRef   = useRef(null);
-  const audioStartedRef  = useRef(false);
+  // game-state refs (mutable, avoid React re-renders)
+  const scrollRef           = useRef(0.5);
+  const targetScrollRef     = useRef(0.5);
+  const isDraggingRef       = useRef(false);
+  const lastXRef            = useRef(0);
+  const velocityRef         = useRef(0);
+  const renderPausedRef     = useRef(false);
+  const powerOutRef         = useRef(false);
+  const powerOutEyeRef      = useRef(null);
+  const audioStartedRef     = useRef(false);
+  const hudVisibleRef       = useRef(true);
 
-  // HUD visibility
-  const hudVisibleRef    = useRef(true);
-
-  // ── Image caches ──────────────────────────────────────────────
+  // image cache — survives re-renders without resetting
   const imagesRef = useRef({});
   const loadImg = useCallback((src) => {
     if (!imagesRef.current[src]) {
@@ -115,21 +110,17 @@ export default function MainRoom() {
     return imagesRef.current[src];
   }, []);
 
-  const initialized = useRef(false);
-
-  // ── 6AM canvas animation ──────────────────────────────────────
+  // ── 6AM animation ───────────────────────────────────────────────────────────
   const run6AMAnimation = useCallback((onDone) => {
     const canvas = canvasRef.current;
     if (!canvas) { onDone(); return; }
     const ctx = canvas.getContext('2d');
     const W = canvas.width, H = canvas.height;
-
     renderPausedRef.current = true;
 
     const FADEIN_MS = 800, HOLD_MS = 2200, SLIDE_MS = 5000, HOLD2_MS = 3000, FADEOUT_MS = 800;
     const NUM_FONT = 'bold 140px "FNAF", Arial';
     const AM_FONT  = 'bold 80px "FNAF", Arial';
-
     ctx.font = AM_FONT;
     const amW = ctx.measureText(' AM').width;
     const cx = W / 2 - amW / 2;
@@ -149,7 +140,6 @@ export default function MainRoom() {
       ctx.fillText('6', cx, cy + numOffset - H);
       ctx.restore(); ctx.restore();
     }
-
     function runPhase(durationMs, fromA, toA, fromO, toO, onComplete) {
       const start = performance.now();
       function frame(now) {
@@ -161,7 +151,6 @@ export default function MainRoom() {
       }
       requestAnimationFrame(frame);
     }
-
     runPhase(FADEIN_MS, 0, 1, 0, 0, () => {
       drawFrame(0, 1);
       setTimeout(() => {
@@ -170,7 +159,7 @@ export default function MainRoom() {
           setTimeout(() => {
             runPhase(FADEOUT_MS, 1, 0, H, H, () => {
               renderPausedRef.current = false;
-              if (hudVisibleRef.current) setHUDVisible(true);
+              setHUDVisible(true);
               onDone();
             });
           }, HOLD2_MS);
@@ -179,31 +168,36 @@ export default function MainRoom() {
     });
   }, []);
 
-  // ── HUD helper ────────────────────────────────────────────────
+  // ── HUD helper (operates on real DOM refs — no state) ───────────────────────
   function setHUDVisible(v) {
     hudVisibleRef.current = v;
     const d = v ? '' : 'none';
-    if (hudTopRightRef.current)  hudTopRightRef.current.style.display  = d;
-    if (hudPowerDivRef.current)  hudPowerDivRef.current.style.display  = d;
-    if (hudUsageRef.current)     hudUsageRef.current.style.display     = d;
-    if (tabletBarRef.current)    tabletBarRef.current.style.display    = v ? 'flex' : 'none';
-    if (tabletCloseBtnRef.current) tabletCloseBtnRef.current.style.display = 'none'; // always hide on HUD toggle
-    btnZonesRef.current.forEach(z => { if (z) z.style.display = v ? 'block' : 'none'; });
+    if (hudTopRightRef.current)     hudTopRightRef.current.style.display  = d;
+    if (hudPowerDivRef.current)     hudPowerDivRef.current.style.display  = d;
+    if (hudUsageRef.current)        hudUsageRef.current.style.display     = d;
+    if (tabletBarRef.current)       tabletBarRef.current.style.display    = v ? 'flex' : 'none';
+    if (tabletCloseBtnRef.current)  tabletCloseBtnRef.current.style.display = 'none';
+    // btn zones live as a module-level var set inside the effect
+    if (window.__fnafBtnZones) {
+      window.__fnafBtnZones.forEach(z => { if (z) z.style.display = v ? 'block' : 'none'; });
+    }
   }
 
-  // ── Main setup useEffect ──────────────────────────────────────
+  const initialized = useRef(false);
+
+  // ── Main setup effect (runs once) ──────────────────────────────────────────
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
 
-    const canvas       = canvasRef.current;
-    const tabletAnim   = tabletAnimRef.current;
-    const tabletCamEl  = tabletCamRef.current;
-    const kitchenVid   = kitchenVideoRef.current;
+    const canvas      = canvasRef.current;
+    const tabletAnim  = tabletAnimRef.current;
+    const tabletCamEl = tabletCamRef.current;
+    const kitchenVid  = kitchenVideoRef.current;
     if (!canvas) return;
 
     let ctx = canvas.getContext('2d');
-    let W = canvas.width = window.innerWidth;
+    let W = canvas.width  = window.innerWidth;
     let H = canvas.height = window.innerHeight;
     if (tabletCamEl) { tabletCamEl.width = W; tabletCamEl.height = H; }
     if (tabletAnim)  { tabletAnim.width  = W; tabletAnim.height  = H; }
@@ -211,37 +205,39 @@ export default function MainRoom() {
     function resize() {
       W = canvas.width  = window.innerWidth;
       H = canvas.height = window.innerHeight;
-      if (tabletCamEl)  { tabletCamEl.width  = W; tabletCamEl.height = H; }
-      if (tabletAnim)   { tabletAnim.width   = W; tabletAnim.height  = H; }
+      if (tabletCamEl) { tabletCamEl.width  = W; tabletCamEl.height = H; }
+      if (tabletAnim)  { tabletAnim.width   = W; tabletAnim.height  = H; }
     }
     window.addEventListener('resize', resize);
 
-    // ── Audio setup ─────────────────────────────────────────────
-    const sfxFan   = new Audio('/assets/FNaF 1 Audio/Buzz_Fan_Florescent2.wav');
+    // ── Audio ────────────────────────────────────────────────────────────────
+    const sfxFan         = new Audio('/assets/FNaF 1 Audio/Buzz_Fan_Florescent2.wav');
     sfxFan.loop = true; sfxFan.volume = 0.2;
-    const sfxPhone = new Audio('/assets/FNaF 1 Audio/voiceover1c.wav');
+    const sfxPhone       = new Audio('/assets/FNaF 1 Audio/voiceover1c.wav');
     sfxPhone.volume = 0.3;
-    const sfxLight = new Audio('/assets/FNaF 1 Audio/BallastHumMedium2.wav');
+    const sfxLight       = new Audio('/assets/FNaF 1 Audio/BallastHumMedium2.wav');
     sfxLight.loop = true; sfxLight.volume = 0.6;
-    const sfxCameraLoop = new Audio('/assets/FNaF 1 Audio/MiniDV_Tape_Eject_1.wav');
+    const sfxCameraLoop  = new Audio('/assets/FNaF 1 Audio/MiniDV_Tape_Eject_1.wav');
     sfxCameraLoop.loop = true; sfxCameraLoop.volume = 0.4;
-    const sfxCameraUp   = new Audio('/assets/FNaF 1 Audio/CAMERA_VIDEO_LOA_60105303.wav');
+    const sfxCameraUp    = new Audio('/assets/FNaF 1 Audio/CAMERA_VIDEO_LOA_60105303.wav');
     sfxCameraUp.volume = 0.5;
-    const sfxCameraDown = new Audio('/assets/FNaF 1 Audio/put down.wav');
+    const sfxCameraDown  = new Audio('/assets/FNaF 1 Audio/put down.wav');
     sfxCameraDown.volume = 0.5;
-    const sfxDoor = new Audio('/assets/FNaF 1 Audio/SFXBible_12478.wav');
+    const sfxDoor        = new Audio('/assets/FNaF 1 Audio/SFXBible_12478.wav');
     sfxDoor.volume = 0.8;
     const camAudio = { pause() {}, play() { return Promise.resolve(); }, currentTime: 0 };
 
     let ambience = null;
-    const ambienceSrcs = ['/assets/FNaF 1 Audio/ambience2.wav', '/assets/FNaF 1 Audio/EerieAmbienceLargeSca_MV005.wav'];
+    const ambienceSrcs = [
+      '/assets/FNaF 1 Audio/ambience2.wav',
+      '/assets/FNaF 1 Audio/EerieAmbienceLargeSca_MV005.wav',
+    ];
     function nextAmbience() {
       ambience = new Audio(ambienceSrcs[Math.floor(Math.random() * ambienceSrcs.length)]);
       ambience.volume = 0.4;
       ambience.play().catch(() => {});
       ambience.addEventListener('ended', nextAmbience);
     }
-
     function startAudio() {
       if (audioStartedRef.current) return;
       audioStartedRef.current = true;
@@ -249,8 +245,6 @@ export default function MainRoom() {
       sfxPhone.play().catch(() => {});
       nextAmbience();
     }
-
-    // Lance l'audio au premier clic/toucher sur le document entier
     function onFirstInteraction() {
       startAudio();
       document.removeEventListener('click', onFirstInteraction);
@@ -259,58 +253,60 @@ export default function MainRoom() {
     document.addEventListener('click', onFirstInteraction);
     document.addEventListener('keydown', onFirstInteraction);
 
-    function stopCamVideo() {}
-    function startCamVideo() {}
-
     function updateLightAudio() {
-      const st = stateRef.current;
+      const st = stateRef;
       const leftOn  = st.left.light  === 'on' && flickerOverride.left  !== 'off';
       const rightOn = st.right.light === 'on' && flickerOverride.right !== 'off';
       if (leftOn || rightOn) { if (sfxLight.paused) sfxLight.play().catch(() => {}); }
       else { sfxLight.pause(); sfxLight.currentTime = 0; }
     }
 
-    // ── Wire up gameCtx ─────────────────────────────────────────
-    gameCtx.state        = stateRef.current;
-    gameCtx.getCtx       = () => ctx;
-    gameCtx.getW         = () => W;
-    gameCtx.getH         = () => H;
+    // ── Door/light state (plain object, NOT React state) ─────────────────────
+    const stateRef = { left: { door: 'open', light: 'off' }, right: { door: 'open', light: 'off' } };
+
+    // ── Wire gameCtx ─────────────────────────────────────────────────────────
+    gameCtx.state           = stateRef;
+    gameCtx.getCtx          = () => ctx;
+    gameCtx.getW            = () => W;
+    gameCtx.getH            = () => H;
     gameCtx.setRenderPaused = (v) => { renderPausedRef.current = v; };
     gameCtx.getRenderPaused = () => renderPausedRef.current;
-    gameCtx.updateHUD    = ({ night, time, powerVal, batteryImg }) => {
-      if (hudNightRef.current)   hudNightRef.current.textContent   = night;
-      if (hudTimeRef.current)    hudTimeRef.current.textContent    = time;
-      if (hudPowerRef.current)   hudPowerRef.current.textContent   = powerVal;
-      if (hudBatteryRef.current) hudBatteryRef.current.src         = batteryImg;
+    gameCtx.updateHUD       = ({ night, time, powerVal, batteryImg }) => {
+      if (hudNightRef.current)   hudNightRef.current.textContent = night;
+      if (hudTimeRef.current)    hudTimeRef.current.textContent  = time;
+      if (hudPowerRef.current)   hudPowerRef.current.textContent = powerVal;
+      if (hudBatteryRef.current) hudBatteryRef.current.src       = batteryImg;
     };
-    gameCtx.startDoorAnim  = startDoorAnim;
-    gameCtx.stopCamVideo   = stopCamVideo;
-    gameCtx.sfxFan         = sfxFan;
-    gameCtx.sfxPhone       = sfxPhone;
-    gameCtx.sfxLight       = sfxLight;
-    gameCtx.sfxCameraLoop  = sfxCameraLoop;
-    gameCtx.camAudio       = camAudio;
-    gameCtx.getPowerOutEyeFrame = () => powerOutEyeRef.current;
-    gameCtx.setPowerOutEyeFrame = (v) => { powerOutEyeRef.current = v; };
-    gameCtx.getPowerOut  = () => powerOutRef.current;
-    gameCtx.setPowerOut  = (v) => { powerOutRef.current = v; };
-    gameCtx.hideHUD      = () => setHUDVisible(false);
-    gameCtx.showHUD      = () => setHUDVisible(true);
-    gameCtx.on6AMAnimation = (onDone) => run6AMAnimation(onDone);
+    gameCtx.startDoorAnim        = startDoorAnim;
+    gameCtx.stopCamVideo         = () => {};
+    gameCtx.sfxFan               = sfxFan;
+    gameCtx.sfxPhone             = sfxPhone;
+    gameCtx.sfxLight             = sfxLight;
+    gameCtx.sfxCameraLoop        = sfxCameraLoop;
+    gameCtx.camAudio             = camAudio;
+    gameCtx.getPowerOutEyeFrame  = () => powerOutEyeRef.current;
+    gameCtx.setPowerOutEyeFrame  = (v) => { powerOutEyeRef.current = v; };
+    gameCtx.getPowerOut          = () => powerOutRef.current;
+    gameCtx.setPowerOut          = (v) => { powerOutRef.current = v; };
+    gameCtx.hideHUD              = () => setHUDVisible(false);
+    gameCtx.showHUD              = () => setHUDVisible(true);
+    gameCtx.on6AMAnimation       = (onDone) => run6AMAnimation(onDone);
 
-    // ── Background images ────────────────────────────────────────
+    // ── Background images ─────────────────────────────────────────────────────
     const bg        = loadImg('/assets/Main Room/39.png');
     const bgLitL    = loadImg('/assets/Main Room/main_room_left_open_lit.png');
     const bgLitR    = loadImg('/assets/Main Room/main_room_right_open_lit.png');
     const bgPwrDown = loadImg('/assets/Main Room/304.png');
     const bgEyes    = loadImg('/assets/Main Room/305.png');
 
-    // ── Fan frames ───────────────────────────────────────────────
+    // ── Fan ───────────────────────────────────────────────────────────────────
     const fanFrames = fanAnimation.frames.map(loadImg);
     let fanIndex = 0;
-    const fanTimer = setInterval(() => { fanIndex = (fanIndex + 1) % fanFrames.length; }, 1000 / fanAnimation.fps);
+    const fanTimer = setInterval(() => {
+      fanIndex = (fanIndex + 1) % fanFrames.length;
+    }, 1000 / fanAnimation.fps);
 
-    // ── Door frames ──────────────────────────────────────────────
+    // ── Doors ─────────────────────────────────────────────────────────────────
     const doorFrames = {
       left:  mainRoomDoorLeft.frames.map(loadImg),
       right: mainRoomDoorRight.frames.map(loadImg),
@@ -330,10 +326,10 @@ export default function MainRoom() {
       anim.frameIndex += anim.direction;
       if (anim.frameIndex >= frames.length) {
         anim.frameIndex = frames.length - 1; anim.direction = 0;
-        clearInterval(anim.timer); anim.timer = null; stateRef.current[side].door = 'closed';
+        clearInterval(anim.timer); anim.timer = null; stateRef[side].door = 'closed';
       } else if (anim.frameIndex <= 0) {
         anim.frameIndex = 0; anim.direction = 0;
-        clearInterval(anim.timer); anim.timer = null; stateRef.current[side].door = 'open';
+        clearInterval(anim.timer); anim.timer = null; stateRef[side].door = 'open';
       }
     }
     function startDoorAnim(side, direction) {
@@ -354,19 +350,26 @@ export default function MainRoom() {
       }
     }
 
-    // ── Button images ────────────────────────────────────────────
+    // ── Button images ─────────────────────────────────────────────────────────
     const btnBase = '/assets/Door_Buttons/';
     const loadBtn = (side, light, door) => loadImg(`${btnBase}Button_${side}_light_${light}_${door}.png`);
     const btnImgs = {
-      left:  { off_closed: loadBtn('left','off','closed'),  off_open: loadBtn('left','off','open'),
-        on_closed:  loadBtn('left','on','closed'),   on_open:  loadBtn('left','on','open')  },
-      right: { off_closed: loadBtn('right','off','closed'), off_open: loadBtn('right','off','open'),
-        on_closed:  loadBtn('right','on','closed'),  on_open:  loadBtn('right','on','open') },
+      left:  {
+        off_closed: loadBtn('left','off','closed'), off_open: loadBtn('left','off','open'),
+        on_closed:  loadBtn('left','on','closed'),  on_open:  loadBtn('left','on','open'),
+      },
+      right: {
+        off_closed: loadBtn('right','off','closed'), off_open: loadBtn('right','off','open'),
+        on_closed:  loadBtn('right','on','closed'),  on_open:  loadBtn('right','on','open'),
+      },
     };
-    function getBtnImg(side) { const s = stateRef.current[side]; return btnImgs[side][`${s.light}_${s.door}`]; }
+    function getBtnImg(side) {
+      const s = stateRef[side];
+      return btnImgs[side][`${s.light}_${s.door}`];
+    }
     const btnPos = { left: { x: 0, y: 261, scale: 1.0 }, right: { x: 1478, y: 261, scale: 1.0 } };
 
-    // ── Light flicker ────────────────────────────────────────────
+    // ── Light flicker ──────────────────────────────────────────────────────────
     const FLICKER_SEQ = [
       { lit: true,  delay: 40  }, { lit: false, delay: 60  }, { lit: true,  delay: 30  },
       { lit: false, delay: 80  }, { lit: true,  delay: 50  }, { lit: false, delay: 45  },
@@ -383,7 +386,7 @@ export default function MainRoom() {
       FLICKER_SEQ.forEach(({ lit, delay }, i) => {
         const t = setTimeout(() => {
           const isLast = i === FLICKER_SEQ.length - 1;
-          if (stateRef.current[side].light === 'on') {
+          if (stateRef[side].light === 'on') {
             flickerOverride[side] = isLast ? null : (lit ? 'on' : 'off');
           } else { flickerOverride[side] = null; }
           updateLightAudio();
@@ -393,18 +396,22 @@ export default function MainRoom() {
       });
     }
 
-    // ── Button zones ─────────────────────────────────────────────
+    // ── Button click zones (appended to body, cleaned up on unmount) ──────────
     const btnsContainer = document.createElement('div');
-    btnsContainer.id    = 'game-btn-zones';
-    btnsContainer.style.position = 'fixed';
-    btnsContainer.style.inset    = '0';
-    btnsContainer.style.pointerEvents = 'none';
-    btnsContainer.style.zIndex   = '10';
+    btnsContainer.id = 'game-btn-zones';
+    Object.assign(btnsContainer.style, {
+      position: 'fixed', inset: '0',
+      pointerEvents: 'none', zIndex: '10',
+    });
     document.body.appendChild(btnsContainer);
+    window.__fnafBtnZones = [];
 
     ['left', 'right'].forEach(side => {
       const zone = document.createElement('div');
-      zone.style.cssText = 'position:absolute;cursor:pointer;pointer-events:auto;z-index:10;';
+      Object.assign(zone.style, {
+        position: 'absolute', cursor: 'pointer',
+        pointerEvents: 'auto', zIndex: '10',
+      });
       zone.addEventListener('click', e => {
         startAudio();
         const rect = zone.getBoundingClientRect();
@@ -413,14 +420,14 @@ export default function MainRoom() {
           toggleDoor(side);
         } else {
           const other = side === 'left' ? 'right' : 'left';
-          if (stateRef.current[side].light === 'off') {
-            stateRef.current[side].light = 'on';
-            stateRef.current[other].light = 'off';
+          if (stateRef[side].light === 'off') {
+            stateRef[side].light   = 'on';
+            stateRef[other].light  = 'off';
             flickerTimers[other].forEach(t => clearTimeout(t));
             flickerTimers[other] = []; flickerOverride[other] = null;
             triggerFlicker(side);
           } else {
-            stateRef.current[side].light = 'off';
+            stateRef[side].light = 'off';
             flickerTimers[side].forEach(t => clearTimeout(t));
             flickerTimers[side] = []; flickerOverride[side] = null;
           }
@@ -428,18 +435,19 @@ export default function MainRoom() {
         }
       });
       btnsContainer.appendChild(zone);
-      btnZonesRef.current.push(zone);
+      window.__fnafBtnZones.push(zone);
     });
 
     function updateBtnZones() {
       if (!bg.complete || !bg.naturalWidth) return;
-      const scale = H / bg.naturalHeight, maxOffset = (bg.naturalWidth * scale) - W;
+      const scale = H / bg.naturalHeight;
+      const maxOffset = (bg.naturalWidth * scale) - W;
       const offsetX = scrollRef.current * maxOffset;
       ['left', 'right'].forEach((side, i) => {
         const pos = btnPos[side];
         const img = getBtnImg(side);
         if (!img.complete || !img.naturalWidth) return;
-        const zone = btnZonesRef.current[i];
+        const zone = window.__fnafBtnZones[i];
         if (!zone) return;
         zone.style.left   = (pos.x * scale - offsetX) + 'px';
         zone.style.top    = (pos.y * scale) + 'px';
@@ -448,11 +456,11 @@ export default function MainRoom() {
       });
     }
 
-    // ── Bonnie / Chica door images ───────────────────────────────
+    // ── Bonnie / Chica door reveal ────────────────────────────────────────────
     let bonnieDoorImg = null, chicaDoorImg = null;
 
     function getActiveBg() {
-      if (window.bonnieAtDoor && stateRef.current.left.light === 'on' && flickerOverride.left !== 'off') {
+      if (window.bonnieAtDoor && stateRef.left.light === 'on' && flickerOverride.left !== 'off') {
         if (!bonnieDoorImg) {
           bonnieDoorImg = loadImg('/assets/Main Room/225.png');
           bonnieDoorImg.onload = () => {
@@ -462,7 +470,7 @@ export default function MainRoom() {
         }
         if (bonnieDoorImg.complete && bonnieDoorImg.naturalWidth) return bonnieDoorImg;
       }
-      if (window.chicaAtDoor && stateRef.current.right.light === 'on' && flickerOverride.right !== 'off') {
+      if (window.chicaAtDoor && stateRef.right.light === 'on' && flickerOverride.right !== 'off') {
         if (!chicaDoorImg) {
           chicaDoorImg = loadImg('/assets/Main Room/227.png');
           chicaDoorImg.onload = () => {
@@ -475,14 +483,14 @@ export default function MainRoom() {
       const pof = powerOutEyeRef.current;
       if (pof === '305') return (bgEyes.complete && bgEyes.naturalWidth) ? bgEyes : bgPwrDown;
       if (powerOutRef.current) return (bgPwrDown.complete && bgPwrDown.naturalWidth) ? bgPwrDown : bg;
-      const leftEff  = stateRef.current.left.light  === 'on' && flickerOverride.left  !== 'off';
-      const rightEff = stateRef.current.right.light === 'on' && flickerOverride.right !== 'off';
+      const leftEff  = stateRef.left.light  === 'on' && flickerOverride.left  !== 'off';
+      const rightEff = stateRef.right.light === 'on' && flickerOverride.right !== 'off';
       if (leftEff  && !rightEff) return (bgLitL.complete && bgLitL.naturalWidth) ? bgLitL : bg;
       if (rightEff && !leftEff)  return (bgLitR.complete && bgLitR.naturalWidth) ? bgLitR : bg;
       return bg;
     }
 
-    // ── Office Freddy easter egg ─────────────────────────────────
+    // ── Office Freddy easter egg ──────────────────────────────────────────────
     const officeFreddyFrames = officeFreddy.frames.map(loadImg);
     let offAnim = null, offAnimSfx = null;
 
@@ -498,7 +506,7 @@ export default function MainRoom() {
       offAnim = { index: 0, lastTime: performance.now(), show: false };
     }, 1000);
 
-    // ── Draw helpers ─────────────────────────────────────────────
+    // ── Draw helpers ──────────────────────────────────────────────────────────
     function drawStripLayer(img, imgW, imgH, scale, offsetX) {
       for (let sx = 0; sx < W; sx++) {
         const imgX = (offsetX + sx) / scale;
@@ -511,49 +519,78 @@ export default function MainRoom() {
     }
     function drawSprite(img, pos, scale, offsetX) {
       if (!img.complete || !img.naturalWidth) return;
-      ctx.drawImage(img, pos.x * scale - offsetX, pos.y * scale,
-          img.naturalWidth * scale * pos.scale, img.naturalHeight * scale * pos.scale);
+      ctx.drawImage(
+          img,
+          pos.x * scale - offsetX,
+          pos.y * scale,
+          img.naturalWidth  * scale * pos.scale,
+          img.naturalHeight * scale * pos.scale,
+      );
     }
 
-    // ── Main draw ────────────────────────────────────────────────
+    // ── Main draw ─────────────────────────────────────────────────────────────
     function draw() {
       if (!bg.complete || !bg.naturalWidth) return;
       const imgW = bg.naturalWidth, imgH = bg.naturalHeight;
-      const scale = H / imgH, maxOffset = (imgW * scale) - W;
+      const scale = H / imgH;
+      const maxOffset = (imgW * scale) - W;
       const offsetX = scrollRef.current * maxOffset;
-      ctx.fillStyle = '#000'; ctx.fillRect(0, 0, W, H);
+
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, W, H);
+
       const pof = powerOutEyeRef.current;
       if (pof === 'black' || pof === 'jumpscare') return;
+
+      // ── Background (FOV strip render) ──────────────────────────
       drawStripLayer(getActiveBg(), imgW, imgH, scale, offsetX);
-      if (!powerOutRef.current) drawSprite(fanFrames[fanIndex], { x: fanAnimation.imgX, y: fanAnimation.imgY, scale: 1.0 }, scale, offsetX);
-      ['left','right'].forEach(side => {
-        const anim = doorAnim[side], frames = doorFrames[side], pos = doorPos[side];
+
+      // ── Fan ────────────────────────────────────────────────────
+      if (!powerOutRef.current) {
+        drawSprite(fanFrames[fanIndex], { x: fanAnimation.imgX, y: fanAnimation.imgY, scale: 1.0 }, scale, offsetX);
+      }
+
+      // ── Doors ──────────────────────────────────────────────────
+      ['left', 'right'].forEach(side => {
+        const anim   = doorAnim[side];
+        const frames = doorFrames[side];
+        const pos    = doorPos[side];
         drawSprite(frames[0], pos, scale, offsetX);
         if (anim.frameIndex > 0) drawSprite(frames[anim.frameIndex], pos, scale, offsetX);
       });
+
+      // ── Buttons + office Freddy ────────────────────────────────
       if (!powerOutRef.current) {
         drawSprite(getBtnImg('left'),  btnPos.left,  scale, offsetX);
         drawSprite(getBtnImg('right'), btnPos.right, scale, offsetX);
-        if (offAnim?.show) {
+
+        // Office Freddy easter egg — drawn full-screen on top
+        if (offAnim && offAnim.show) {
           const img = officeFreddyFrames[offAnim.index];
-          if (img?.complete && img.naturalWidth) ctx.drawImage(img, 0, 0, W, H);
+          if (img && img.complete && img.naturalWidth) {
+            ctx.drawImage(img, 0, 0, W, H);
+          }
         }
+
         updateBtnZones();
       }
     }
 
-    // ── RAF loop ─────────────────────────────────────────────────
+    // ── RAF loop ──────────────────────────────────────────────────────────────
     let rafId = null;
     function animate() {
       rafId = requestAnimationFrame(animate);
       if (renderPausedRef.current) return;
+
+      // Momentum scroll
       if (!isDraggingRef.current) {
-        velocityRef.current *= 0.85;
+        velocityRef.current  *= 0.85;
         targetScrollRef.current += velocityRef.current;
       }
       targetScrollRef.current = Math.max(0, Math.min(1, targetScrollRef.current));
       scrollRef.current += (targetScrollRef.current - scrollRef.current) * 0.12;
 
+      // Office Freddy frame advance
       if (offAnim) {
         const now = performance.now();
         const msPerFrame = 1000 / officeFreddy.fps;
@@ -567,14 +604,23 @@ export default function MainRoom() {
           }
         }
       }
+
       draw();
     }
-    animate();
 
-    // ── Tablet state ─────────────────────────────────────────────
+    // Start RAF only after bg is ready (or immediately if already cached)
+    if (bg.complete && bg.naturalWidth) {
+      animate();
+    } else {
+      bg.onload = animate;
+    }
+
+    // ── Tablet state ──────────────────────────────────────────────────────────
     let tabletState = 'closed', tabletFrame = 0, lastTabletTime = 0;
-    const tabletFrames = Array.from({ length: tabletFrameCount }, (_, i) => loadImg(`/assets/Tablette/frame_${i+1}.png`));
-    const tabletCtx    = tabletAnim?.getContext('2d');
+    const tabletFrames = Array.from({ length: tabletFrameCount }, (_, i) =>
+        loadImg(`/assets/Tablette/frame_${i + 1}.png`),
+    );
+    const tabletCtx = tabletAnim?.getContext('2d');
 
     function drawTabletFrame(idx) {
       if (!tabletCtx) return;
@@ -598,18 +644,18 @@ export default function MainRoom() {
             setTimeout(() => {
               if (tabletAnim)  tabletAnim.style.display  = 'none';
               if (tabletCamEl) tabletCamEl.style.display = 'block';
-              if (tabletBarRef.current) tabletBarRef.current.style.display = 'none';
+              if (tabletBarRef.current)      tabletBarRef.current.style.display      = 'none';
               if (tabletCloseBtnRef.current) tabletCloseBtnRef.current.style.display = 'flex';
               tabletState = 'open';
               showCamSelector();
               startNoiseLoop();
-              startCamVideo();
               sfxCameraLoop.currentTime = 0;
               sfxCameraLoop.play().catch(() => {});
             }, TABLET_FRAME_DELAY);
             return;
           }
         } else {
+          // closing
           tabletFrame--;
           if (tabletFrame < 0) {
             stopNoiseLoop();
@@ -618,8 +664,8 @@ export default function MainRoom() {
             if (tabletCamEl) tabletCamEl.style.display = 'none';
             if (tabletCloseBtnRef.current) tabletCloseBtnRef.current.style.display = 'none';
             tabletState = 'closed';
-            if (tabletBarRef.current)  tabletBarRef.current.style.display  = 'flex';
-            btnZonesRef.current.forEach(z => { if (z) z.style.display = 'block'; });
+            if (tabletBarRef.current) tabletBarRef.current.style.display = 'flex';
+            if (window.__fnafBtnZones) window.__fnafBtnZones.forEach(z => { if (z) z.style.display = 'block'; });
             bonnie.onTabletClose();
             chica.onTabletClose();
             return;
@@ -639,7 +685,11 @@ export default function MainRoom() {
       chica.onTabletOpen();
       sfxCameraUp.currentTime = 0; sfxCameraUp.play().catch(() => {});
       tabletState = 'opening'; tabletFrame = 0;
-      if (tabletAnim) { tabletAnim.style.display = 'block'; tabletAnim.width = W; tabletAnim.height = H; }
+      if (tabletAnim) {
+        tabletAnim.style.display = 'block';
+        tabletAnim.width  = W;
+        tabletAnim.height = H;
+      }
       requestAnimationFrame(animateTablet);
     }
 
@@ -649,7 +699,7 @@ export default function MainRoom() {
       foxy.onTabletClose();
       sfxCameraDown.currentTime = 0; sfxCameraDown.play().catch(() => {});
       sfxCameraLoop.pause(); sfxCameraLoop.currentTime = 0;
-      stopCamVideo(); stopNoiseLoop();
+      stopNoiseLoop();
       tabletState = 'closing';
       tabletFrame = tabletFrames.length - 1;
       if (tabletCamEl) tabletCamEl.style.display = 'none';
@@ -658,7 +708,7 @@ export default function MainRoom() {
       requestAnimationFrame(animateTablet);
     }
 
-    // ── Camera overlay (tablet cam) ───────────────────────────────
+    // ── Camera overlay ────────────────────────────────────────────────────────
     const camCtx       = tabletCamEl?.getContext('2d');
     const camFrameImg  = loadImg('/assets/Cam_views/11.png');
     const camRedDotImg = loadImg('/assets/Cam_views/7.png');
@@ -686,9 +736,8 @@ export default function MainRoom() {
       const cw = tabletCamEl.width, ch = tabletCamEl.height;
       camCtx.fillStyle = '#000'; camCtx.fillRect(0, 0, cw, ch);
 
-      // ── Cover-fill helper (replaces slow strip loop) ──────────
       function drawCover(img, iw, ih) {
-        const scale = Math.max(cw / iw, ch / ih) * 1.05; // slight zoom for pan room
+        const scale = Math.max(cw / iw, ch / ih) * 1.05;
         const dw = iw * scale, dh = ih * scale;
         const maxShift = Math.max(0, dw - cw);
         const dx = (cw - dw) / 2 + (camPan - 0.5) * maxShift * 2;
@@ -696,12 +745,12 @@ export default function MainRoom() {
       }
 
       const src = getCamImagePath(window.activeCam);
-      // Kitchen : pas de mp4, on affiche l'image statique comme les autres cams
       const camImg = getOrLoadCamImg(src);
       if (camImg?.complete && camImg.naturalWidth) {
         drawCover(camImg, camImg.naturalWidth, camImg.naturalHeight);
       }
 
+      // Foxy run overlay
       if (window.foxyRunning && window.activeCam === 'west_hall' && !window.foxyRunAnimDone) {
         const ff = foxyRunFrames[foxyRunIdx];
         if (ff?.complete && ff.naturalWidth) {
@@ -710,6 +759,7 @@ export default function MainRoom() {
         }
       }
 
+      // Noise overlay
       const nf = noiseFrames[noiseIdx];
       if (nf?.complete && nf.naturalWidth) {
         camCtx.save();
@@ -720,6 +770,7 @@ export default function MainRoom() {
         camCtx.restore();
       }
 
+      // Foxy sfx trigger
       if (window.foxyRunning && window.activeCam === 'west_hall' && !window._foxyRunCamSfxTriggered) {
         window._foxyRunCamSfxTriggered = true;
         foxy.onWatchRunCam();
@@ -728,7 +779,7 @@ export default function MainRoom() {
         if (foxyRunIdx !== 0) { foxyRunIdx = 0; foxyRunAccum = 0; }
       }
 
-      if (camFrameImg.complete  && camFrameImg.naturalWidth)  camCtx.drawImage(camFrameImg,  0, 0, cw, ch);
+      if (camFrameImg.complete  && camFrameImg.naturalWidth) camCtx.drawImage(camFrameImg, 0, 0, cw, ch);
       if (isRedDotVisible() && camRedDotImg.complete && camRedDotImg.naturalWidth) {
         const dotH = ch * 0.07, dotW = camRedDotImg.naturalWidth * (dotH / camRedDotImg.naturalHeight);
         camCtx.drawImage(camRedDotImg, cw * 0.02, ch * 0.03, dotW, dotH);
@@ -740,7 +791,10 @@ export default function MainRoom() {
       const delta = noiseLastTime ? timestamp - noiseLastTime : 0;
       noiseLastTime = timestamp;
       noiseAccum += delta;
-      while (noiseAccum >= 1000 / noiseMenuDef.fps) { noiseAccum -= 1000 / noiseMenuDef.fps; noiseIdx = (noiseIdx + 1) % noiseFrames.length; }
+      while (noiseAccum >= 1000 / noiseMenuDef.fps) {
+        noiseAccum -= 1000 / noiseMenuDef.fps;
+        noiseIdx = (noiseIdx + 1) % noiseFrames.length;
+      }
       if (!window.foxyRunAnimDone) {
         foxyRunAccum += delta;
         while (foxyRunAccum >= 1000 / foxyRunDef.fps) {
@@ -758,7 +812,7 @@ export default function MainRoom() {
     function startNoiseLoop() { if (noiseRafId) return; noiseLastTime = 0; noiseRafId = requestAnimationFrame(tickNoise); }
     function stopNoiseLoop()  { if (noiseRafId) { cancelAnimationFrame(noiseRafId); noiseRafId = null; } }
 
-    // ── Cam selector ─────────────────────────────────────────────
+    // ── Cam selector ──────────────────────────────────────────────────────────
     window.activeCam = 'show_stage';
 
     function selectCam(room) {
@@ -776,58 +830,68 @@ export default function MainRoom() {
       if (camLabelRef.current) camLabelRef.current.style.display = 'none';
     }
 
-    // ── Tablet bar / mouse-edge open ──────────────────────────────
+    // ── Tablet bar / close button ─────────────────────────────────────────────
     const tabletBar = tabletBarRef.current;
     if (tabletBar) tabletBar.addEventListener('click', openTablet);
     const tabletCloseBtn = tabletCloseBtnRef.current;
     if (tabletCloseBtn) tabletCloseBtn.addEventListener('click', closeTablet);
 
-    function onMouseMove(e) {
-      // Ne jamais ouvrir/fermer la cam pendant un drag pan
+    // ── Mouse edge — open / close tablet ─────────────────────────────────────
+    // Separate from the pan handler; guard with isDragging so pan doesn't trigger it
+    function onMouseMoveEdge(e) {
       if (isDraggingRef.current) return;
       const fromBottom = window.innerHeight - e.clientY;
       const minimap = document.getElementById('minimap-tablet');
-      const onMinimap = minimap?.matches(':hover');
-      if (onMinimap) return;
+      if (minimap?.matches(':hover')) return;
       if (fromBottom < 60) {
         if (tabletState === 'closed') openTablet();
         else if (tabletState === 'open') closeTablet();
       }
     }
-    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mousemove', onMouseMoveEdge);
 
-    // ── Pan dragging ──────────────────────────────────────────────
+    // ── Pan — mouse ───────────────────────────────────────────────────────────
     function onMouseDown(e) {
       isDraggingRef.current = true;
-      lastXRef.current = e.clientX;
-      velocityRef.current = 0;
+      lastXRef.current      = e.clientX;
+      velocityRef.current   = 0;
       document.body.classList.add('dragging');
       startAudio();
     }
-    function onMouseMoveGlobal(e) {
+    function onMouseMovePan(e) {
       if (!isDraggingRef.current) return;
       const dx = e.clientX - lastXRef.current;
-      const scl = H / bg.naturalHeight;
-      const maxOff = (bg.naturalWidth * scl) - W;
+      if (!bg.complete || !bg.naturalWidth) return;
+      const scale     = H / bg.naturalHeight;
+      const maxOff    = (bg.naturalWidth * scale) - W;
+      if (maxOff <= 0) return;
       velocityRef.current = -(dx / maxOff);
       targetScrollRef.current += velocityRef.current;
       lastXRef.current = e.clientX;
     }
-    function onMouseUp() { isDraggingRef.current = false; document.body.classList.remove('dragging'); }
+    function onMouseUp() {
+      isDraggingRef.current = false;
+      document.body.classList.remove('dragging');
+    }
 
     canvas.addEventListener('mousedown', onMouseDown);
-    window.addEventListener('mousemove', onMouseMoveGlobal);
+    window.addEventListener('mousemove', onMouseMovePan);
     window.addEventListener('mouseup', onMouseUp);
 
-    // Touch
+    // ── Pan — touch ───────────────────────────────────────────────────────────
     canvas.addEventListener('touchstart', e => {
-      isDraggingRef.current = true; lastXRef.current = e.touches[0].clientX;
-      velocityRef.current = 0; e.preventDefault();
+      isDraggingRef.current = true;
+      lastXRef.current      = e.touches[0].clientX;
+      velocityRef.current   = 0;
+      e.preventDefault();
     }, { passive: false });
     window.addEventListener('touchmove', e => {
       if (!isDraggingRef.current) return;
       const dx = e.touches[0].clientX - lastXRef.current;
-      const scl = H / bg.naturalHeight, maxOff = (bg.naturalWidth * scl) - W;
+      if (!bg.complete || !bg.naturalWidth) return;
+      const scale  = H / bg.naturalHeight;
+      const maxOff = (bg.naturalWidth * scale) - W;
+      if (maxOff <= 0) return;
       velocityRef.current = -(dx / maxOff);
       targetScrollRef.current += velocityRef.current;
       lastXRef.current = e.touches[0].clientX;
@@ -835,7 +899,7 @@ export default function MainRoom() {
     }, { passive: false });
     window.addEventListener('touchend', () => { isDraggingRef.current = false; });
 
-    // ── Dev keys ──────────────────────────────────────────────────
+    // ── Dev keys ──────────────────────────────────────────────────────────────
     function onKeyDown(e) {
       if (e.key === 'j' || e.key === 'J') {
         const picks = [playChicaJumpscare, playBonnieJumpscare, playFoxyJumpscare, playFreddyJumpscare, playGoldenFreddyJumpscare];
@@ -844,45 +908,46 @@ export default function MainRoom() {
     }
     window.addEventListener('keydown', onKeyDown);
 
-    // ── Start game logic ──────────────────────────────────────────
+    // ── Start game logic ──────────────────────────────────────────────────────
     initGameLogic();
     GameState.render();
 
     // Page fade-in
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const fade = document.getElementById('game-page-fade');
-      if (fade) { fade.style.opacity = '0'; }
+      if (fade) fade.style.opacity = '0';
     }));
 
-    // ── Cleanup ───────────────────────────────────────────────────
+    // ── Cleanup ───────────────────────────────────────────────────────────────
     return () => {
       cancelAnimationFrame(rafId);
       stopNoiseLoop();
       clearInterval(fanTimer);
       clearInterval(officeFreddyTimer);
       window.removeEventListener('resize', resize);
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mousemove', onMouseMoveGlobal);
+      window.removeEventListener('mousemove', onMouseMoveEdge);
+      window.removeEventListener('mousemove', onMouseMovePan);
       window.removeEventListener('mouseup', onMouseUp);
       window.removeEventListener('keydown', onKeyDown);
+      document.removeEventListener('click', onFirstInteraction);
+      document.removeEventListener('keydown', onFirstInteraction);
       sfxFan.pause(); sfxPhone.pause(); sfxLight.pause(); sfxCameraLoop.pause();
       if (ambience) ambience.pause();
       if (btnsContainer.parentNode) btnsContainer.parentNode.removeChild(btnsContainer);
-      btnZonesRef.current = [];
-      ['left','right'].forEach(s => {
+      window.__fnafBtnZones = [];
+      ['left', 'right'].forEach(s => {
         flickerTimers[s].forEach(t => clearTimeout(t));
         if (doorAnim[s].timer) clearInterval(doorAnim[s].timer);
       });
       clearCamCache();
       delete window.selectCam;
+      delete window.__fnafBtnZones;
     };
   }, [loadImg, run6AMAnimation]);
 
-  // ── JSX ───────────────────────────────────────────────────────
+  // ── JSX ───────────────────────────────────────────────────────────────────
   return (
-      <div style={{ width: '100vw', height: '100vh', position: 'relative',
-        overflow: 'hidden', background: '#000' }}>
-
+      <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden', background: '#000' }}>
         <style>{`
         @font-face {
           font-family: 'FNAF';
@@ -899,13 +964,11 @@ export default function MainRoom() {
 
         {/* Tablet animation canvas */}
         <canvas ref={tabletAnimRef} id="tablet-anim-canvas"
-                style={{ display: 'none', position: 'fixed', inset: 0,
-                  width: '100%', height: '100%', zIndex: 45 }} />
+                style={{ display: 'none', position: 'fixed', inset: 0, width: '100%', height: '100%', zIndex: 45 }} />
 
         {/* Tablet camera canvas */}
         <canvas ref={tabletCamRef} id="tablet-cam"
-                style={{ display: 'none', position: 'fixed', inset: 0, zIndex: 44,
-                  background: '#000', width: '100%', height: '100%' }} />
+                style={{ display: 'none', position: 'fixed', inset: 0, zIndex: 44, background: '#000', width: '100%', height: '100%' }} />
 
         {/* Hidden kitchen video */}
         <video ref={kitchenVideoRef} id="kitchen-video" src="" loop playsInline
@@ -913,50 +976,54 @@ export default function MainRoom() {
 
         {/* Page fade */}
         <div id="game-page-fade"
-             style={{ position: 'fixed', inset: 0, zIndex: 998, background: '#000',
-               opacity: 1, pointerEvents: 'none' }} />
+             style={{ position: 'fixed', inset: 0, zIndex: 998, background: '#000', opacity: 1, pointerEvents: 'none' }} />
 
-        {/* HUD top-right: time + night */}
+        {/* HUD top-right */}
         <div ref={hudTopRightRef}
-             style={{ position: 'fixed', top: '37px', right: '50px', zIndex: 500,
+             style={{
+               position: 'fixed', top: '37px', right: '50px', zIndex: 500,
                pointerEvents: 'none', userSelect: 'none',
                fontFamily: "'FNAF','Courier New',monospace",
                color: '#fff', textShadow: '0 0 10px rgba(255,255,255,0.5)',
-               textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 2 }}>
+               textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 2,
+             }}>
           <div ref={hudTimeRef}  style={{ fontSize: 'calc(clamp(24px,3.6vw,56px)*1.6)', letterSpacing: '0.06em', lineHeight: 1 }}>12 AM</div>
           <div ref={hudNightRef} style={{ fontSize: 'calc(clamp(13px,1.6vw,26px)*1.6)', letterSpacing: '0.08em', opacity: 0.9 }}>Night 1</div>
         </div>
 
         {/* HUD power */}
         <div ref={hudPowerDivRef}
-             style={{ position: 'fixed', bottom: '123px', left: '70px', zIndex: 500,
+             style={{
+               position: 'fixed', bottom: '123px', left: '70px', zIndex: 500,
                pointerEvents: 'none', userSelect: 'none',
                fontFamily: "'FNAF','Courier New',monospace", color: '#fff',
                textShadow: '0 0 10px rgba(255,255,255,0.5)',
-               fontSize: 'calc(clamp(13px,1.6vw,26px)*2.25)', letterSpacing: '0.08em' }}>
+               fontSize: 'calc(clamp(13px,1.6vw,26px)*2.25)', letterSpacing: '0.08em',
+             }}>
           Power Left: <span ref={hudPowerRef}>99%</span>
         </div>
 
         {/* HUD usage */}
         <div ref={hudUsageRef}
-             style={{ position: 'fixed', bottom: '61px', left: '70px', zIndex: 500,
+             style={{
+               position: 'fixed', bottom: '61px', left: '70px', zIndex: 500,
                pointerEvents: 'none', userSelect: 'none',
                fontFamily: "'FNAF','Courier New',monospace", color: '#fff',
                textShadow: '0 0 10px rgba(255,255,255,0.5)',
                fontSize: 'calc(clamp(13px,1.6vw,26px)*2.25)', letterSpacing: '0.08em',
-               display: 'flex', alignItems: 'center', gap: 8 }}>
+               display: 'flex', alignItems: 'center', gap: 8,
+             }}>
           <span>Usage :</span>
           <img ref={hudBatteryRef} src="/assets/Battery/212.png" alt="battery"
                style={{ height: 'clamp(28px,4vw,52px)', width: 'auto', imageRendering: 'pixelated' }} />
         </div>
 
-        {/* Tablet bar — opens camera */}
+        {/* Tablet bar */}
         <div ref={tabletBarRef} id="tablet-bar"
              style={{
                position: 'fixed', bottom: 0, left: 0, width: '100%', height: '52px',
                background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)',
-               zIndex: 550,
-               display: 'flex', alignItems: 'center', justifyContent: 'center',
+               zIndex: 550, display: 'flex', alignItems: 'center', justifyContent: 'center',
                cursor: 'pointer', gap: '10px',
              }}>
           <img src="/assets/Tablette/open_tablette_icon.png" alt="tablet"
@@ -968,14 +1035,13 @@ export default function MainRoom() {
           }}>CAMERAS</span>
         </div>
 
-        {/* Close camera button — visible only when tablet is open */}
+        {/* Close camera button */}
         <div ref={tabletCloseBtnRef}
              style={{
                display: 'none', position: 'fixed', bottom: 0, left: 0,
                width: '100%', height: '52px',
                background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)',
-               zIndex: 550,
-               alignItems: 'center', justifyContent: 'center',
+               zIndex: 550, alignItems: 'center', justifyContent: 'center',
                cursor: 'pointer', gap: '10px',
              }}>
         <span style={{
@@ -985,14 +1051,14 @@ export default function MainRoom() {
         }}>▼ FERMER CAMÉRA ▼</span>
         </div>
 
-        {/* Cam label — top left when tablet open */}
+        {/* Cam label */}
         <div ref={camLabelRef}
-             style={{ display: 'none', position: 'fixed',
-               top: '18px', left: '22px', zIndex: 200,
+             style={{
+               display: 'none', position: 'fixed', top: '18px', left: '22px', zIndex: 200,
                fontFamily: "'FNAF',monospace", fontSize: '1.1vw', color: '#fff',
                letterSpacing: '0.1em', textTransform: 'uppercase',
-               textShadow: '0 0 8px rgba(255,255,255,0.5)',
-               pointerEvents: 'none' }} />
+               textShadow: '0 0 8px rgba(255,255,255,0.5)', pointerEvents: 'none',
+             }} />
 
         {/* Minimap */}
         <Minimap />
