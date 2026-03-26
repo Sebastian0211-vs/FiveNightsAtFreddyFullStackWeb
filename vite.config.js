@@ -10,7 +10,7 @@ function serveRootAssets() {
     name: 'serve-root-assets',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        const url = req.url.split('?')[0];
+        const url = decodeURIComponent(req.url.split('?')[0]);
         if (url.startsWith('/assets/')) {
           const filePath = path.join(process.cwd(), url);
           if (fs.existsSync(filePath)) {

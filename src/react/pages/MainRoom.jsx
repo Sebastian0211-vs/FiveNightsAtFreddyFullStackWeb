@@ -2,10 +2,10 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { gameCtx } from '../../engine/gameContext.js';
 import { GameState, freddy, bonnie, chica, foxy, ANIMATRONICS,
-         getCamImagePath, clearCamCache, initGameLogic } from '../../engine/gameState.js';
+  getCamImagePath, clearCamCache, initGameLogic } from '../../engine/gameState.js';
 import { playChicaJumpscare, playBonnieJumpscare, playFoxyJumpscare,
-         playFreddyJumpscare, playGoldenFreddyJumpscare,
-         playPowerOutJumpscare, noiseMenuDef } from '../../engine/jumpscare.js';
+  playFreddyJumpscare, playGoldenFreddyJumpscare,
+  playPowerOutJumpscare, noiseMenuDef } from '../../engine/jumpscare.js';
 import { ROOMS, CAMS } from '../../data/rooms.js';
 import Minimap from '../components/Minimap.jsx';
 
@@ -85,6 +85,7 @@ export default function MainRoom() {
   const hudPowerDivRef   = useRef(null);
   const hudUsageRef      = useRef(null);
   const tabletBarRef     = useRef(null);
+  const tabletCloseBtnRef = useRef(null);
   const btnZonesRef      = useRef([]);
   const camLabelRef      = useRef(null);
 
@@ -186,6 +187,7 @@ export default function MainRoom() {
     if (hudPowerDivRef.current)  hudPowerDivRef.current.style.display  = d;
     if (hudUsageRef.current)     hudUsageRef.current.style.display     = d;
     if (tabletBarRef.current)    tabletBarRef.current.style.display    = v ? 'flex' : 'none';
+    if (tabletCloseBtnRef.current) tabletCloseBtnRef.current.style.display = 'none'; // always hide on HUD toggle
     btnZonesRef.current.forEach(z => { if (z) z.style.display = v ? 'block' : 'none'; });
   }
 
@@ -203,6 +205,8 @@ export default function MainRoom() {
     let ctx = canvas.getContext('2d');
     let W = canvas.width = window.innerWidth;
     let H = canvas.height = window.innerHeight;
+    if (tabletCamEl) { tabletCamEl.width = W; tabletCamEl.height = H; }
+    if (tabletAnim)  { tabletAnim.width  = W; tabletAnim.height  = H; }
 
     function resize() {
       W = canvas.width  = window.innerWidth;
@@ -246,8 +250,17 @@ export default function MainRoom() {
       nextAmbience();
     }
 
-    function stopCamVideo() { kitchenVid.pause(); kitchenVid.currentTime = 0; }
-    function startCamVideo() { if (window.activeCam === 'kitchen') kitchenVid.play().catch(() => {}); }
+    // Lance l'audio au premier clic/toucher sur le document entier
+    function onFirstInteraction() {
+      startAudio();
+      document.removeEventListener('click', onFirstInteraction);
+      document.removeEventListener('keydown', onFirstInteraction);
+    }
+    document.addEventListener('click', onFirstInteraction);
+    document.addEventListener('keydown', onFirstInteraction);
+
+    function stopCamVideo() {}
+    function startCamVideo() {}
 
     function updateLightAudio() {
       const st = stateRef.current;
@@ -346,9 +359,9 @@ export default function MainRoom() {
     const loadBtn = (side, light, door) => loadImg(`${btnBase}Button_${side}_light_${light}_${door}.png`);
     const btnImgs = {
       left:  { off_closed: loadBtn('left','off','closed'),  off_open: loadBtn('left','off','open'),
-               on_closed:  loadBtn('left','on','closed'),   on_open:  loadBtn('left','on','open')  },
+        on_closed:  loadBtn('left','on','closed'),   on_open:  loadBtn('left','on','open')  },
       right: { off_closed: loadBtn('right','off','closed'), off_open: loadBtn('right','off','open'),
-               on_closed:  loadBtn('right','on','closed'),  on_open:  loadBtn('right','on','open') },
+        on_closed:  loadBtn('right','on','closed'),  on_open:  loadBtn('right','on','open') },
     };
     function getBtnImg(side) { const s = stateRef.current[side]; return btnImgs[side][`${s.light}_${s.door}`]; }
     const btnPos = { left: { x: 0, y: 261, scale: 1.0 }, right: { x: 1478, y: 261, scale: 1.0 } };
@@ -499,7 +512,7 @@ export default function MainRoom() {
     function drawSprite(img, pos, scale, offsetX) {
       if (!img.complete || !img.naturalWidth) return;
       ctx.drawImage(img, pos.x * scale - offsetX, pos.y * scale,
-                    img.naturalWidth * scale * pos.scale, img.naturalHeight * scale * pos.scale);
+          img.naturalWidth * scale * pos.scale, img.naturalHeight * scale * pos.scale);
     }
 
     // ── Main draw ────────────────────────────────────────────────
@@ -586,6 +599,7 @@ export default function MainRoom() {
               if (tabletAnim)  tabletAnim.style.display  = 'none';
               if (tabletCamEl) tabletCamEl.style.display = 'block';
               if (tabletBarRef.current) tabletBarRef.current.style.display = 'none';
+              if (tabletCloseBtnRef.current) tabletCloseBtnRef.current.style.display = 'flex';
               tabletState = 'open';
               showCamSelector();
               startNoiseLoop();
@@ -602,6 +616,7 @@ export default function MainRoom() {
             hideCamSelector();
             if (tabletAnim)  tabletAnim.style.display  = 'none';
             if (tabletCamEl) tabletCamEl.style.display = 'none';
+            if (tabletCloseBtnRef.current) tabletCloseBtnRef.current.style.display = 'none';
             tabletState = 'closed';
             if (tabletBarRef.current)  tabletBarRef.current.style.display  = 'flex';
             btnZonesRef.current.forEach(z => { if (z) z.style.display = 'block'; });
@@ -671,34 +686,20 @@ export default function MainRoom() {
       const cw = tabletCamEl.width, ch = tabletCamEl.height;
       camCtx.fillStyle = '#000'; camCtx.fillRect(0, 0, cw, ch);
 
+      // ── Cover-fill helper (replaces slow strip loop) ──────────
+      function drawCover(img, iw, ih) {
+        const scale = Math.max(cw / iw, ch / ih) * 1.05; // slight zoom for pan room
+        const dw = iw * scale, dh = ih * scale;
+        const maxShift = Math.max(0, dw - cw);
+        const dx = (cw - dw) / 2 + (camPan - 0.5) * maxShift * 2;
+        camCtx.drawImage(img, dx, (ch - dh) / 2, dw, dh);
+      }
+
       const src = getCamImagePath(window.activeCam);
-      if (window.activeCam === 'kitchen' && kitchenVid.readyState >= 2) {
-        const vw = kitchenVid.videoWidth || cw, vh = kitchenVid.videoHeight || ch;
-        const scl = Math.max(ch / vh, cw / vw * 1.4);
-        const maxOff = Math.max(0, (vw * scl) - cw);
-        for (let sx = 0; sx < cw; sx++) {
-          const imgX = (camPan * maxOff + sx) / scl;
-          if (imgX < 0 || imgX >= vw) continue;
-          const sn = (sx / cw - 0.5) * 2;
-          const dist = Math.sqrt(1 + (sn * FOV_FACTOR) ** 2);
-          const stripH = ch / dist;
-          camCtx.drawImage(kitchenVid, imgX, 0, 1, vh, sx, (ch - stripH) / 2, 1, stripH);
-        }
-      } else {
-        const camImg = getOrLoadCamImg(src);
-        if (camImg?.complete && camImg.naturalWidth) {
-          const imgW = camImg.naturalWidth, imgH = camImg.naturalHeight;
-          const scl = Math.max(ch / imgH, cw / imgW * 1.4);
-          const maxOff = Math.max(0, (imgW * scl) - cw);
-          for (let sx = 0; sx < cw; sx++) {
-            const imgX = (camPan * maxOff + sx) / scl;
-            if (imgX < 0 || imgX >= imgW) continue;
-            const sn = (sx / cw - 0.5) * 2;
-            const dist = Math.sqrt(1 + (sn * FOV_FACTOR) ** 2);
-            const stripH = ch / dist;
-            camCtx.drawImage(camImg, imgX, 0, 1, imgH, sx, (ch - stripH) / 2, 1, stripH);
-          }
-        }
+      // Kitchen : pas de mp4, on affiche l'image statique comme les autres cams
+      const camImg = getOrLoadCamImg(src);
+      if (camImg?.complete && camImg.naturalWidth) {
+        drawCover(camImg, camImg.naturalWidth, camImg.naturalHeight);
       }
 
       if (window.foxyRunning && window.activeCam === 'west_hall' && !window.foxyRunAnimDone) {
@@ -764,8 +765,6 @@ export default function MainRoom() {
       window.activeCam = room;
       if (camLabelRef.current) camLabelRef.current.textContent = CAM_LABELS[room] || room;
       camPan = 0.5; camPanDir = 1;
-      if (room === 'kitchen') kitchenVid.play().catch(() => {});
-      else kitchenVid.pause();
     }
     window.selectCam = selectCam;
 
@@ -780,12 +779,17 @@ export default function MainRoom() {
     // ── Tablet bar / mouse-edge open ──────────────────────────────
     const tabletBar = tabletBarRef.current;
     if (tabletBar) tabletBar.addEventListener('click', openTablet);
+    const tabletCloseBtn = tabletCloseBtnRef.current;
+    if (tabletCloseBtn) tabletCloseBtn.addEventListener('click', closeTablet);
 
     function onMouseMove(e) {
+      // Ne jamais ouvrir/fermer la cam pendant un drag pan
+      if (isDraggingRef.current) return;
       const fromBottom = window.innerHeight - e.clientY;
       const minimap = document.getElementById('minimap-tablet');
       const onMinimap = minimap?.matches(':hover');
-      if (fromBottom < 60 && !onMinimap) {
+      if (onMinimap) return;
+      if (fromBottom < 60) {
         if (tabletState === 'closed') openTablet();
         else if (tabletState === 'open') closeTablet();
       }
@@ -840,9 +844,6 @@ export default function MainRoom() {
     }
     window.addEventListener('keydown', onKeyDown);
 
-    // ── Start audio / fade-in ─────────────────────────────────────
-    startAudio();
-
     // ── Start game logic ──────────────────────────────────────────
     initGameLogic();
     GameState.render();
@@ -879,10 +880,10 @@ export default function MainRoom() {
 
   // ── JSX ───────────────────────────────────────────────────────
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative',
-                  overflow: 'hidden', background: '#000' }}>
+      <div style={{ width: '100vw', height: '100vh', position: 'relative',
+        overflow: 'hidden', background: '#000' }}>
 
-      <style>{`
+        <style>{`
         @font-face {
           font-family: 'FNAF';
           src: url('/assets/Fonts/five-nights-at-freddys.otf') format('opentype');
@@ -892,82 +893,109 @@ export default function MainRoom() {
         #game-page-fade { transition: opacity 0.9s ease; }
       `}</style>
 
-      {/* Main game canvas */}
-      <canvas ref={canvasRef} id="c"
-              style={{ cursor: 'grab', userSelect: 'none', width: '100vw', height: '100vh' }} />
+        {/* Main game canvas */}
+        <canvas ref={canvasRef} id="c"
+                style={{ cursor: 'grab', userSelect: 'none', width: '100vw', height: '100vh' }} />
 
-      {/* Tablet animation canvas */}
-      <canvas ref={tabletAnimRef} id="tablet-anim-canvas"
-              style={{ display: 'none', position: 'fixed', inset: 0,
-                       width: '100%', height: '100%', zIndex: 45 }} />
+        {/* Tablet animation canvas */}
+        <canvas ref={tabletAnimRef} id="tablet-anim-canvas"
+                style={{ display: 'none', position: 'fixed', inset: 0,
+                  width: '100%', height: '100%', zIndex: 45 }} />
 
-      {/* Tablet camera canvas */}
-      <canvas ref={tabletCamRef} id="tablet-cam"
-              style={{ display: 'none', position: 'fixed', inset: 0, zIndex: 44,
-                       background: '#000', width: '100%', height: '100%' }} />
+        {/* Tablet camera canvas */}
+        <canvas ref={tabletCamRef} id="tablet-cam"
+                style={{ display: 'none', position: 'fixed', inset: 0, zIndex: 44,
+                  background: '#000', width: '100%', height: '100%' }} />
 
-      {/* Hidden kitchen video */}
-      <video ref={kitchenVideoRef} id="kitchen-video" src="" loop playsInline
-             style={{ display: 'none', position: 'absolute', pointerEvents: 'none' }} />
+        {/* Hidden kitchen video */}
+        <video ref={kitchenVideoRef} id="kitchen-video" src="" loop playsInline
+               style={{ display: 'none', position: 'absolute', pointerEvents: 'none' }} />
 
-      {/* Page fade */}
-      <div id="game-page-fade"
-           style={{ position: 'fixed', inset: 0, zIndex: 998, background: '#000',
-                    opacity: 1, pointerEvents: 'none' }} />
+        {/* Page fade */}
+        <div id="game-page-fade"
+             style={{ position: 'fixed', inset: 0, zIndex: 998, background: '#000',
+               opacity: 1, pointerEvents: 'none' }} />
 
-      {/* HUD top-right: time + night */}
-      <div ref={hudTopRightRef}
-           style={{ position: 'fixed', top: '37px', right: '50px', zIndex: 500,
-                    pointerEvents: 'none', userSelect: 'none',
-                    fontFamily: "'FNAF','Courier New',monospace",
-                    color: '#fff', textShadow: '0 0 10px rgba(255,255,255,0.5)',
-                    textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <div ref={hudTimeRef}  style={{ fontSize: 'calc(clamp(24px,3.6vw,56px)*1.6)', letterSpacing: '0.06em', lineHeight: 1 }}>12 AM</div>
-        <div ref={hudNightRef} style={{ fontSize: 'calc(clamp(13px,1.6vw,26px)*1.6)', letterSpacing: '0.08em', opacity: 0.9 }}>Night 1</div>
+        {/* HUD top-right: time + night */}
+        <div ref={hudTopRightRef}
+             style={{ position: 'fixed', top: '37px', right: '50px', zIndex: 500,
+               pointerEvents: 'none', userSelect: 'none',
+               fontFamily: "'FNAF','Courier New',monospace",
+               color: '#fff', textShadow: '0 0 10px rgba(255,255,255,0.5)',
+               textAlign: 'right', display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <div ref={hudTimeRef}  style={{ fontSize: 'calc(clamp(24px,3.6vw,56px)*1.6)', letterSpacing: '0.06em', lineHeight: 1 }}>12 AM</div>
+          <div ref={hudNightRef} style={{ fontSize: 'calc(clamp(13px,1.6vw,26px)*1.6)', letterSpacing: '0.08em', opacity: 0.9 }}>Night 1</div>
+        </div>
+
+        {/* HUD power */}
+        <div ref={hudPowerDivRef}
+             style={{ position: 'fixed', bottom: '123px', left: '70px', zIndex: 500,
+               pointerEvents: 'none', userSelect: 'none',
+               fontFamily: "'FNAF','Courier New',monospace", color: '#fff',
+               textShadow: '0 0 10px rgba(255,255,255,0.5)',
+               fontSize: 'calc(clamp(13px,1.6vw,26px)*2.25)', letterSpacing: '0.08em' }}>
+          Power Left: <span ref={hudPowerRef}>99%</span>
+        </div>
+
+        {/* HUD usage */}
+        <div ref={hudUsageRef}
+             style={{ position: 'fixed', bottom: '61px', left: '70px', zIndex: 500,
+               pointerEvents: 'none', userSelect: 'none',
+               fontFamily: "'FNAF','Courier New',monospace", color: '#fff',
+               textShadow: '0 0 10px rgba(255,255,255,0.5)',
+               fontSize: 'calc(clamp(13px,1.6vw,26px)*2.25)', letterSpacing: '0.08em',
+               display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span>Usage :</span>
+          <img ref={hudBatteryRef} src="/assets/Battery/212.png" alt="battery"
+               style={{ height: 'clamp(28px,4vw,52px)', width: 'auto', imageRendering: 'pixelated' }} />
+        </div>
+
+        {/* Tablet bar — opens camera */}
+        <div ref={tabletBarRef} id="tablet-bar"
+             style={{
+               position: 'fixed', bottom: 0, left: 0, width: '100%', height: '52px',
+               background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)',
+               zIndex: 550,
+               display: 'flex', alignItems: 'center', justifyContent: 'center',
+               cursor: 'pointer', gap: '10px',
+             }}>
+          <img src="/assets/Tablette/open_tablette_icon.png" alt="tablet"
+               style={{ height: 28, opacity: 0.85, pointerEvents: 'none' }} />
+          <span style={{
+            fontFamily: "'FNAF','Courier New',monospace",
+            fontSize: '0.75rem', letterSpacing: '0.18em',
+            color: 'rgba(255,255,255,0.6)', userSelect: 'none', pointerEvents: 'none',
+          }}>CAMERAS</span>
+        </div>
+
+        {/* Close camera button — visible only when tablet is open */}
+        <div ref={tabletCloseBtnRef}
+             style={{
+               display: 'none', position: 'fixed', bottom: 0, left: 0,
+               width: '100%', height: '52px',
+               background: 'linear-gradient(to top, rgba(0,0,0,0.85), transparent)',
+               zIndex: 550,
+               alignItems: 'center', justifyContent: 'center',
+               cursor: 'pointer', gap: '10px',
+             }}>
+        <span style={{
+          fontFamily: "'FNAF','Courier New',monospace",
+          fontSize: '0.75rem', letterSpacing: '0.18em',
+          color: 'rgba(255,255,255,0.6)', userSelect: 'none', pointerEvents: 'none',
+        }}>▼ FERMER CAMÉRA ▼</span>
+        </div>
+
+        {/* Cam label — top left when tablet open */}
+        <div ref={camLabelRef}
+             style={{ display: 'none', position: 'fixed',
+               top: '18px', left: '22px', zIndex: 200,
+               fontFamily: "'FNAF',monospace", fontSize: '1.1vw', color: '#fff',
+               letterSpacing: '0.1em', textTransform: 'uppercase',
+               textShadow: '0 0 8px rgba(255,255,255,0.5)',
+               pointerEvents: 'none' }} />
+
+        {/* Minimap */}
+        <Minimap />
       </div>
-
-      {/* HUD power */}
-      <div ref={hudPowerDivRef}
-           style={{ position: 'fixed', bottom: '123px', left: '70px', zIndex: 500,
-                    pointerEvents: 'none', userSelect: 'none',
-                    fontFamily: "'FNAF','Courier New',monospace", color: '#fff',
-                    textShadow: '0 0 10px rgba(255,255,255,0.5)',
-                    fontSize: 'calc(clamp(13px,1.6vw,26px)*2.25)', letterSpacing: '0.08em' }}>
-        Power Left: <span ref={hudPowerRef}>99%</span>
-      </div>
-
-      {/* HUD usage */}
-      <div ref={hudUsageRef}
-           style={{ position: 'fixed', bottom: '61px', left: '70px', zIndex: 500,
-                    pointerEvents: 'none', userSelect: 'none',
-                    fontFamily: "'FNAF','Courier New',monospace", color: '#fff',
-                    textShadow: '0 0 10px rgba(255,255,255,0.5)',
-                    fontSize: 'calc(clamp(13px,1.6vw,26px)*2.25)', letterSpacing: '0.08em',
-                    display: 'flex', alignItems: 'center', gap: 8 }}>
-        <span>Usage :</span>
-        <img ref={hudBatteryRef} src="/assets/Battery/212.png" alt="battery"
-             style={{ height: 'clamp(28px,4vw,52px)', width: 'auto', imageRendering: 'pixelated' }} />
-      </div>
-
-      {/* Tablet bar */}
-      <div ref={tabletBarRef} id="tablet-bar"
-           style={{ position: 'fixed', bottom: 0, left: 0, width: '100%', height: 40,
-                    background: 'transparent', zIndex: 550,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-        <img src="/assets/Tablette/open_tablette_icon.png" alt="tablet" style={{ height: 30, opacity: 0.7 }} />
-      </div>
-
-      {/* Cam label */}
-      <div ref={camLabelRef}
-           style={{ display: 'none', position: 'fixed',
-                    bottom: 'calc(2vh + 260px)', right: '1vw', zIndex: 200,
-                    fontFamily: "'FNAF',monospace", fontSize: '1vw', color: '#fff',
-                    letterSpacing: '0.08em', textTransform: 'uppercase',
-                    textShadow: '0 0 6px rgba(255,255,255,0.4)',
-                    pointerEvents: 'none', textAlign: 'right' }} />
-
-      {/* Minimap */}
-      <Minimap />
-    </div>
   );
 }
