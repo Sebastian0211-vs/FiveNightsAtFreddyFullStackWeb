@@ -88,7 +88,7 @@
 
     // Image de fond
     const bgImg = document.createElement('img');
-    bgImg.src = '../../assets/map/145.png';
+    bgImg.src = '../../assets/Map/145.png';
     bgImg.style.cssText = `
         position: absolute; inset: 0; width: 100%; height: 100%;
         object-fit: contain; pointer-events: none; opacity: 1;
