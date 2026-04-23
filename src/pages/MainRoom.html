@@ -23,11 +23,21 @@
         body.dragging { cursor: grabbing; }
         canvas { display: block; position: absolute; top: 0; left: 0; }
 
-        /* ── HUD ──────────────────────────────────────────────────── */
+        /* ── HUD — fully responsive ──────────────────────────────── */
+
+        /*
+         * All positions now use clamp() or vw/vh.
+         * Formula: clamp(min, preferred-vw/vh, max)
+         * The preferred value scales with viewport so it looks right at
+         * any resolution from 720p to 4K.
+         */
+
         #hud-top-right {
             position: fixed;
-            top: var(--hud-tr-top, 37px);
-            right: var(--hud-tr-right, 50px);
+            /* top: was 37px → now scales from 20px (mobile) to 48px (4K) */
+            top:   clamp(16px, 2.8vh, 48px);
+            /* right: was 50px → now scales */
+            right: clamp(24px, 3.5vw, 72px);
             z-index: 500;
             pointer-events: none;
             user-select: none;
@@ -37,51 +47,60 @@
             text-align: right;
             display: flex;
             flex-direction: column;
-            gap: 2px;
+            gap: clamp(2px, 0.3vh, 5px);
         }
+
         #hud-time {
-            font-size: calc(clamp(24px, 3.6vw, 56px) * var(--hud-tr-scale, 1.6));
+            /* was: calc(clamp(24px, 3.6vw, 56px) * 1.6)
+             * Now a direct responsive clamp so it reads well at all sizes */
+            font-size: clamp(28px, 4.5vw, 80px);
             letter-spacing: 0.06em;
             line-height: 1;
         }
+
         #hud-night {
-            font-size: calc(clamp(13px, 1.6vw, 26px) * var(--hud-tr-scale, 1.6));
+            font-size: clamp(14px, 2vw, 34px);
             letter-spacing: 0.08em;
             opacity: 0.9;
         }
 
+        /* Bottom-left cluster: power + usage share the same positioning anchor */
         #hud-power {
             position: fixed;
-            bottom: var(--hud-pw-bottom, 123px);
-            left: var(--hud-pw-left, 70px);
+            /* was bottom: 123px, left: 70px */
+            bottom: clamp(70px, 9vh, 150px);
+            left:   clamp(30px, 4vw, 90px);
             z-index: 500;
             pointer-events: none;
             user-select: none;
             font-family: 'FNAF', 'Courier New', monospace;
             color: #fff;
             text-shadow: 0 0 10px rgba(255,255,255,0.5);
-            font-size: calc(clamp(13px, 1.6vw, 26px) * var(--hud-bl-scale, 2.25));
+            font-size: clamp(14px, 2vw, 36px);
             letter-spacing: 0.08em;
         }
 
         #hud-usage {
             position: fixed;
-            bottom: var(--hud-us-bottom, 61px);
-            left: var(--hud-us-left, 70px);
+            /* was bottom: 61px, left: 70px */
+            bottom: clamp(20px, 3.5vh, 60px);
+            left:   clamp(30px, 4vw, 90px);
             z-index: 500;
             pointer-events: none;
             user-select: none;
             font-family: 'FNAF', 'Courier New', monospace;
             color: #fff;
             text-shadow: 0 0 10px rgba(255,255,255,0.5);
-            font-size: calc(clamp(13px, 1.6vw, 26px) * var(--hud-bl-scale, 2.25));
+            font-size: clamp(14px, 2vw, 36px);
             letter-spacing: 0.08em;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: clamp(4px, 0.6vw, 12px);
         }
+
         #hud-battery-img {
-            height: clamp(28px, 4vw, 52px);
+            /* was hardcoded 28-52px — now scales with font size */
+            height: clamp(24px, 3.2vw, 56px);
             width: auto;
             image-rendering: pixelated;
         }
@@ -110,7 +129,7 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 40px;
+            height: clamp(30px, 4vh, 50px);
             background: transparent;
             border-top: none;
             z-index: 550;
@@ -119,19 +138,22 @@
             justify-content: center;
             cursor: pointer;
         }
-        #tablet-bar img { height: 30px; opacity: 0.7; }
+        #tablet-bar img {
+            height: clamp(20px, 3vh, 38px);
+            opacity: 0.7;
+        }
 
-        /* ── Cam label overlay (top-left when tablet open) ────── */
+        /* ── Cam label overlay ───────────────────────────────────── */
         #cam-label-overlay {
             display: none;
             position: fixed;
-            bottom: calc(2vh + 260px); /* 260px = hauteur de la minimap */
+            bottom: calc(2vh + 260px);
             right: 1vw;
             left: auto;
             top: auto;
             z-index: 200;
             font-family: 'FNAF', monospace;
-            font-size: 1vw;
+            font-size: clamp(10px, 1.1vw, 18px);
             color: #fff;
             letter-spacing: 0.08em;
             text-transform: uppercase;
@@ -275,36 +297,29 @@
                 if (!window._bonnieDoorImg) {
                     window._bonnieDoorImg = new Image();
                     window._bonnieDoorImg.src = '../../assets/Main Room/225.png';
-
                     const windowscaresfx = new Audio('../../assets/FNaF 1 Audio/windowscare.wav');
                     windowscaresfx.volume = 1;
-                    window._bonnieDoorImg.onload = () => {
-                        windowscaresfx.play().catch(() => {});
-                    };
+                    window._bonnieDoorImg.onload = () => { windowscaresfx.play().catch(() => {}); };
                 }
                 if (window._bonnieDoorImg.complete && window._bonnieDoorImg.naturalWidth) {
                     return window._bonnieDoorImg;
                 }
             }
         }
-        if(window.chicaAtDoor){
+        if (window.chicaAtDoor) {
             const rightLit = state.right.light === 'on' && flickerOverride.right !== 'off';
-            if(rightLit){
+            if (rightLit) {
                 if (!window._chicaDoorImg) {
                     window._chicaDoorImg = new Image();
-                    window._chicaDoorImg.src = '../../assets/Main Room/227.png'
-
+                    window._chicaDoorImg.src = '../../assets/Main Room/227.png';
                     const windowscaresfx = new Audio('../../assets/FNaF 1 Audio/windowscare.wav');
                     windowscaresfx.volume = 1;
-                    window._chicaDoorImg.onload = () => {
-                        windowscaresfx.play().catch(() => {})
-                    };
+                    window._chicaDoorImg.onload = () => { windowscaresfx.play().catch(() => {}); };
                 }
                 if (window._chicaDoorImg.complete && window._chicaDoorImg.naturalWidth) {
                     return window._chicaDoorImg;
                 }
             }
-
         }
         if (window._powerOutEyeFrame === '305') {
             return bgFreddyEyesImg.complete && bgFreddyEyesImg.naturalWidth ? bgFreddyEyesImg : bgPoweredDown;
@@ -494,7 +509,6 @@
             }
             updateButtonZones();
         }
-
     }
 
     function animate() {
@@ -523,9 +537,6 @@
         draw();
     }
 
-    // Jumpscare functions and GameState are defined in gamelogic.js
-
-    // J = jumpscare aléatoire (dev helper)
     window.addEventListener('keydown', e => {
         if (e.key === 'j' || e.key === 'J') {
             const picks = [playChicaJumpscare, playBonnieJumpscare, playFoxyJumpscare, playFreddyJumpscare, playGoldenFreddyJumpscare];
@@ -546,7 +557,7 @@
         const img = new Image(); img.src = `${tabletAnimation.basePath}${i}.png`; tabletFrames.push(img);
     }
 
-    // --- DOM refs (declared ONCE) ---
+    // --- DOM refs ---
     const tabletBar    = document.getElementById('tablet-bar');
     const tabletCanvas = document.getElementById('tablet-anim-canvas');
     const tabletCtx    = tabletCanvas.getContext('2d');
@@ -555,7 +566,6 @@
     tabletCam.height   = window.innerHeight;
     const camCtx       = tabletCam.getContext('2d');
 
-    // ── Cam selector (piloté par la minimap) ─────────────────────
     const camLabelOverlay = document.getElementById('cam-label-overlay');
 
     const CAM_LABELS = {
@@ -572,7 +582,6 @@
         restrooms:        'Restrooms',
     };
 
-    // Exposée globalement pour que minimap_debug_patch.js puisse l'appeler
     function selectCam(room, camLabel) {
         window.activeCam = room;
         if (camLabelOverlay) {
@@ -602,10 +611,7 @@
         tabletCam.height = window.innerHeight;
     });
 
-    // --- Camera source — now using static images via getCamImagePath ---
-    // Dynamic cam image — updated by drawCamView each frame
     let _camImg = null, _camImgSrc = '';
-
     function getOrLoadCamImg(src) {
         if (!src) return null;
         if (src === _camImgSrc && _camImg) return _camImg;
@@ -615,7 +621,6 @@
         return _camImg;
     }
 
-    // stopCamVideo / startCamVideo — drive the kitchen video element
     var camAudio = { pause() {}, play() { return Promise.resolve(); }, currentTime: 0 };
     const kitchenVideo = document.getElementById('kitchen-video');
 
@@ -623,39 +628,31 @@
         const img = new Image(); img.src = src; return img;
     });
     let _officeFreddyAnim = null;
-
     let _officeFreddyAnimSfx = null;
 
-    if(!GameState._6amTriggered || !GameState._powerOutTriggered){
+    if (!GameState._6amTriggered || !GameState._powerOutTriggered) {
         setInterval(() => {
             if (_officeFreddyAnim) return;
             if (window.isTabletOpen) return;
             if (renderPaused) return;
             if (Math.floor(Math.random() * 1000) !== 1) return;
-
             _officeFreddyAnimSfx = new Audio('../../assets/FNaF 1 Audio/robotvoice.wav');
             _officeFreddyAnimSfx.volume = 0.7;
             _officeFreddyAnimSfx.play().catch(() => {});
-
             _officeFreddyAnim = { index: 0, lastTime: performance.now(), show: false };
         }, 1000);
     }
 
-
     function startCamVideo() {
-        if (window.activeCam === 'kitchen') {
-            kitchenVideo.play().catch(() => {});
-        }
+        if (window.activeCam === 'kitchen') { kitchenVideo.play().catch(() => {}); }
     }
     function stopCamVideo() {
         kitchenVideo.pause();
         kitchenVideo.currentTime = 0;
     }
 
-    // Set initial cam to show_stage
     window.activeCam = 'show_stage';
 
-    // --- noiseMenu overlay ---
     let noiseMenuFrames = [], noiseMenuReady = false;
     (function preloadNoiseFrames() {
         let loaded = 0;
@@ -670,18 +667,15 @@
     let noiseIndex = 0, noiseRafId = null, noiseLastTime = 0, noiseAccum = 0;
     const noiseMsPerFrame = 1000 / noiseMenu.fps;
 
-    // ── Foxy run cam overlay ──────────────────────────────────────
     const foxyRunFrames = foxyRun.frames.map(src => {
         const img = new Image(); img.src = src; return img;
     });
     let foxyRunIndex = 0, foxyRunAccum = 0;
     const foxyRunMsPerFrame = 1000 / foxyRun.fps;
 
-    // --- Camera pan ---
     let camPan = 0, camPanDir = 1;
     const CAM_PAN_SPEED = 0.000065;
 
-    // --- Camera GUI overlay ---
     const camFrameImg  = new Image(); camFrameImg.src  = '../../assets/Cam_views/11.png';
     const camRedDotImg = new Image(); camRedDotImg.src = '../../assets/Cam_views/7.png';
 
@@ -692,13 +686,11 @@
         const cw = tabletCam.width, ch = tabletCam.height;
         camCtx.fillStyle = '#000'; camCtx.fillRect(0, 0, cw, ch);
 
-        // ── Draw current cam image ───────────────────────────────
         const src = (typeof getCamImagePath !== 'undefined' && window.activeCam)
             ? getCamImagePath(window.activeCam)
             : null;
 
         if (window.activeCam === 'kitchen' && kitchenVideo.readyState >= 2) {
-            // Draw video frame — cover-fill with subtle pan
             const vw = kitchenVideo.videoWidth || cw;
             const vh = kitchenVideo.videoHeight || ch;
             const scaleH = ch / vh, scaleW = cw / vw;
@@ -716,7 +708,6 @@
         } else {
             const camImg = getOrLoadCamImg(src);
             if (camImg && camImg.complete && camImg.naturalWidth) {
-                // Cover-fill with subtle side pan
                 const imgW = camImg.naturalWidth, imgH = camImg.naturalHeight;
                 const scaleH = ch / imgH, scaleW = cw / imgW;
                 const scale  = Math.max(scaleH, scaleW * 1.4);
@@ -733,7 +724,6 @@
             }
         }
 
-        // ── Foxy run frame drawn BEFORE noise so noise composites on top ─
         if (window.foxyRunning && window.activeCam === 'west_hall' && !window.foxyRunAnimDone) {
             const fFrame = foxyRunFrames[foxyRunIndex];
             if (fFrame && fFrame.complete && fFrame.naturalWidth) {
@@ -743,20 +733,18 @@
             }
         }
 
-
         let noiseB = Math.floor(Math.random() * 3);
         setInterval(() => { noiseB = Math.floor(Math.random() * 3); }, 1000);
         const noiseFrame = noiseMenuReady ? noiseMenuFrames[noiseIndex] : null;
         if (noiseFrame && noiseFrame.complete && noiseFrame.naturalWidth) {
             camCtx.save();
             camCtx.globalCompositeOperation = 'screen';
-            camCtx.globalAlpha = ((150 + Math.random() * 50 + noiseB * 15) / 245)*0.7;
+            camCtx.globalAlpha = ((150 + Math.random() * 50 + noiseB * 15) / 245) * 0.7;
             const scale = Math.max(cw / noiseFrame.naturalWidth, ch / noiseFrame.naturalHeight);
             camCtx.drawImage(noiseFrame, (cw - noiseFrame.naturalWidth * scale) / 2, (ch - noiseFrame.naturalHeight * scale) / 2, noiseFrame.naturalWidth * scale, noiseFrame.naturalHeight * scale);
             camCtx.restore();
         }
 
-        // ── Foxy run trigger logic (sfx + 3s timer) on cam 2A ────────────
         if (window.foxyRunning && window.activeCam === 'west_hall') {
             if (!window._foxyRunCamSfxTriggered) {
                 window._foxyRunCamSfxTriggered = true;
@@ -782,7 +770,6 @@
         noiseAccum += delta;
         while (noiseAccum >= noiseMsPerFrame) { noiseAccum -= noiseMsPerFrame; noiseIndex = (noiseIndex + 1) % noiseMenuFrames.length; }
 
-        // Advance foxy run frame independently — plays once, stops at last frame
         if (!window.foxyRunAnimDone) {
             foxyRunAccum += delta;
             while (foxyRunAccum >= foxyRunMsPerFrame) {
@@ -805,7 +792,6 @@
     function startNoiseLoop() { if (noiseRafId) return; noiseLastTime = 0; noiseRafId = requestAnimationFrame(tickNoise); }
     function stopNoiseLoop()  { if (noiseRafId) { cancelAnimationFrame(noiseRafId); noiseRafId = null; } }
 
-    // --- Tablet state ---
     let tabletState = 'closed', tabletFrame = 0, lastFrameTime = 0;
 
     function resizeTabletCanvas() { tabletCanvas.width = window.innerWidth; tabletCanvas.height = window.innerHeight; }
@@ -870,7 +856,7 @@
         if (GameState._6amTriggered) return;
         window.isTabletOpen = true;
         if (typeof bonnie !== 'undefined') bonnie.onTabletOpen();
-        if(typeof chica !== 'undefined') chica.onTabletOpen();
+        if (typeof chica  !== 'undefined') chica.onTabletOpen();
         sfxCameraUp.currentTime = 0; sfxCameraUp.play().catch(() => {});
         tabletState = 'opening'; tabletFrame = 0;
         tabletCanvas.style.display = 'block';
@@ -883,7 +869,6 @@
         if (tabletState !== 'open') return;
         window.isTabletOpen = false;
         if (typeof foxy !== 'undefined') foxy.onTabletClose();
-        //if (typeof bonnie !== 'undefined') bonnie.onTabletClose();
         sfxCameraDown.currentTime = 0; sfxCameraDown.play().catch(() => {});
         sfxCameraLoop.pause(); sfxCameraLoop.currentTime = 0;
         stopCamVideo();
@@ -918,8 +903,6 @@
         requestAnimationFrame(() => requestAnimationFrame(() => { fadeEl.style.opacity = '0'; }));
     });
 
-    // ── Start game logic ──────────────────────────────────────────
-    // GameState, jumpscares, and constants are all defined in gamelogic.js
     initGameLogic();
 
 </script>
