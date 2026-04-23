@@ -226,7 +226,7 @@
         document.body.style.transition = "opacity 2s";
         document.body.style.opacity = "0";
         setTimeout(() => {
-            window.location.href = url;
+            window.location.href = '/mainroom';
         }, 2000);
     }
 
@@ -253,8 +253,7 @@
         document.body.style.transition = "opacity 0.8s";
         document.body.style.opacity = "0";
         setTimeout(() => {
-            // Points to the Vite dev server — update to your deployed URL in production
-            window.location.href = 'http://localhost:5173/login';
+            window.location.href = '/login';  // ← change this
         }, 800);
     }
 </script>
