@@ -1,12 +1,17 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import { resolve } from 'path'
 
 export default defineConfig({
   plugins: [react()],
-  // Serve the project root so /Assets/... paths resolve correctly
-  root: '.',
-  publicDir: 'public',
-  server: {
-    port: 5173,
-  },
-});
+  build: {
+    rollupOptions: {
+      input: {
+        main:     resolve(__dirname, 'index.html'),
+        menu:     resolve(__dirname, 'src/pages/Menu.html'),
+        mainroom: resolve(__dirname, 'src/pages/MainRoom.html'),
+        warning:  resolve(__dirname, 'src/pages/Warning.html'),
+      }
+    }
+  }
+})

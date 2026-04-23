@@ -40,6 +40,7 @@ const ANIM_FPS    = 30;
 const MIN_OPACITY = 0.3;
 const MAX_OPACITY = 0.4;
 
+// Baby look-up sequence (plays over frame 0 when idle, rare event)
 const LOOK_UP_FRAMES = [frame_970, frame_971, frame_972, frame_973, frame_983, frame_984, frame_985];
 const LOOK_UP_FPS    = 10;
 const LOOK_UP_CHANCE = 0.01;
@@ -141,7 +142,7 @@ export default function Login() {
         sfx.play().catch(() => {});
         setFading(true);
         sfx.addEventListener('ended', () => navigate('/register'));
-        setTimeout(() => navigate('/register'), 6000);
+        setTimeout(() => navigate('/register'), 6000); // fallback
     }
 
     const stateRef     = useRef('idle');
@@ -349,7 +350,7 @@ export default function Login() {
                 zIndex: 0, pointerEvents: 'none',
             }} />
 
-            {/* z-index 0 — Baby look-up rare event */}
+            {/* z-index 0 — Baby look-up rare event (replaces frame 0 only) */}
             {lookUpFrame && (
                 <img src={lookUpFrame} style={{
                     position: 'absolute', inset: 0,
@@ -369,7 +370,7 @@ export default function Login() {
                 zIndex: 1, pointerEvents: 'none',
             }} />
 
-            {/* z-index 2 — flickering overlay */}
+            {/* z-index 2 — flickering 986 overlay */}
             <img src={overlay} style={{
                 position: 'absolute', inset: 0,
                 width: '100%', height: '100%',
@@ -378,7 +379,9 @@ export default function Login() {
                 zIndex: 2, pointerEvents: 'none',
             }} />
 
-            {/* z-index 10 — login form */}
+
+
+            {/* z-index 10 — login form on the paper */}
             {formVisible && (
                 <div style={formStyle}>
                     <div>
@@ -407,6 +410,7 @@ export default function Login() {
                 pointerEvents: fading ? 'all' : 'none',
                 zIndex: 999,
             }} />
+
         </div>
     );
 }
