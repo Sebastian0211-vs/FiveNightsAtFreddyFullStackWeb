@@ -40,57 +40,73 @@ const ANIM_FPS    = 30;
 const MIN_OPACITY = 0.3;
 const MAX_OPACITY = 0.4;
 
-// Baby look-up sequence (plays over frame 0 when idle, rare event)
 const LOOK_UP_FRAMES = [frame_970, frame_971, frame_972, frame_973, frame_983, frame_984, frame_985];
 const LOOK_UP_FPS    = 10;
-// Chance per second of triggering the event while idle at frame 0
-const LOOK_UP_CHANCE = 0.01; // 4% per second → roughly every ~25s on average
+const LOOK_UP_CHANCE = 0.01;
+
+const SWIPE_THRESHOLD = 40;
 
 TABLE_FRAMES.slice(0, -1).forEach(src => { const i = new Image(); i.src = src; });
 
-
+// ─────────────────────────────────────────────────────────────────────────────
+// STYLES — fully responsive using clamp() with sensible min/max
+// Key fix: max values were too small (e.g. 14px, 18px).
+// Now using viewport-relative values that scale properly on all screen sizes.
+// ─────────────────────────────────────────────────────────────────────────────
 const STYLES = `
+    /* ── Responsive base ── */
+    :root {
+        --form-font-base:  clamp(13px, 1.4vw, 22px);
+        --form-font-label: clamp(11px, 1.1vw, 18px);
+        --form-font-small: clamp(10px, 0.9vw, 15px);
+        --form-gap:        clamp(6px,  0.8vh, 14px);
+        --form-input-pad:  clamp(4px,  0.5vh, 8px);
+    }
+
     .tw-input {
         background: transparent;
         border: none;
         border-bottom: 1px solid rgba(60,30,10,0.55);
         outline: none;
         font-family: "Courier New", Courier, monospace;
-        font-size: clamp(12px, 1vw + 0.5vh, 18px);
+        font-size: var(--form-font-base);
         color: rgba(30, 15, 3, 0.95);
         width: 100%;
-        padding: 3px 0;
+        padding: var(--form-input-pad) 0;
         caret-color: rgba(40,20,5,0.9);
         pointer-events: auto;
         position: relative;
         z-index: 20;
     }
     .tw-input::placeholder { color: rgba(60,30,10,0.35); }
+
     .tw-label {
-        font-size: clamp(1vw, 0.8vw, 1vw);
+        font-size: var(--form-font-label);
         color: rgba(30,15,3,0.7);
         letter-spacing: 0.14em;
         text-transform: uppercase;
-        margin-bottom: 0.1vw;
+        margin-bottom: 0.2em;
     }
+
     .tw-btn {
         background: transparent;
-        border: 0.05vw solid rgba(40,20,5,0.5);
+        border: 1px solid rgba(40,20,5,0.5);
         font-family: "Courier New", Courier, monospace;
-        font-size: clamp(0.5vw, 0.9vw, 1vw);
+        font-size: var(--form-font-base);
         color: rgba(30,15,3,0.9);
         letter-spacing: 0.15em;
         text-transform: uppercase;
-        padding: 0.5vw 0;
+        padding: clamp(6px, 0.7vh, 12px) 0;
         cursor: pointer;
         width: 100%;
-        margin-top: 05.vw;
+        margin-top: clamp(4px, 0.6vh, 10px);
         transition: background 0.15s;
         pointer-events: auto;
     }
     .tw-btn:hover { background: rgba(40,20,5,0.12); }
+
     .tw-link {
-        font-size: clamp(1vw, 0.72vw, 0.5vw);
+        font-size: var(--form-font-small);
         color: rgba(40,20,5,0.55);
         letter-spacing: 0.08em;
         text-align: center;
@@ -104,7 +120,7 @@ const STYLES = `
     .tw-link:hover { color: rgba(40,20,5,0.9); }
     .tw-link.register { color: rgba(140,20,10,0.8); }
     .tw-link.register:hover { color: rgba(190,30,10,1); }
-    .tw-divider { border: none; border-top: 0.05vw solid rgba(40,20,5,0.18); margin: 0.15vw 0; }
+    .tw-divider { border: none; border-top: 1px solid rgba(40,20,5,0.18); margin: clamp(4px, 0.4vh, 8px) 0; }
 `;
 
 export default function Login() {
@@ -125,16 +141,16 @@ export default function Login() {
         sfx.play().catch(() => {});
         setFading(true);
         sfx.addEventListener('ended', () => navigate('/register'));
-        setTimeout(() => navigate('/register'), 6000); // fallback
+        setTimeout(() => navigate('/register'), 6000);
     }
 
     const stateRef     = useRef('idle');
     const frameRef     = useRef(0);
     const animTimer    = useRef(null);
     const scrollLocked = useRef(false);
+    const touchStartY  = useRef(null);
 
-    // ── Rare look-up event ────────────────────────────────────
-    const [lookUpFrame,   setLookUpFrame]   = useState(null); // null = not playing
+    const [lookUpFrame,   setLookUpFrame]   = useState(null);
     const lookUpTimer  = useRef(null);
     const lookUpActive = useRef(false);
 
@@ -149,7 +165,6 @@ export default function Login() {
             const lookUpSeq   = [frame_970, frame_971, frame_972, frame_973, frame_983, frame_984, frame_985];
             const lookDownSeq = [frame_984, frame_983, frame_973, frame_972, frame_971, frame_970];
 
-            // Phase 3 — look down, then back to 632
             function playLookDown() {
                 let i = 0;
                 lookUpTimer.current = setInterval(() => {
@@ -164,7 +179,6 @@ export default function Login() {
                 }, 1000 / LOOK_UP_FPS);
             }
 
-            // Phase 2 — play SFX, hold on last frame until it ends
             function playSfxThenDown() {
                 const sfx = new Audio(Math.random() < 0.5 ? shh2 : shouldhaveknown1);
                 sfx.volume = 0.1;
@@ -172,7 +186,6 @@ export default function Login() {
                 sfx.play().catch(() => setTimeout(playLookDown, 1500));
             }
 
-            // Phase 1 — look up frame by frame, then hand off to SFX
             let i = 0;
             setLookUpFrame(lookUpSeq[0]);
             lookUpTimer.current = setInterval(() => {
@@ -194,7 +207,6 @@ export default function Login() {
         };
     }, []);
 
-    // ── Flicker ───────────────────────────────────────────────
     useEffect(() => {
         const id = setInterval(() => {
             setOpacity(MIN_OPACITY + Math.random() * (MAX_OPACITY - MIN_OPACITY));
@@ -202,7 +214,6 @@ export default function Login() {
         return () => clearInterval(id);
     }, []);
 
-    // ── Audio ─────────────────────────────────────────────────
     useEffect(() => {
         const a1 = new Audio(winds);
         const a2 = new Audio(crickets);
@@ -211,7 +222,6 @@ export default function Login() {
         return () => { [a1, a2, a3].forEach(a => { a.pause(); a.currentTime = 0; }); };
     }, []);
 
-    // ── Animation stepper ────────────────────────────────────
     function stepForward() {
         if (frameRef.current >= LAST_FRAME) {
             stateRef.current = 'open';
@@ -244,9 +254,42 @@ export default function Login() {
         );
     }
 
-    // ── Scroll ────────────────────────────────────────────────
+    function triggerScroll(directionUp) {
+        if (lookUpActive.current) {
+            clearInterval(lookUpTimer.current);
+            lookUpTimer.current = null;
+            setLookUpFrame(null);
+            lookUpActive.current = false;
+        }
+
+        if (scrollLocked.current) return;
+        scrollLocked.current = true;
+        setTimeout(() => { scrollLocked.current = false; }, 3000);
+
+        if (directionUp) {
+            if (stateRef.current === 'idle' || stateRef.current === 'closing') {
+                stateRef.current = 'opening'; startAnim('forward');
+            }
+        } else {
+            if (stateRef.current === 'open' || stateRef.current === 'opening') {
+                stateRef.current = 'closing'; startAnim('backward');
+            }
+        }
+    }
+
     useEffect(() => {
-        function onWheel(e) {
+        function onWheel(e) { triggerScroll(e.deltaY > 0); }
+        window.addEventListener('wheel', onWheel, { passive: true });
+        return () => window.removeEventListener('wheel', onWheel);
+    }, []);
+
+    useEffect(() => {
+        function onTouchStart(e) { touchStartY.current = e.touches[0].clientY; }
+        function onTouchEnd(e) {
+            if (touchStartY.current === null) return;
+            const deltaY = touchStartY.current - e.changedTouches[0].clientY;
+            touchStartY.current = null;
+            if (Math.abs(deltaY) < SWIPE_THRESHOLD) return;
             if (lookUpActive.current) {
                 clearInterval(lookUpTimer.current);
                 lookUpTimer.current = null;
@@ -255,16 +298,44 @@ export default function Login() {
             }
             if (scrollLocked.current) return;
             scrollLocked.current = true;
-            setTimeout(() => { scrollLocked.current = false; }, 600);
-            if (stateRef.current === 'idle' || stateRef.current === 'closing') {
-                stateRef.current = 'opening'; startAnim('forward');
-            } else if (stateRef.current === 'open' || stateRef.current === 'opening') {
-                stateRef.current = 'closing'; startAnim('backward');
+            setTimeout(() => { scrollLocked.current = false; }, 3000);
+            const swipingUp = deltaY > 0;
+            if (swipingUp) {
+                if (stateRef.current === 'idle' || stateRef.current === 'closing') {
+                    stateRef.current = 'opening'; startAnim('forward');
+                }
+            } else {
+                if (stateRef.current === 'open' || stateRef.current === 'opening') {
+                    stateRef.current = 'closing'; startAnim('backward');
+                }
             }
         }
-        window.addEventListener('wheel', onWheel, { passive: true });
-        return () => window.removeEventListener('wheel', onWheel);
+        window.addEventListener('touchstart', onTouchStart, { passive: true });
+        window.addEventListener('touchend',   onTouchEnd,   { passive: true });
+        return () => {
+            window.removeEventListener('touchstart', onTouchStart);
+            window.removeEventListener('touchend',   onTouchEnd);
+        };
     }, []);
+
+    // ── Responsive form position
+    // Uses vw/vh percentages so it scales with any resolution.
+    // The form width is 18vw (capped at 320px, min 200px) and positioned
+    // relative to the paper image which is centred on screen.
+    const formStyle = {
+        position: 'absolute',
+        top: '50%',
+        left: '52%',
+        width: 'clamp(200px, 18vw, 320px)',
+        transform: 'translate(-10%, 0) rotate(-2.5deg)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 'var(--form-gap)',
+        fontFamily: '"Courier New", Courier, monospace',
+        zIndex: 10,
+        pointerEvents: 'auto',
+        cursor: 'auto',
+    };
 
     return (
         <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden', background: '#000' }}>
@@ -278,7 +349,7 @@ export default function Login() {
                 zIndex: 0, pointerEvents: 'none',
             }} />
 
-            {/* z-index 0 — Baby look-up rare event (replaces frame 0 only) */}
+            {/* z-index 0 — Baby look-up rare event */}
             {lookUpFrame && (
                 <img src={lookUpFrame} style={{
                     position: 'absolute', inset: 0,
@@ -298,7 +369,7 @@ export default function Login() {
                 zIndex: 1, pointerEvents: 'none',
             }} />
 
-            {/* z-index 2 — flickering 986 overlay */}
+            {/* z-index 2 — flickering overlay */}
             <img src={overlay} style={{
                 position: 'absolute', inset: 0,
                 width: '100%', height: '100%',
@@ -307,21 +378,9 @@ export default function Login() {
                 zIndex: 2, pointerEvents: 'none',
             }} />
 
-
-
-            {/* z-index 10 — login form on the paper */}
+            {/* z-index 10 — login form */}
             {formVisible && (
-                <div style={{
-                    position: 'absolute',
-                    top: '50%', left: '52%',
-                    width: '15%',
-                    transform: 'translate(-10%, 0) rotate(-2.5deg)',
-                    display: 'flex', flexDirection: 'column', gap: '10px',
-                    fontFamily: '"Courier New", Courier, monospace',
-                    zIndex: 10,
-                    pointerEvents: 'auto',
-                    cursor: 'auto',
-                }}>
+                <div style={formStyle}>
                     <div>
                         <div className="tw-label">Username</div>
                         <input className="tw-input" type="text" placeholder="_ _ _ _ _ _ _" />
@@ -332,7 +391,7 @@ export default function Login() {
                     </div>
                     <button className="tw-btn" onClick={handleLogin}>[ Connect ]</button>
                     <hr className="tw-divider" />
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(4px, 0.5vh, 8px)' }}>
                         <button className="tw-link">Forgot my password</button>
                         <button className="tw-link register" onClick={goToRegister}>Create an account</button>
                     </div>
@@ -348,7 +407,6 @@ export default function Login() {
                 pointerEvents: fading ? 'all' : 'none',
                 zIndex: 999,
             }} />
-
         </div>
     );
 }
