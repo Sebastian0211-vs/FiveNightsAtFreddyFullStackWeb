@@ -116,7 +116,19 @@ export default function Login() {
     const [fading, setFading]           = useState(false);
     const navigate = useNavigate();
 
-    function handleLogin() {
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+
+    async function handleLogin() {
+        const res = await fetch('https://sy-baubau.ch:3001/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) return alert(data.error);
+
+        localStorage.setItem('token', data.token);
         setFading(true);
         setTimeout(() => navigate('/game'), 1200);
     }
