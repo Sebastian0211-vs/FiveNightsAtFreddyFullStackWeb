@@ -398,11 +398,13 @@ export default function Login() {
                 <div style={formStyle}>
                     <div>
                         <div className="tw-label">Username</div>
-                        <input className="tw-input" type="text" placeholder="_ _ _ _ _ _ _" />
+                        <input className="tw-input" type="text" placeholder="_ _ _ _ _ _ _"
+                               value={username} onChange={e => setUsername(e.target.value)} />
                     </div>
                     <div>
                         <div className="tw-label">Password</div>
-                        <input className="tw-input" type="password" placeholder="* * * * * * *" />
+                        <input className="tw-input" type="password" placeholder="* * * * * * *"
+                               value={password} onChange={e => setPassword(e.target.value)} />
                     </div>
                     <button className="tw-btn" onClick={handleLogin}>[ Connect ]</button>
                     <hr className="tw-divider" />

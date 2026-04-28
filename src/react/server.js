@@ -15,4 +15,4 @@ mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('MongoDB connecté BAUBAU!!'))
     .catch(err => console.error(err));
 
-app.listen(3001, () => console.log('Server on :3001'));
+app.listen(3002, () => console.log('Server on :3002'));
