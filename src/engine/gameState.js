@@ -12,8 +12,19 @@
 //    renderPaused     — boolean, pauses the canvas render loop
 //    ctx, W, H        — canvas context + dimensions
 // ============================================================
+const API_BASE = 'https://fnaf.sy-baubau.ch:3001';
+async function saveProgress(night) {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    await fetch(`${API_BASE}/api/auth/progress`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ night }),
+    }).catch(() => {});
+}
+
 const GameState = {
-    night:          1,
+    night:          (window.__startNight || 1),
     rawPower:       999,
     secondsElapsed: 0,
     passiveAccum:   0,
@@ -390,11 +401,13 @@ const GameState = {
                     setTimeout(() => {
                         runPhase(FADEOUT_MS, 1, 0, H, H, () => {
                             if (this.night >= 6) {
+                                saveProgress(6);
                                 ctx.fillStyle = '#000';
                                 ctx.fillRect(0, 0, W, H);
-                                setTimeout(() => { window.location.href = '../pages/menu.html'; }, 1000);
+                                setTimeout(() => { window.location.href = '/menu'; }, 1000);
                                 return;
                             }
+                            saveProgress(this.night);
                             this.night++;
                             this.rawPower       = 999;
                             this.secondsElapsed = 0;
