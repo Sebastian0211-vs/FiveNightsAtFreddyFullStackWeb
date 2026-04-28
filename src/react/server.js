@@ -7,7 +7,7 @@ import authRoutes from './routes/auth.js';
 dotenv.config();
 const app = express();
 
-app.use(cors({ origin: 'https://sy-baubau.ch' })); // ou * en dev
+app.use(cors({ origin: 'https://fnaf.sy-baubau.ch' })); // ou * en dev
 app.use(express.json());
 app.use('/api/auth', authRoutes);
 

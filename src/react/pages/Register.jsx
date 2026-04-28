@@ -653,8 +653,26 @@ export default function Register() {
         setTimeout(() => navigate('/login'), 1200);
     }
 
-    function handleSubmit() {
+    async function handleSubmit() {
         if (!submitReady) return;
+
+        try {
+            const res = await fetch('https://sy-baubau.ch:3001/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: username.value, email: email.value, password: password.value }),
+            });
+            const data = await res.json();
+
+            if (!res.ok) {
+                alert(data.error || 'Erreur lors de la création du compte.');
+                return;
+            }
+        } catch (err) {
+            alert('Impossible de contacter le serveur.');
+            return;
+        }
+
         const sfx = new Audio(complete_sfx);
         sfx.volume = 0.9;
         sfx.play().catch(() => {});
