@@ -195,6 +195,11 @@
        loop playsinline
        style="display:none;position:absolute;pointer-events:none;"></video>
 
+<script>
+    // Read ?night=X from URL — must run before gameState.js loads
+    const __urlNight = parseInt(new URLSearchParams(window.location.search).get('night'));
+    window.__startNight = (!isNaN(__urlNight) && __urlNight >= 1 && __urlNight <= 6) ? __urlNight : 1;
+</script>
 <script src="../data/animations.js"></script>
 <script src="../constants/nightConfig.js"></script>
 <script src="../data/rooms.js"></script>

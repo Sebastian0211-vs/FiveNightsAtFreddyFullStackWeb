@@ -135,7 +135,7 @@ export default function Login() {
     const [password, setPassword] = useState('');
 
     async function handleLogin() {
-        const res = await fetch('https://sy-baubau.ch:3001/api/auth/login', {
+        const res = await fetch('https://fnaf.sy-baubau.ch:3001/api/auth/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, password }),
@@ -144,8 +144,9 @@ export default function Login() {
         if (!res.ok) return alert(data.error);
 
         localStorage.setItem('token', data.token);
+        localStorage.setItem('username', data.username);
         setFading(true);
-        setTimeout(() => navigate('/game'), 1200);
+        setTimeout(() => { window.location.href = '/menu'; }, 1200);
     }
 
     function goToRegister() {

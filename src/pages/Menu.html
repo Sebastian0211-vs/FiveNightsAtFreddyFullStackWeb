@@ -200,6 +200,21 @@
 <!-- Login button — bottom right, links to the React/Vite app -->
 <button id="login-btn" onclick="goToLogin()">Employee Login</button>
 
+<!-- Connected user display -->
+<div id="user-display" style="
+    display: none;
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    font-family: 'FNAF', 'Courier New', monospace;
+    font-size: clamp(9px, 1vw, 13px);
+    color: rgba(255,220,100,0.7);
+    letter-spacing: 0.12em;
+    text-shadow: 0 0 8px rgba(255,180,0,0.4);
+    z-index: 20;
+    pointer-events: none;
+"></div>
+
 <!-- Full-screen transition overlay -->
 <div id="transition-overlay">
     <img id="transition-img" src="../../assets/Menu/574.png">
@@ -230,23 +245,33 @@
         }, 2000);
     }
 
+    const API = 'https://fnaf.sy-baubau.ch:3001';
+    let __furthestNight = 0;
+
     async function onNewGame() {
+        const token = localStorage.getItem('token');
+        if (token) {
+            await fetch(`${API}/api/auth/reset`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}` }
+            }).catch(() => {});
+        }
+
         const overlay = document.getElementById('transition-overlay');
         const img     = document.getElementById('transition-img');
-
         overlay.classList.add('active');
-
         await fadeTo(overlay, 0, 1, 700);
         await fadeTo(img, 0, 1, 800);
         await wait(3500);
         await fadeTo(img, 1, 0, 800);
         await wait(500);
-
-        window.location.href = 'MainRoom.html';
+        window.location.href = '/mainroom';
     }
 
-    function onContinue(){
-        console.log("CONTINUE")
+    async function onContinue() {
+        const startNight = __furthestNight > 0 ? __furthestNight + 1 : 1;
+        const capped     = Math.min(startNight, 6);
+        window.location.href = `/mainroom?night=${capped}`;
     }
 
     function goToLogin() {
@@ -262,8 +287,26 @@
 <script src="../pages/player.js"></script>
 
 <script>
-    window.onload = () => {
+    window.onload = async () => {
         document.body.style.opacity = "1";
+
+        // Load connected user info
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const res  = await fetch(`${API}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    __furthestNight = data.furthestNight || 0;
+                    const el = document.getElementById('user-display');
+                    el.textContent = `Connected as ${data.username}`;
+                    el.style.display = 'block';
+                }
+            } catch (e) {}
+        }
+
         const a = new Audio('../../assets/FNaF 1 Audio/darkness music.wav');
         const b = new Audio('../../assets/FNaF 1 Audio/static2.wav');
         a.loop = true
