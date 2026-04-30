@@ -146,7 +146,7 @@ export default function Login() {
         localStorage.setItem('token', data.token);
         localStorage.setItem('username', data.username);
         setFading(true);
-        setTimeout(() => { window.location.href = '/menu'; }, 1200);
+        setTimeout(() => { window.location.href = '/warning'; }, 1200);
     }
 
     function goToRegister() {
