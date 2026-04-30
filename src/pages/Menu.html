@@ -157,25 +157,30 @@
 
         #login-btn {
             position: fixed;
-            bottom: 28px;
-            right: 36px;
+            bottom: clamp(20px, 4vh, 60px);
+            right:  clamp(20px, 2.5vw, 50px);
             z-index: 50;
             font-family: 'FNAF', 'Courier New', monospace;
-            font-size: clamp(9px, 1.1vw, 13px);
+            font-size: clamp(11px, 1.6vw, 33px);
             letter-spacing: 0.2em;
             text-transform: uppercase;
-            color: rgba(200, 160, 120, 0.65);
+            color: #fff;
             background: transparent;
-            border: 1px solid rgba(180, 120, 60, 0.3);
-            padding: 8px 18px;
+            border: 1px solid #fff;
+            padding-left: 2%;
+            padding-right: 2%;
+            padding-top: 1%;
+            padding-bottom: 1%;
+
             cursor: pointer;
             transition: color 0.25s, border-color 0.25s, text-shadow 0.25s;
             text-shadow: none;
         }
+
         #login-btn:hover {
-            color: rgba(255, 200, 140, 0.95);
-            border-color: rgba(220, 140, 60, 0.7);
-            text-shadow: 0 0 10px rgba(220, 120, 40, 0.5);
+            color: rgba(255, 200, 200, 0.95);
+            border-color: rgba(220, 140, 60, 0.9);
+            text-shadow: 0 0 10px rgba(220, 120, 40, 0.6);
         }
     </style>
 </head>
@@ -195,25 +200,28 @@
         <img class="menu-btn" src="../../assets/Menu/new_game_trans.png" onclick="onNewGame()">
         <img class="menu-btn" src="../../assets/Menu/continue_trans.png" onclick="onContinue()">
     </div>
+    <!-- Connected user display -->
+    <div id="user-display" style="
+        display: none;
+        position: fixed;
+        bottom: 7%;
+        left: 24px;
+        font-family: 'FNAF', 'Courier New', monospace;
+        font-size: clamp(22px, 1.6vw, 33px);
+        color: rgb(255,255,255);
+        letter-spacing: 0.12em;
+        text-shadow: 0 0 8px rgba(255,180,0,0.4);
+        z-index: 20;
+        pointer-events: none;
+"   ></div>
+
+    <button id="login-btn" style="bottom: 7%" onclick="goToLogin()">Employee Login</button>
+
 </div>
 
 <!-- Login button — bottom right, links to the React/Vite app -->
-<button id="login-btn" onclick="goToLogin()">Employee Login</button>
 
-<!-- Connected user display -->
-<div id="user-display" style="
-    display: none;
-    position: fixed;
-    bottom: 24px;
-    left: 24px;
-    font-family: 'FNAF', 'Courier New', monospace;
-    font-size: clamp(9px, 1vw, 40px);
-    color: rgba(255,220,100,0.7);
-    letter-spacing: 0.12em;
-    text-shadow: 0 0 8px rgba(255,180,0,0.4);
-    z-index: 20;
-    pointer-events: none;
-"></div>
+
 
 <!-- Full-screen transition overlay -->
 <div id="transition-overlay">
@@ -294,8 +302,8 @@
         const token = localStorage.getItem('token');
         if (token) {
             try {
-                const res  = await fetch(`${API}/api/auth/me`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
+                const res = await fetch(`${API}/api/auth/me`, {
+                    headers: {'Authorization': `Bearer ${token}`}
                 });
                 if (res.ok) {
                     const data = await res.json();
@@ -304,7 +312,12 @@
                     el.textContent = `Connected as ${data.username}`;
                     el.style.display = 'block';
                 }
-            } catch (e) {}
+            } catch (e) {
+            }
+        } else {
+            const el = document.getElementById('user-display');
+            el.textContent = `Connected as GUEST`;
+            el.style.display = 'block';
         }
 
         const a = new Audio('../../assets/FNaF 1 Audio/darkness music.wav');
