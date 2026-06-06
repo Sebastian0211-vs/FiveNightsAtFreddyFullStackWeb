@@ -416,7 +416,7 @@ const GameState = {
 
                             ANIMATRONICS.forEach(a => {
                                 //set ai level back to base for each animatronic and reset boost flag so they can get the boost again on the next hour
-                                a.level = base_ai_level[this.night]?.[a.name] || 0;
+                                a.level = window.__customAILevels?.[a.name] ?? base_ai_level[this.night]?.[a.name] ?? 0;
                                 a._boostApplied = false;
 
 

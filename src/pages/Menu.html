@@ -117,10 +117,11 @@
         .continue-row:hover { opacity: 0.7; }
         #continue-night {
             font-family: 'FNAF', 'Courier New', monospace;
-            font-size: clamp(8px, 0.85vw, 12px);
-            color: rgba(200, 160, 80, 0.65);
-            letter-spacing: 0.08em;
+            font-size: clamp(40px, 8vw, 112px);
+            color: #ffffff;
+            letter-spacing: 0.04em;
             white-space: nowrap;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.95);
         }
 
         /* Text buttons (Leaderboard, Login) — same visual weight as image buttons */
@@ -207,8 +208,9 @@
             <span class="menu-btn-text" style="display:inline;">Continue</span>
             <span id="continue-night"></span>
         </div>
+        <button id="custom-night-btn" class="menu-btn menu-btn-text" onclick="goToCustomNight()" style="display:none;">Custom Night</button>
         <button class="menu-btn menu-btn-text" onclick="goToLeaderboard()">Leaderboard</button>
-        <button id="login-btn" class="menu-btn menu-btn-text" onclick="goToLogin()">Employee Login</button>
+        <button id="login-btn" class="menu-btn menu-btn-text" onclick="goToLogin()">Log Out</button>
     </div>
 </div>
 
@@ -219,10 +221,10 @@
     bottom: 24px;
     left: 24px;
     font-family: 'FNAF', 'Courier New', monospace;
-    font-size: clamp(9px, 1vw, 13px);
-    color: rgba(255,220,100,0.7);
-    letter-spacing: 0.12em;
-    text-shadow: 0 0 8px rgba(255,180,0,0.4);
+    font-size: clamp(13px, 1.6vw, 20px);
+    color: #ffffff;
+    letter-spacing: 0.08em;
+    text-shadow: 2px 2px 6px rgba(0,0,0,0.9);
     z-index: 20;
     pointer-events: none;
 "></div>
@@ -257,7 +259,7 @@
         }, 2000);
     }
 
-    const API = 'https://fnaf.sy-baubau.ch:3001';
+    const API = '%VITE_API_URL%';
     let __furthestNight = 0;
 
     async function onNewGame() {
@@ -286,10 +288,32 @@
         window.location.href = `/mainroom?night=${capped}`;
     }
 
-    function goToLogin() {
+    async function goToLogin() {
+        await fetch(`${API}/api/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
         document.body.style.transition = "opacity 0.8s";
         document.body.style.opacity = "0";
         setTimeout(() => { window.location.href = '/login'; }, 800);
+    }
+
+    function goToCustomNight() {
+        const sfx = new Audio('../../assets/FNaF 1 Audio/CAMERA_VIDEO_LOA_60105303.wav');
+        sfx.play().catch(() => {});
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;pointer-events:all;background:#fff;opacity:0;';
+        document.body.appendChild(overlay);
+        const flickers = [0.9, 0, 0.7, 0, 1, 0, 0.5, 0.8, 0, 1];
+        let i = 0;
+        const flicker = setInterval(() => {
+            overlay.style.opacity = flickers[i] ?? 0;
+            i++;
+            if (i >= flickers.length) {
+                clearInterval(flicker);
+                overlay.style.transition = 'opacity 0.3s';
+                overlay.style.background = '#000';
+                overlay.style.opacity = '1';
+                setTimeout(() => { window.location.href = '/customnight'; }, 350);
+            }
+        }, 60);
     }
 
     function goToLeaderboard() {
@@ -338,7 +362,7 @@
             } else {
                 row.style.display = 'flex';
                 const next = Math.min(__furthestNight + 1, 6);
-                nightLabel.textContent = `night ${next}`;
+                nightLabel.textContent = `Night ${next}`;
             }
         }
         updateContinueBtn();
@@ -346,17 +370,24 @@
         // Load connected user info (cookie-based)
         try {
             const res = await fetch(`${API}/api/auth/me`, { credentials: 'include' });
+            if (!res.ok) {
+                window.location.href = '/unauthorized';
+                return;
+            }
             if (res.ok) {
                 const data = await res.json();
                 __furthestNight = data.furthestNight || 0;
                 updateContinueBtn();
                 const el = document.getElementById('user-display');
-                el.textContent = `Guard: ${data.username}`;
+                el.textContent = `Connected as: ${data.username}`;
                 el.style.display = 'block';
-                const loginBtn = document.getElementById('login-btn');
-                if (loginBtn) loginBtn.textContent = 'My Profile';
+                if (__furthestNight >= 5) {
+                    document.getElementById('custom-night-btn').style.display = 'block';
+                }
             }
-        } catch (e) {}
+        } catch (e) {
+            window.location.href = '/unauthorized';
+        }
 
         const a = new Audio('../../assets/FNaF 1 Audio/darkness music.wav');
         const b = new Audio('../../assets/FNaF 1 Audio/static2.wav');

@@ -27,6 +27,23 @@ const boost_ai_level = {
     '5 AM':  { Freddy: 0, Bonnie: 0, Chica: 0, Foxy: 0 },
 };
 
+// ── Custom Night override (set by CustomNight.html via sessionStorage) ───────
+(function () {
+    try {
+        const raw = sessionStorage.getItem('__customNight');
+        if (!raw) return;
+        const lvl = JSON.parse(raw);
+        const clamp = v => Math.max(0, Math.min(20, parseInt(v) || 0));
+        window.__customAILevels = {
+            Freddy: clamp(lvl.freddy),
+            Bonnie: clamp(lvl.bonnie),
+            Chica:  clamp(lvl.chica),
+            Foxy:   clamp(lvl.foxy),
+        };
+        sessionStorage.removeItem('__customNight');
+    } catch (e) {}
+})();
+
 // ── Animatronic movement intervals (ms) ──────────────────────
 
 const ANIM_INTERVALS = {
