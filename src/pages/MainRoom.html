@@ -246,8 +246,22 @@
         }
         nextAmbience();
     }
-    window.onload = () => { startAudio(); };
+    const API = '%VITE_API_URL%';
 
+    window.onload = async () => {
+        // Guard
+        try {
+            const res = await fetch(`${API}/api/auth/me`, { credentials: 'include' });
+            if (!res.ok) {
+                window.location.href = '/unauthorized';
+                return;
+            }
+        } catch (e) {
+            window.location.href = '/unauthorized';
+            return;
+        }
+        startAudio();
+    };
     // --- Background images ---
     const bg = new Image();
     bg.src = '../../assets/Main Room/39.png';
