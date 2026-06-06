@@ -221,7 +221,17 @@
         }, 60);
     }
 
-    window.onload = () => {
+    window.onload = async () => {
+        try {
+            const res = await fetch(`${API}/api/auth/me`, { credentials: 'include' });
+            if (!res.ok) {
+                window.location.href = '/unauthorized';
+                return;
+            }
+        } catch (e) {
+            window.location.href = '/unauthorized';
+            return;
+        }
         // Fade in
         document.body.style.opacity = '1';
         const fade = document.getElementById('page-fade');
