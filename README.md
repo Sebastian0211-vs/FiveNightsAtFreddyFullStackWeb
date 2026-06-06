@@ -1,8 +1,8 @@
 <div align="center">
 
-![Freddy Fazbear](readme-assets/banner.png)
+![Freddy Fazbear](readme-assets/img.png)
 
-# Five Nights at Freddy's — Full-Stack Web Edition
+# Five Nights at Freddy's : Full-Stack Web Edition
 
 *"Hello? Hello, hello? Uh, I wanted to record a message for you to help you get settled in on your first night..."*
 
@@ -16,9 +16,12 @@ A full-stack web recreation of Five Nights at Freddy's 1. The game runs entirely
 
 <div align="center">
 
-| Security Office | Show Stage (Cam 1A) |
-|---|---|
-| ![Office](readme-assets/office.png) | ![Show Stage](readme-assets/show-stage.png) |
+| Main Menu                             | Account Creation Mini-Game              |
+|---------------------------------------|-----------------------------------------|
+| ![Main Menu](readme-assets/img_1.png) | ![Mini Game](readme-assets/img_2.png)   |
+| Office                                | Leaderboard                             |
+| ![Office](readme-assets/img_3.png)    | ![Leaderboard](readme-assets/img_4.png) |
+
 
 </div>
 
