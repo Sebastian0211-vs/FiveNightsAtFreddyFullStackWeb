@@ -87,12 +87,14 @@ class Chica extends Animatronic {
             console.log('[Chica] caught in light — jumpscare!');
             this._atDoor = false;
             window.chicaAtDoor = false;
+            GameState._submitScore('jumpscare');
             playChicaJumpscare();
         } else {
             console.log('[Chica] silent entry');
             this._atDoor  = false;
             this.inOffice = true;
             window.chicaAtDoor  = false;
+            GameState._submitScore('jumpscare');
             window.chicaInOffice = true;
         }
     }

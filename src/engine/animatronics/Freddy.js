@@ -121,6 +121,7 @@ class Freddy extends Animatronic {
         }
 
         console.log('[Freddy] is in -> JUMPSCARE')
+        GameState._submitScore('jumpscare');
         playFreddyJumpscare();
 
         // Succès → lumière allumée = screamer immédiat, sinon entrée silencieuse

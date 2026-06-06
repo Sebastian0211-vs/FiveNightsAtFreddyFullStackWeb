@@ -14,6 +14,16 @@ export const typeDefs = `#graphql
     survivedSeconds: Int!
     outcome: Outcome!
     createdAt: String!
+    country: String
+    countryCode: String
+    cameraFlicks: Int
+    doorCloses: Int
+    powerRemaining: Float
+    isCustomNight: Boolean
+    aiFreddy: Int
+    aiBonnie: Int
+    aiChica: Int
+    aiFoxy: Int
   }
 
   enum Outcome {
@@ -30,6 +40,6 @@ export const typeDefs = `#graphql
   type Mutation {
     updateProgress(night: Int!): User!
     resetProgress: User!
-    submitScore(night: Int!, survivedSeconds: Int!, outcome: Outcome!): Score!
+    submitScore(night: Int!, survivedSeconds: Int!, outcome: Outcome!, cameraFlicks: Int, doorCloses: Int, powerRemaining: Float, isCustomNight: Boolean, aiFreddy: Int, aiBonnie: Int, aiChica: Int, aiFoxy: Int): Score!
   }
 `;

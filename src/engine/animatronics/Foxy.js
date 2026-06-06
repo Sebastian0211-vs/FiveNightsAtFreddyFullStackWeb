@@ -79,6 +79,7 @@ class Foxy extends Animatronic {
         this.sprintTimer               = null;
 
         if (state.left.door === 'open') {
+            GameState._submitScore('jumpscare');
             playFoxyJumpscare();
         } else {
             this._bangDoor();

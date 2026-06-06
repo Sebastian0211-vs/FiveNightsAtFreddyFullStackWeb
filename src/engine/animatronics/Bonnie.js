@@ -107,12 +107,14 @@ class Bonnie extends Animatronic {
             console.log('[Bonnie] caught in light — jumpscare!');
             this._atDoor = false;
             window.bonnieAtDoor = false;
+            GameState._submitScore('jumpscare');
             playBonnieJumpscare();
         } else {
             console.log('[Bonnie] silent entry');
             this._atDoor  = false;
             this.inOffice = true;
             window.bonnieAtDoor  = false;
+            GameState._submitScore('jumpscare');
             window.bonnieInOffice = true;
         }
     }

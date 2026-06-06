@@ -2,6 +2,22 @@ import { GraphQLError } from 'graphql';
 import User from '../models/User.js';
 import Score from '../models/Score.js';
 
+// Fetch country from IP using ip-api.com (free, no key needed)
+async function geolocateIP(ip) {
+    try {
+        // Skip loopback / private IPs (dev environment)
+        if (!ip || ip === '::1' || ip.startsWith('127.') || ip.startsWith('192.168.') || ip.startsWith('10.')) {
+            return { country: null, countryCode: null };
+        }
+        const res = await fetch(`http://ip-api.com/json/${ip}?fields=country,countryCode,status`);
+        const data = await res.json();
+        if (data.status !== 'success') return { country: null, countryCode: null };
+        return { country: data.country, countryCode: data.countryCode };
+    } catch {
+        return { country: null, countryCode: null };
+    }
+}
+
 function requireUser(ctx) {
     if (!ctx.user) {
         throw new GraphQLError('Non authentifié', {
@@ -52,9 +68,12 @@ export const resolvers = {
 
         submitScore: async (_p, args, ctx) => {
             const user = requireUser(ctx);
+            const { country, countryCode } = await geolocateIP(ctx.ip);
             return Score.create({
                 user: user._id,
                 username: user.username,
+                country,
+                countryCode,
                 ...args,
             });
         },

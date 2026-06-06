@@ -12,13 +12,15 @@
 //    renderPaused     — boolean, pauses the canvas render loop
 //    ctx, W, H        — canvas context + dimensions
 // ============================================================
-const API_BASE = 'https://fnaf.sy-baubau.ch:3001';
+const API_BASE = window.location.hostname === 'localhost'
+    ? `http://localhost:3002`
+    : `https://fnaf.sy-baubau.ch:3001`;
+
 async function saveProgress(night) {
-    const token = localStorage.getItem('token');
-    if (!token) return;
     await fetch(`${API_BASE}/api/auth/progress`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ night }),
     }).catch(() => {});
 }
@@ -28,6 +30,45 @@ const GameState = {
     rawPower:       999,
     secondsElapsed: 0,
     passiveAccum:   0,
+
+    // ── Per-night stat counters ──────────────────────────────
+    cameraFlicks: 0,
+    doorCloses:   0,
+    _scoreSent:   false, // guard: only submit once per night outcome
+
+    // ── Submit score to GraphQL ──────────────────────────────
+    async _submitScore(outcome) {
+        if (this._scoreSent) return;
+        this._scoreSent = true;
+        const powerRemaining  = outcome === 'win' ? parseFloat(this.getDisplayPercent()) : 0;
+        const customLevels    = window.__customAILevels || null;
+        const isCustomNight   = !!customLevels;
+        try {
+            await fetch(`${API_BASE}/graphql`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    query: `mutation($night:Int!,$survivedSeconds:Int!,$outcome:Outcome!,$cameraFlicks:Int,$doorCloses:Int,$powerRemaining:Float,$isCustomNight:Boolean,$aiFreddy:Int,$aiBonnie:Int,$aiChica:Int,$aiFoxy:Int){
+                        submitScore(night:$night,survivedSeconds:$survivedSeconds,outcome:$outcome,cameraFlicks:$cameraFlicks,doorCloses:$doorCloses,powerRemaining:$powerRemaining,isCustomNight:$isCustomNight,aiFreddy:$aiFreddy,aiBonnie:$aiBonnie,aiChica:$aiChica,aiFoxy:$aiFoxy){ id }
+                    }`,
+                    variables: {
+                        night:           this.night,
+                        survivedSeconds: this.secondsElapsed,
+                        outcome,
+                        cameraFlicks:    this.cameraFlicks,
+                        doorCloses:      this.doorCloses,
+                        powerRemaining,
+                        isCustomNight,
+                        aiFreddy:  customLevels?.Freddy ?? null,
+                        aiBonnie:  customLevels?.Bonnie ?? null,
+                        aiChica:   customLevels?.Chica  ?? null,
+                        aiFoxy:    customLevels?.Foxy   ?? null,
+                    },
+                }),
+            });
+        } catch { /* non-blocking */ }
+    },
 
     // ── Power usage ──────────────────────────────────────────
     // 1 base + 1 per closed door + 1 per active light, capped at 5
@@ -85,7 +126,7 @@ const GameState = {
     // ── HUD render ───────────────────────────────────────────
     render() {
         const usage = this.getUsage();
-        document.getElementById('hud-night').textContent     = `Night ${this.night}`;
+        document.getElementById('hud-night').textContent     = window.__customAILevels ? 'Custom Night' : `Night ${this.night}`;
         document.getElementById('hud-time').textContent      = HOURS[this.getCurrentHour()];
         document.getElementById('hud-power-val').textContent = `${Math.ceil(this.getDisplayPercent())}%`;
         const batteryMap = { 1: '212', 2: '213', 3: '214', 4: '456', 5: '455' };
@@ -253,6 +294,7 @@ const GameState = {
                                 steps4.play().catch(() => {});
                                 steps4.addEventListener('ended', () => {
                                     window._powerOutEyeFrame = 'jumpscare';
+                                    GameState._submitScore('jumpscare');
                                     playPowerOutJumpscare();
                                 });
                             }, 500));
@@ -271,6 +313,7 @@ const GameState = {
         if (this._6amTriggered) return;
         this._6amTriggered = true;
         console.log('6 AM — night complete');
+        this._submitScore('win');
 
         // ── Cancel every pending power-out timer ─────────────
         if (this._powerOutTimers) {
@@ -413,6 +456,9 @@ const GameState = {
                             this.secondsElapsed = 0;
                             this.passiveAccum   = 0;
                             this._6amTriggered  = false;
+                            this.cameraFlicks   = 0;
+                            this.doorCloses     = 0;
+                            this._scoreSent     = false;
 
                             ANIMATRONICS.forEach(a => {
                                 //set ai level back to base for each animatronic and reset boost flag so they can get the boost again on the next hour
@@ -612,6 +658,22 @@ _kitchenAudio4 = new Audio('../../assets/FNaF 1 Audio/OVEN-DRAWE_GEN-HDF18122.wa
 function initGameLogic() {
     setInterval(() => GameState.tick(), 1000);
     GameState.render();
+
+    // ── Stat tracking: poll at 100 ms to catch all camera/door toggles ──
+    let _prevTabletOpen  = false;
+    let _prevLeftDoor    = 'open';
+    let _prevRightDoor   = 'open';
+    setInterval(() => {
+        // Camera flick: rising edge of isTabletOpen
+        if (window.isTabletOpen && !_prevTabletOpen) GameState.cameraFlicks++;
+        _prevTabletOpen = !!window.isTabletOpen;
+
+        // Door close: rising edge of door → 'closed'
+        if (state.left.door  === 'closed' && _prevLeftDoor  !== 'closed') GameState.doorCloses++;
+        if (state.right.door === 'closed' && _prevRightDoor !== 'closed') GameState.doorCloses++;
+        _prevLeftDoor  = state.left.door;
+        _prevRightDoor = state.right.door;
+    }, 100);
 
     setInterval(() => { if (freddy.valid) freddy.tryMove(); }, ANIM_INTERVALS.freddy);
     setInterval(() => { if (bonnie.valid) bonnie.tryMove(); }, ANIM_INTERVALS.bonnie);
