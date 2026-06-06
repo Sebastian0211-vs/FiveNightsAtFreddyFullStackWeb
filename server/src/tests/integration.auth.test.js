@@ -1,6 +1,13 @@
 import { describe, it, expect, beforeAll, vi } from 'vitest';
 import request from 'supertest';
 
+// Mock Resend so the module loads without a real API key in CI/test
+vi.mock('resend', () => ({
+    Resend: class {
+        emails = { send: vi.fn().mockResolvedValue({ id: 'test-id' }) };
+    },
+}));
+
 // Mock the User model BEFORE importing the app — no real Mongo in tests.
 const fakeDb = new Map();
 let idCounter = 1;
