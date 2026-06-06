@@ -263,13 +263,12 @@
     let __furthestNight = 0;
 
     async function onNewGame() {
-        const token = localStorage.getItem('token');
-        if (token) {
-            await fetch(`${API}/api/auth/reset`, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${token}` }
-            }).catch(() => {});
-        }
+        await fetch(`${API}/graphql`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: 'mutation { resetProgress { furthestNight } }' }),
+        }).catch(() => {});
 
         const overlay = document.getElementById('transition-overlay');
         const img     = document.getElementById('transition-img');

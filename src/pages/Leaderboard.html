@@ -221,6 +221,8 @@
         }, 60);
     }
 
+    const API = '%VITE_API_URL%';
+
     window.onload = async () => {
         try {
             const res = await fetch(`${API}/api/auth/me`, { credentials: 'include' });
@@ -252,7 +254,6 @@
         playAnimation(document.getElementById('animWhite'), whiteMenu, 0.4);
 
         // Fetch leaderboard from GraphQL
-        const API = '%VITE_API_URL%';
         fetch(`${API}/graphql`, {
             method: 'POST',
             credentials: 'include',

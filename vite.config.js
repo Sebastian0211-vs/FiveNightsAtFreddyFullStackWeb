@@ -15,7 +15,7 @@ function htmlRewrites() {
   return {
     name: 'html-rewrites',
     configureServer(server) {
-      const spaRoutes = ['/login', '/register', '/play', '/test'];
+      const spaRoutes = ['/', '/warning', '/login', '/register', '/play', '/test'];
       server.middlewares.use((req, _res, next) => {
         const url = req.url.split('?')[0]; // strip query string
         if (map[url]) {

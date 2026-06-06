@@ -57,6 +57,7 @@ TABLE_FRAMES.slice(0, -1).forEach(src => { const i = new Image(); i.src = src; }
 // ─────────────────────────────────────────────────────────────────────────────
 const STYLES = `
     /* ── Responsive base ── */
+
     :root {
         --form-font-base:  clamp(13px, 1.4vw, 22px);
         --form-font-label: clamp(11px, 1.1vw, 18px);
@@ -123,6 +124,15 @@ const STYLES = `
     .tw-link.register { color: rgba(140,20,10,0.8); }
     .tw-link.register:hover { color: rgba(190,30,10,1); }
     .tw-divider { border: none; border-top: 1px solid rgba(40,20,5,0.18); margin: clamp(4px, 0.4vh, 8px) 0; }
+    
+    @keyframes hintFloat {
+        0%, 100% { transform: translateX(-50%) translateY(0);    }
+        50%       { transform: translateX(-50%) translateY(-5px); }
+    }
+    @keyframes hintFadeIn {
+        from { opacity: 0; transform: translateX(-50%) translateY(8px); }
+        to   { opacity: 1; transform: translateX(-50%) translateY(0);   }
+    }
 `;
 
 export default function Login() {
@@ -130,6 +140,7 @@ export default function Login() {
     const [frameIndex,  setFrameIndex]  = useState(0);
     const [formVisible, setFormVisible] = useState(false);
     const [fading, setFading]           = useState(false);
+    const [showHint,    setShowHint]    = useState(false);
     const navigate = useNavigate();
 
     const [username, setUsername] = useState('');
@@ -220,6 +231,22 @@ export default function Login() {
         };
     }, []);
 
+    // Hint for login/register
+    useEffect(() => {
+        const timer = setTimeout(() => setShowHint(true), 3000);
+        return () => clearTimeout(timer);
+    }, []);
+
+    useEffect(() => {
+        function hideHint() { setShowHint(false); }
+        window.addEventListener('wheel',      hideHint, { once: true });
+        window.addEventListener('touchstart', hideHint, { once: true });
+        return () => {
+            window.removeEventListener('wheel',      hideHint);
+            window.removeEventListener('touchstart', hideHint);
+        };
+    }, []);
+
     useEffect(() => {
         const id = setInterval(() => {
             setOpacity(MIN_OPACITY + Math.random() * (MAX_OPACITY - MIN_OPACITY));
@@ -267,67 +294,39 @@ export default function Login() {
         );
     }
 
-    function triggerScroll(directionUp) {
-        if (lookUpActive.current) {
-            clearInterval(lookUpTimer.current);
-            lookUpTimer.current = null;
-            setLookUpFrame(null);
-            lookUpActive.current = false;
-        }
-
-        if (scrollLocked.current) return;
-        scrollLocked.current = true;
-        setTimeout(() => { scrollLocked.current = false; }, 3000);
-
-        if (directionUp) {
-            if (stateRef.current === 'idle' || stateRef.current === 'closing') {
-                stateRef.current = 'opening'; startAnim('forward');
-            }
-        } else {
-            if (stateRef.current === 'open' || stateRef.current === 'opening') {
-                stateRef.current = 'closing'; startAnim('backward');
-            }
-        }
-    }
-
     useEffect(() => {
-        function onWheel(e) { triggerScroll(e.deltaY > 0); }
-        window.addEventListener('wheel', onWheel, { passive: true });
-        return () => window.removeEventListener('wheel', onWheel);
-    }, []);
+        function handlePosition(clientY) {
+            const ratio = clientY / window.innerHeight;
 
-    useEffect(() => {
-        function onTouchStart(e) { touchStartY.current = e.touches[0].clientY; }
-        function onTouchEnd(e) {
-            if (touchStartY.current === null) return;
-            const deltaY = touchStartY.current - e.changedTouches[0].clientY;
-            touchStartY.current = null;
-            if (Math.abs(deltaY) < SWIPE_THRESHOLD) return;
             if (lookUpActive.current) {
                 clearInterval(lookUpTimer.current);
                 lookUpTimer.current = null;
                 setLookUpFrame(null);
                 lookUpActive.current = false;
             }
-            if (scrollLocked.current) return;
-            scrollLocked.current = true;
-            setTimeout(() => { scrollLocked.current = false; }, 3000);
-            const swipingUp = deltaY > 0;
-            if (swipingUp) {
+
+            if (ratio > 0.90) {
+                setShowHint(false);
                 if (stateRef.current === 'idle' || stateRef.current === 'closing') {
-                    stateRef.current = 'opening'; startAnim('forward');
+                    stateRef.current = 'opening';
+                    startAnim('forward');
                 }
-            } else {
+            } else if (ratio < 0.10) {
                 if (stateRef.current === 'open' || stateRef.current === 'opening') {
-                    stateRef.current = 'closing'; startAnim('backward');
+                    stateRef.current = 'closing';
+                    startAnim('backward');
                 }
             }
         }
-        window.addEventListener('touchstart', onTouchStart, { passive: true });
-        window.addEventListener('touchend',   onTouchEnd,   { passive: true });
+
+        function onMouseMove(e) { handlePosition(e.clientY); }
+        function onTouchMove(e) { handlePosition(e.touches[0].clientY); }
+
+        window.addEventListener('mousemove', onMouseMove, { passive: true });
+        window.addEventListener('touchmove', onTouchMove, { passive: true });
         return () => {
-            window.removeEventListener('touchstart', onTouchStart);
-            window.removeEventListener('touchend',   onTouchEnd);
+            window.removeEventListener('mousemove', onMouseMove);
+            window.removeEventListener('touchmove', onTouchMove);
         };
     }, []);
 
@@ -425,6 +424,38 @@ export default function Login() {
                 pointerEvents: fading ? 'all' : 'none',
                 zIndex: 999,
             }} />
+
+            {showHint && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: '6%',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '6px',
+                    zIndex: 998,
+                    pointerEvents: 'none',
+                    animation: 'hintFadeIn 0.6s ease forwards, hintFloat 2s ease-in-out 0.6s infinite',
+                }}>
+                <span style={{
+                    fontFamily: '"Courier New", Courier, monospace',
+                    fontSize: 'clamp(11px, 1.2vw, 16px)',
+                    color: 'rgba(255,255,255,0.55)',
+                    letterSpacing: '0.15em',
+                    textTransform: 'uppercase',
+                }}>
+                    login / register
+                </span>
+                <span style={{
+                    fontSize: 'clamp(18px, 2.5vw, 32px)',
+                    color: 'rgba(255,255,255,0.5)',
+                    display: 'inline-block',
+                }}>
+                </span>
+            </div>
+        )}
 
         </div>
     );
