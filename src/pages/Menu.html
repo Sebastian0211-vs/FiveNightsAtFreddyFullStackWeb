@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <base href="/src/pages/">
     <title>FNAF 1</title>
 
     <style>
@@ -80,33 +81,64 @@
 
         .menu-buttons {
             position: absolute;
-            top: 50%;
+            top: 46%;
             left: 10%;
-            width:15%;
-            height:12%;
+            width: 15%;
             z-index: 20;
             display: flex;
             flex-direction: column;
-            gap: 60%;
+            gap: 48%;
         }
 
         #selector {
-            position:absolute;
+            position: absolute;
             left: -25%;
-            width:20%;
-            transition:top 0.1s;
-            pointer-events:none;
+            width: 20%;
+            transition: top 0.1s;
+            pointer-events: none;
         }
 
-        .menu-btn {
-            width:100%;
-            cursor:pointer;
-            display:block;
+        /* Image buttons (New Game) */
+        img.menu-btn {
+            width: 100%;
+            cursor: pointer;
+            display: block;
+        }
+        img.menu-btn:hover { opacity: 0.7; }
+
+        /* Continue row — image + night label side by side */
+        .continue-row {
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .continue-row:hover { opacity: 0.7; }
+        #continue-night {
+            font-family: 'FNAF', 'Courier New', monospace;
+            font-size: clamp(8px, 0.85vw, 12px);
+            color: rgba(200, 160, 80, 0.65);
+            letter-spacing: 0.08em;
+            white-space: nowrap;
         }
 
-        .menu-btn:hover {
-            opacity: 0.7;
+        /* Text buttons (Leaderboard, Login) — same visual weight as image buttons */
+        .menu-btn-text {
+            font-family: 'FNAF', 'Courier New', monospace;
+            font-size: clamp(40px, 8vw, 112px);
+            color: #ffffff;
+            background: none;
+            border: none;
+            cursor: pointer;
+            text-align: left;
+            padding: 0;
+            letter-spacing: 0.04em;
+            text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.95);
+            white-space: nowrap;
+            display: block;
         }
+        .menu-btn-text:hover { opacity: 0.7; }
 
 
         @keyframes slideDown {
@@ -155,28 +187,6 @@
             src: url('../../assets/Fonts/five-nights-at-freddys.otf') format('opentype');
         }
 
-        #login-btn {
-            position: fixed;
-            bottom: 28px;
-            right: 36px;
-            z-index: 50;
-            font-family: 'FNAF', 'Courier New', monospace;
-            font-size: clamp(9px, 1.1vw, 13px);
-            letter-spacing: 0.2em;
-            text-transform: uppercase;
-            color: rgba(200, 160, 120, 0.65);
-            background: transparent;
-            border: 1px solid rgba(180, 120, 60, 0.3);
-            padding: 8px 18px;
-            cursor: pointer;
-            transition: color 0.25s, border-color 0.25s, text-shadow 0.25s;
-            text-shadow: none;
-        }
-        #login-btn:hover {
-            color: rgba(255, 200, 140, 0.95);
-            border-color: rgba(220, 140, 60, 0.7);
-            text-shadow: 0 0 10px rgba(220, 120, 40, 0.5);
-        }
     </style>
 </head>
 
@@ -192,22 +202,24 @@
     <img id="title" class="FNAFtitle" src="../../assets/Menu/444-trans.png">
     <div class="menu-buttons">
         <img id="selector" src="../../assets/Menu/arrow_trans.png">
-        <img class="menu-btn" src="../../assets/Menu/new_game_trans.png" onclick="onNewGame()">
-        <img class="menu-btn" src="../../assets/Menu/continue_trans.png" onclick="onContinue()">
+        <button class="menu-btn menu-btn-text" onclick="onNewGame()">New Game</button>
+        <div id="continue-row" class="continue-row menu-btn" onclick="onContinue()">
+            <span class="menu-btn-text" style="display:inline;">Continue</span>
+            <span id="continue-night"></span>
+        </div>
+        <button class="menu-btn menu-btn-text" onclick="goToLeaderboard()">Leaderboard</button>
+        <button id="login-btn" class="menu-btn menu-btn-text" onclick="goToLogin()">Employee Login</button>
     </div>
 </div>
 
-<!-- Login button — bottom right, links to the React/Vite app -->
-<button id="login-btn" onclick="goToLogin()">Employee Login</button>
-
-<!-- Connected user display -->
+<!-- Connected user display — bottom left -->
 <div id="user-display" style="
     display: none;
     position: fixed;
     bottom: 24px;
     left: 24px;
     font-family: 'FNAF', 'Courier New', monospace;
-    font-size: clamp(9px, 1vw, 40px);
+    font-size: clamp(9px, 1vw, 13px);
     color: rgba(255,220,100,0.7);
     letter-spacing: 0.12em;
     text-shadow: 0 0 8px rgba(255,180,0,0.4);
@@ -277,9 +289,36 @@
     function goToLogin() {
         document.body.style.transition = "opacity 0.8s";
         document.body.style.opacity = "0";
-        setTimeout(() => {
-            window.location.href = '/login';  // ← change this
-        }, 800);
+        setTimeout(() => { window.location.href = '/login'; }, 800);
+    }
+
+    function goToLeaderboard() {
+        // TV channel-switch: camera sound + rapid static flash
+        const sfx = new Audio('../../assets/FNaF 1 Audio/CAMERA_VIDEO_LOA_60105303.wav');
+        sfx.play().catch(() => {});
+
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position:fixed; inset:0; z-index:9999; pointer-events:all;
+            background:#fff; opacity:0;
+        `;
+        document.body.appendChild(overlay);
+
+        // Rapid static flicker
+        const flickers = [0.9, 0, 0.7, 0, 1, 0, 0.5, 0.8, 0, 1];
+        let i = 0;
+        const flicker = setInterval(() => {
+            overlay.style.opacity = flickers[i] ?? 0;
+            i++;
+            if (i >= flickers.length) {
+                clearInterval(flicker);
+                // Fade to black then navigate
+                overlay.style.transition = 'opacity 0.3s';
+                overlay.style.background = '#000';
+                overlay.style.opacity = '1';
+                setTimeout(() => { window.location.href = '/leaderboard'; }, 350);
+            }
+        }, 60);
     }
 </script>
 
@@ -290,22 +329,34 @@
     window.onload = async () => {
         document.body.style.opacity = "1";
 
-        // Load connected user info
-        const token = localStorage.getItem('token');
-        if (token) {
-            try {
-                const res  = await fetch(`${API}/api/auth/me`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    __furthestNight = data.furthestNight || 0;
-                    const el = document.getElementById('user-display');
-                    el.textContent = `Connected as ${data.username}`;
-                    el.style.display = 'block';
-                }
-            } catch (e) {}
+        // Show/hide continue based on progress
+        function updateContinueBtn() {
+            const row = document.getElementById('continue-row');
+            const nightLabel = document.getElementById('continue-night');
+            if (__furthestNight === 0) {
+                row.style.display = 'none';
+            } else {
+                row.style.display = 'flex';
+                const next = Math.min(__furthestNight + 1, 6);
+                nightLabel.textContent = `night ${next}`;
+            }
         }
+        updateContinueBtn();
+
+        // Load connected user info (cookie-based)
+        try {
+            const res = await fetch(`${API}/api/auth/me`, { credentials: 'include' });
+            if (res.ok) {
+                const data = await res.json();
+                __furthestNight = data.furthestNight || 0;
+                updateContinueBtn();
+                const el = document.getElementById('user-display');
+                el.textContent = `Guard: ${data.username}`;
+                el.style.display = 'block';
+                const loginBtn = document.getElementById('login-btn');
+                if (loginBtn) loginBtn.textContent = 'My Profile';
+            }
+        } catch (e) {}
 
         const a = new Audio('../../assets/FNaF 1 Audio/darkness music.wav');
         const b = new Audio('../../assets/FNaF 1 Audio/static2.wav');
@@ -322,24 +373,36 @@
 </script>
 
 <script>
-    const buttons = document.querySelectorAll(".menu-btn");
     const selector = document.getElementById("selector");
     let selectedIndex = 0;
 
+    function getVisibleButtons() {
+        return Array.from(document.querySelectorAll(".menu-btn")).filter(
+            b => b.style.display !== 'none'
+        );
+    }
+
     function moveSelector(index) {
-        selectedIndex = index;
-        const btn = buttons[index];
+        const buttons = getVisibleButtons();
+        if (!buttons.length) return;
+        selectedIndex = (index + buttons.length) % buttons.length;
+        const btn = buttons[selectedIndex];
         selector.style.top = btn.offsetTop + btn.offsetHeight / 2 - selector.offsetHeight / 2 + "px";
     }
 
-    buttons.forEach((btn, i) => {
-        btn.addEventListener("mouseenter", () => moveSelector(i));
+    // Attach hover listeners (re-derive index from visible list)
+    document.querySelectorAll(".menu-btn").forEach((btn) => {
+        btn.addEventListener("mouseenter", () => {
+            const visible = getVisibleButtons();
+            const i = visible.indexOf(btn);
+            if (i >= 0) moveSelector(i);
+        });
     });
 
     document.addEventListener("keydown", (e) => {
-        if (e.key === "ArrowDown") moveSelector((selectedIndex + 1) % buttons.length);
-        if (e.key === "ArrowUp") moveSelector((selectedIndex - 1 + buttons.length) % buttons.length);
-        if (e.key === "Enter") buttons[selectedIndex].click();
+        if (e.key === "ArrowDown") moveSelector(selectedIndex + 1);
+        if (e.key === "ArrowUp")   moveSelector(selectedIndex - 1);
+        if (e.key === "Enter")     getVisibleButtons()[selectedIndex]?.click();
     });
 
     moveSelector(0);

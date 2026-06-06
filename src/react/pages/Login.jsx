@@ -142,7 +142,7 @@ export default function Login() {
         try {
             await login(username, password); // sets HttpOnly cookie server-side
             setFading(true);
-            setTimeout(() => { navigate('/', { replace: true }); }, 1200);
+            setTimeout(() => { window.location.href = '/menu'; }, 1200);
         } catch (err) {
             setError(err.message || 'Erreur de connexion');
         }

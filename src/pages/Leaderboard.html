@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <base href="/src/pages/">
+    <title>Leaderboard</title>
+
+    <style>
+        body {
+            background-color: black;
+            margin: 0;
+            height: 100vh;
+            opacity: 0;
+            transition: opacity 1s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            aspect-ratio: 16/9;
+        }
+
+        /* Static Bonnie background */
+        #bg {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 1;
+            filter: brightness(0.55);
+        }
+
+        /* Noise overlays — same as menu */
+        #animNoise {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 20;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        #animWhite {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 21;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        /* Slide strip — same as menu */
+        .slide {
+            position: fixed;
+            top: 5%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            opacity: 0.5;
+            z-index: 5;
+            animation: slideDown 10s linear forwards;
+        }
+
+        @keyframes slideDown {
+            from { top: -100%; }
+            to   { top: 90%;   }
+        }
+
+        @font-face {
+            font-family: 'FNAF';
+            src: url('../../assets/Fonts/five-nights-at-freddys.otf') format('opentype');
+        }
+
+        /* Title — inside container, scales with it */
+        #title {
+            position: absolute;
+            top: 8%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            font-family: 'FNAF', 'Courier New', monospace;
+            font-size: 4vw;
+            color: #ffffff;
+            text-shadow: 2px 2px 12px rgba(0,0,0,0.95);
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        #back-btn {
+            position: fixed;
+            top: 24px;
+            left: 28px;
+            z-index: 30;
+            font-family: 'FNAF', 'Courier New', monospace;
+            font-size: clamp(12px, 1.4vw, 20px);
+            color: #ffffff;
+            background: none;
+            border: none;
+            cursor: pointer;
+            letter-spacing: 0.05em;
+            text-shadow: 1px 1px 6px rgba(0,0,0,0.9);
+            white-space: nowrap;
+        }
+        #back-btn:hover { opacity: 0.7; }
+
+        /* Leaderboard table — inside container, scales with it */
+        #leaderboard {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            font-family: 'FNAF', 'Courier New', monospace;
+            color: #ffffff;
+            width: 70%;
+            text-shadow: 1px 1px 6px rgba(0,0,0,0.9);
+            background: rgba(30, 30, 30, 0.55);
+            padding: 1% 2%;
+        }
+
+        #leaderboard table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #leaderboard th {
+            font-size: 1.1vw;
+            letter-spacing: 0.15em;
+            color: #ffffff;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding: 0.5% 1%;
+            text-align: left;
+        }
+
+        #leaderboard td {
+            font-size: 1.2vw;
+            letter-spacing: 0.08em;
+            color: rgba(255,255,255,0.85);
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+            padding: 0.6% 1%;
+        }
+
+        .slide { z-index: 22; }
+
+        /* Fade-in from black on load */
+        #page-fade {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            background: #000;
+            opacity: 1;
+            pointer-events: none;
+            transition: opacity 0.8s ease;
+        }
+    </style>
+</head>
+
+<body>
+
+<div id="page-fade"></div>
+
+<div class="container">
+    <img id="bg" src="../../assets/Custom/Bonnie_Menu.jpg">
+    <img id="animNoise" src="../../assets/Menu/staticNoise1.png">
+    <img id="animWhite" src="../../assets/Menu/whiteNoise1.png">
+    <img class="slide"  src="../../assets/Menu/452.png">
+
+    <div id="title">Leaderboard</div>
+
+    <div id="leaderboard">
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Guard</th>
+                <th>Night</th>
+                <th>Survived</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="lb-body">
+            <tr><td colspan="5" style="opacity:0.4;padding:16px 12px;">Loading...</td></tr>
+        </tbody>
+    </table>
+</div>
+
+</div>
+
+<button id="back-btn" onclick="goToMenu()">Back to Menu</button>
+
+<script src="../data/animations.js"></script>
+<script src="../pages/player.js"></script>
+
+<script>
+    function goToMenu() {
+        const sfx = new Audio('../../assets/FNaF 1 Audio/CAMERA_VIDEO_LOA_60105303.wav');
+        sfx.play().catch(() => {});
+
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#fff;opacity:0;pointer-events:all;';
+        document.body.appendChild(overlay);
+
+        const flickers = [0.9, 0, 0.7, 0, 1, 0, 0.5, 0.8, 0, 1];
+        let i = 0;
+        const flicker = setInterval(() => {
+            overlay.style.opacity = flickers[i] ?? 0;
+            i++;
+            if (i >= flickers.length) {
+                clearInterval(flicker);
+                overlay.style.transition = 'opacity 0.3s';
+                overlay.style.background = '#000';
+                overlay.style.opacity = '1';
+                setTimeout(() => { window.location.href = '/menu'; }, 350);
+            }
+        }, 60);
+    }
+
+    window.onload = () => {
+        // Fade in
+        document.body.style.opacity = '1';
+        const fade = document.getElementById('page-fade');
+        setTimeout(() => { fade.style.opacity = '0'; }, 50);
+
+        // Audio
+        const sfxStatic = new Audio('../../assets/FNaF 1 Audio/static2.wav');
+        sfxStatic.loop = true;
+        sfxStatic.play().catch(() => {});
+
+        const music = new Audio('../../assets/Custom/Bonnies Lullaby.mp3');
+        music.loop = true;
+        music.play().catch(() => {});
+
+        // Start noise/white stripe overlays (same as menu)
+        playNoise(document.getElementById('animNoise'), noiseMenu, 0.4);
+        playNoise(document.getElementById('animNoise'), noiseMenu);
+        playAnimation(document.getElementById('animWhite'), whiteMenu, 0.4);
+
+        // Fetch leaderboard from GraphQL
+        const API = 'http://localhost:3002';
+        fetch(`${API}/graphql`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: `{
+                leaderboard(limit: 20) {
+                    username night survivedSeconds outcome
+                }
+            }` })
+        })
+        .then(r => r.json())
+        .then(({ data }) => {
+            const rows = data?.leaderboard ?? [];
+            const tbody = document.getElementById('lb-body');
+            if (!rows.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="opacity:0.4;padding:16px 12px;">No records yet.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = rows.map((s, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${s.username}</td>
+                    <td>Night ${s.night}</td>
+                    <td>${s.survivedSeconds}s</td>
+                    <td>${s.outcome === 'win' ? '★ survived' : '☠ terminated'}</td>
+                </tr>
+            `).join('');
+        })
+        .catch(() => {
+            document.getElementById('lb-body').innerHTML =
+                '<tr><td colspan="5" style="opacity:0.4;padding:16px 12px;">[ signal lost ]</td></tr>';
+        });
+
+        // Loop slide strip
+        const slide = document.querySelector('.slide');
+        slide.addEventListener('animationend', () => {
+            slide.style.animation = 'none';
+            void slide.offsetWidth;
+            slide.style.animation = 'slideDown 10s linear forwards';
+        });
+    };
+</script>
+
+</body>
+</html>
