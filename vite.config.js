@@ -2,22 +2,23 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 
-// Rewrites clean URLs to their actual HTML file paths in dev mode
+// MainRoom is the only remaining standalone HTML page; everything
+// else is now a React SPA route. This middleware rewrites the
+// /mainroom clean URL to its HTML file and serves index.html for
+// the SPA routes in dev.
 function htmlRewrites() {
   const map = {
-    '/menu':         '/src/pages/Menu.html',
-    '/mainroom':     '/src/pages/MainRoom.html',
-    '/warning':      '/src/pages/Warning.html',
-    '/leaderboard':  '/src/pages/Leaderboard.html',
-    '/unauthorized':  '/src/pages/Unauthorized.html',
-    '/customnight':   '/src/pages/CustomNight.html',
+    '/mainroom': '/src/pages/MainRoom.html',
   };
   return {
     name: 'html-rewrites',
     configureServer(server) {
-      const spaRoutes = ['/login', '/register', '/play', '/test'];
+      const spaRoutes = [
+        '/login', '/register', '/reset-password', '/play', '/test',
+        '/menu', '/warning', '/leaderboard', '/unauthorized', '/customnight',
+      ];
       server.middlewares.use((req, _res, next) => {
-        const url = req.url.split('?')[0]; // strip query string
+        const url = req.url.split('?')[0];
         if (map[url]) {
           req.url = map[url];
         } else if (spaRoutes.includes(url)) {
@@ -34,13 +35,8 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        main:        resolve(__dirname, 'index.html'),
-        menu:        resolve(__dirname, 'src/pages/Menu.html'),
-        mainroom:    resolve(__dirname, 'src/pages/MainRoom.html'),
-        warning:     resolve(__dirname, 'src/pages/Warning.html'),
-        leaderboard:  resolve(__dirname, 'src/pages/Leaderboard.html'),
-        unauthorized: resolve(__dirname, 'src/pages/Unauthorized.html'),
-        customnight:  resolve(__dirname, 'src/pages/CustomNight.html'),
+        main:     resolve(__dirname, 'index.html'),
+        mainroom: resolve(__dirname, 'src/pages/MainRoom.html'),
       }
     }
   }

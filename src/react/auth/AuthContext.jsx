@@ -1,7 +1,23 @@
 import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { gql } from '@apollo/client';
 import { api } from '../lib/api.js';
+import { apolloClient } from '../lib/apollo.js';
 
 const AuthContext = createContext(null);
+
+// Session/profile data is fetched via GraphQL (requirement 8.2 — all data
+// retrieved through GraphQL). Login/register/logout stay on the Passport
+// REST endpoints (requirement 7.4) since they set/clear the HttpOnly cookie.
+const ME_QUERY = gql`
+  query Me {
+    me {
+      id
+      username
+      email
+      furthestNight
+    }
+  }
+`;
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
@@ -9,8 +25,11 @@ export function AuthProvider({ children }) {
 
     const refresh = useCallback(async () => {
         try {
-            const me = await api('/api/auth/me');
-            setUser(me);
+            const { data } = await apolloClient.query({
+                query: ME_QUERY,
+                fetchPolicy: 'network-only',
+            });
+            setUser(data?.me ?? null);
         } catch {
             setUser(null);
         } finally {
@@ -35,6 +54,7 @@ export function AuthProvider({ children }) {
     const logout = useCallback(async () => {
         await api('/api/auth/logout', { method: 'POST' });
         setUser(null);
+        await apolloClient.clearStore().catch(() => {});
     }, []);
 
     return (
