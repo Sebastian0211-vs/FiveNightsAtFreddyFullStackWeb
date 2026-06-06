@@ -13,6 +13,12 @@ import frame_984    from '../../../assets/FNaF 6/night_assets/Baby/table_baby/98
 import frame_985    from '../../../assets/FNaF 6/night_assets/Baby/table_baby/985.png';
 import shh2              from '../../../assets/FNaF 6 Audio/Shh2.mp3';
 import shouldhaveknown1  from '../../../assets/FNaF 6 Audio/shouldhaveknown1.mp3';
+import Fnaf1            from '../../../assets/custom/The Living Tombstone - Five Nights at Freddys.wav';
+import Fnaf2            from '../../../assets/custom/The Living Tombstone - Five Nights at Freddys 2 - Its Been So Long.ogg';
+import Join             from '../../../assets/custom/join for a bite.mp3';
+const TAPE_TRACKS = [
+    Fnaf1, Fnaf2, Join
+];
 
 import winds        from '../../../assets/FNaF 6 Audio/winds.mp3';
 import crickets     from '../../../assets/FNaF 6 Audio/crickets01.mp3';
@@ -166,6 +172,85 @@ export default function Login() {
         setFading(true);
         sfx.addEventListener('ended', () => navigate('/register'));
         setTimeout(() => navigate('/register'), 6000); // fallback
+    }
+
+    const tapeRef      = useRef(null);
+    const tapeCtxRef   = useRef(null);
+    const wowTimerRef  = useRef(null);
+    const [tapePlaying, setTapePlaying] = useState(false);
+
+    function makeTapeDistortionCurve(amount) {
+        const n = 512;
+        const curve = new Float32Array(n);
+        for (let i = 0; i < n; i++) {
+            const x = (i * 2) / n - 1;
+            curve[i] = ((3 + amount) * x * 20 * (Math.PI / 180)) / (Math.PI + amount * Math.abs(x));
+        }
+        return curve;
+    }
+
+    function stopTape() {
+        if (wowTimerRef.current) { clearInterval(wowTimerRef.current); wowTimerRef.current = null; }
+        if (tapeRef.current)     { tapeRef.current.pause(); tapeRef.current.currentTime = 0; tapeRef.current = null; }
+        if (tapeCtxRef.current)  { tapeCtxRef.current.close().catch(() => {}); tapeCtxRef.current = null; }
+        setTapePlaying(false);
+    }
+
+    function toggleTape() {
+        if (tapePlaying) { stopTape(); return; }
+
+        const track = TAPE_TRACKS[Math.floor(Math.random() * TAPE_TRACKS.length)];
+        const audio = new Audio(track);
+        audio.crossOrigin = 'anonymous';
+        tapeRef.current = audio;
+
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        tapeCtxRef.current = ctx;
+        const source = ctx.createMediaElementSource(audio);
+
+        // Highpass — remove sub-bass (tape rolls off below ~200Hz)
+        const hp = ctx.createBiquadFilter();
+        hp.type = 'highpass';
+        hp.frequency.value = 220;
+        hp.Q.value = 0.7;
+
+        // Lowpass — cut crisp highs (cassette bandwidth ~8kHz)
+        const lp = ctx.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = 4000;
+        lp.Q.value = 0.8;
+
+        // Tape saturation / soft-clip
+        const shaper = ctx.createWaveShaper();
+        shaper.curve = makeTapeDistortionCurve(25);
+        shaper.oversample = '2x';
+
+        // Slight presence dip around 1–2kHz (boxy midrange of cheap speakers)
+        const mid = ctx.createBiquadFilter();
+        mid.type = 'peaking';
+        mid.frequency.value = 1400;
+        mid.gain.value = -6;
+        mid.Q.value = 1.2;
+
+        const gain = ctx.createGain();
+        gain.gain.value = 0.02;
+
+        source.connect(hp);
+        hp.connect(lp);
+        lp.connect(shaper);
+        shaper.connect(mid);
+        mid.connect(gain);
+        gain.connect(ctx.destination);
+
+        // Wow & flutter — slow playback rate wobble like worn tape
+        wowTimerRef.current = setInterval(() => {
+            if (!tapeRef.current) return;
+            tapeRef.current.playbackRate = 1 + (Math.random() - 0.5) * 0.012;
+        }, 120);
+
+        audio.addEventListener('ended', stopTape);
+        audio.play().catch(() => {});
+        setTapePlaying(true);
     }
 
     const stateRef     = useRef('idle');
@@ -391,6 +476,19 @@ export default function Login() {
             }} />
 
 
+
+            {/* Tape player clickable hotspot — visible only when form is open */}
+            {formVisible && (
+                <div onClick={toggleTape} title={tapePlaying ? 'Stop tape' : 'Play tape'} style={{
+                    position: 'absolute',
+                    left: '17%',
+                    top: '60%',
+                    width: '10%',
+                    height: '6%',
+                    zIndex: 10,
+                    cursor: 'pointer',
+                }} />
+            )}
 
             {/* z-index 10 — login form on the paper */}
             {formVisible && (
