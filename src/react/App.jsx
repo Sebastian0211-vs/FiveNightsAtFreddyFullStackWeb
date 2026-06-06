@@ -14,6 +14,7 @@ import Menu from './pages/Menu.jsx';
 import Warning from './pages/Warning.jsx';
 import Unauthorized from './pages/Unauthorized.jsx';
 import CustomNight from './pages/CustomNight.jsx';
+import ResetPassword from './pages/ResetPassword.jsx'
 
 export default function App() {
     return (
