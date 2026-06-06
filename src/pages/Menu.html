@@ -208,7 +208,7 @@
             <span id="continue-night"></span>
         </div>
         <button class="menu-btn menu-btn-text" onclick="goToLeaderboard()">Leaderboard</button>
-        <button id="login-btn" class="menu-btn menu-btn-text" onclick="goToLogin()">Employee Login</button>
+        <button id="login-btn" class="menu-btn menu-btn-text" onclick="doLogout()">Deconnect</button>
     </div>
 </div>
 
@@ -290,6 +290,16 @@
         document.body.style.transition = "opacity 0.8s";
         document.body.style.opacity = "0";
         setTimeout(() => { window.location.href = '/login'; }, 800);
+    }
+
+    async function doLogout() {
+        try {
+            await fetch(`${API}/api/auth/logout`, {
+                method: 'POST',
+                credentials: 'include',
+            });
+        } catch (e) {}
+        goToLogin()
     }
 
     function goToLeaderboard() {
