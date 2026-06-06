@@ -154,6 +154,11 @@ export default function Login() {
     const [error, setError]       = useState('');
     const { login } = useAuth();
 
+    // Forgot password state
+    const [forgotMode,    setForgotMode]    = useState(false);
+    const [forgotEmail,   setForgotEmail]   = useState('');
+    const [forgotStatus,  setForgotStatus]  = useState(''); // '' | 'sending' | 'sent' | 'error'
+
     async function handleLogin() {
         setError('');
         try {
@@ -172,6 +177,23 @@ export default function Login() {
         setFading(true);
         sfx.addEventListener('ended', () => navigate('/register'));
         setTimeout(() => navigate('/register'), 6000); // fallback
+    }
+
+    async function handleForgot() {
+        if (!forgotEmail) return;
+        setForgotStatus('sending');
+        try {
+            const API = import.meta.env.VITE_API_URL || '';
+            const res = await fetch(`${API}/api/auth/forgot-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: forgotEmail }),
+            });
+            if (!res.ok) throw new Error();
+            setForgotStatus('sent');
+        } catch {
+            setForgotStatus('error');
+        }
     }
 
     const tapeRef      = useRef(null);
@@ -490,26 +512,64 @@ export default function Login() {
                 }} />
             )}
 
-            {/* z-index 10 — login form on the paper */}
+            {/* z-index 10 — login / forgot-password form on the paper */}
             {formVisible && (
                 <div style={formStyle}>
-                    <div>
-                        <div className="tw-label">Username</div>
-                        <input className="tw-input" type="text" placeholder="_ _ _ _ _ _ _"
-                               value={username} onChange={e => setUsername(e.target.value)} />
-                    </div>
-                    <div>
-                        <div className="tw-label">Password</div>
-                        <input className="tw-input" type="password" placeholder="* * * * * * *"
-                               value={password} onChange={e => setPassword(e.target.value)} />
-                    </div>
-                    {error ? <div style={{ color: '#c33', fontSize: 'var(--form-font-small)', textAlign: 'center' }}>{error}</div> : null}
-                    <button className="tw-btn" onClick={handleLogin}>[ Connect ]</button>
-                    <hr className="tw-divider" />
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(4px, 0.5vh, 8px)' }}>
-                        <button className="tw-link">Forgot my password</button>
-                        <button className="tw-link register" onClick={goToRegister}>Create an account</button>
-                    </div>
+                    {forgotMode ? (
+                        // ── Forgot password view ──
+                        forgotStatus === 'sent' ? (
+                            <>
+                                <div style={{ fontSize: 'var(--form-font-small)', color: 'rgba(30,80,10,0.9)', textAlign: 'center', lineHeight: 1.5 }}>
+                                    If that email is registered, a reset link has been sent.
+                                </div>
+                                <button className="tw-link" onClick={() => { setForgotMode(false); setForgotStatus(''); setForgotEmail(''); }}>
+                                    ← Back to login
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <div>
+                                    <div className="tw-label">Your email</div>
+                                    <input className="tw-input" type="email" placeholder="_ _ _ @ _ _ _"
+                                           value={forgotEmail} onChange={e => setForgotEmail(e.target.value)}
+                                           onKeyDown={e => e.key === 'Enter' && handleForgot()} />
+                                </div>
+                                {forgotStatus === 'error' && (
+                                    <div style={{ color: '#c33', fontSize: 'var(--form-font-small)', textAlign: 'center' }}>
+                                        Something went wrong. Try again.
+                                    </div>
+                                )}
+                                <button className="tw-btn" onClick={handleForgot} disabled={forgotStatus === 'sending'}>
+                                    {forgotStatus === 'sending' ? '[ Sending... ]' : '[ Send reset link ]'}
+                                </button>
+                                <button className="tw-link" onClick={() => { setForgotMode(false); setForgotStatus(''); }}>
+                                    ← Back to login
+                                </button>
+                            </>
+                        )
+                    ) : (
+                        // ── Normal login view ──
+                        <>
+                            <div>
+                                <div className="tw-label">Username</div>
+                                <input className="tw-input" type="text" placeholder="_ _ _ _ _ _ _"
+                                       value={username} onChange={e => setUsername(e.target.value)} />
+                            </div>
+                            <div>
+                                <div className="tw-label">Password</div>
+                                <input className="tw-input" type="password" placeholder="* * * * * * *"
+                                       value={password} onChange={e => setPassword(e.target.value)}
+                                       onKeyDown={e => e.key === 'Enter' && handleLogin()} />
+                            </div>
+                            {error ? <div style={{ color: '#c33', fontSize: 'var(--form-font-small)', textAlign: 'center' }}>{error}</div> : null}
+                            <button className="tw-btn" onClick={handleLogin}>[ Connect ]</button>
+                            <hr className="tw-divider" />
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(4px, 0.5vh, 8px)' }}>
+                                <button className="tw-link" onClick={() => { setForgotMode(true); setError(''); }}>Forgot my password</button>
+                                <button className="tw-link register" onClick={goToRegister}>Create an account</button>
+                            </div>
+                        </>
+                    )}
                 </div>
             )}
 
