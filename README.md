@@ -1,191 +1,212 @@
-# 🧸Five Nights at Freddy's — Web Edition
+# Five Nights at Freddy's — Full-Stack Web Edition
 
 > *"Hello? Hello, hello? Uh, I wanted to record a message for you to help you get settled in on your first night..."*
 
+A full-stack web recreation of Five Nights at Freddy's 1. The game runs entirely in the browser; the backend handles authentication, a live leaderboard, and email-based password reset.
+
 ---
+
+## Stack
+
+| Layer | Tech |
+|---|---|
+| Game engine | Vanilla JS + HTML5 Canvas |
+| Frontend SPA | React 18 + React Router v6 + Vite |
+| API | Apollo GraphQL (`@apollo/server` + `expressMiddleware`) |
+| Auth | Passport.js · JWT stored as HttpOnly cookie |
+| Database | MongoDB + Mongoose |
+| Email | Resend SDK |
+| External APIs | ip-api.com (geolocation) · purgomalum.com (profanity filter) |
+| Tests | Vitest · Supertest · Testing Library |
+
+---
+
+## Features
+
+**Game**
+- Nights 1–6 plus a fully configurable Custom Night
+- All four animatronics (Freddy, Bonnie, Chica, Foxy) with faithful AI movement
+- Power system, door/light controls, tablet camera with full minimap
+- Golden Freddy easter egg and complete jumpscare sequences
+- Per-session stat tracking: camera flicks, door closes, power remaining at 6 AM
+
+**Auth & accounts**
+- Register / login / logout with HttpOnly cookie JWT
+- Username profanity check on registration (purgomalum.com)
+- Forgot password → email link via Resend → reset form
+
+**Leaderboard**
+- Stores outcome, night, survival time, country flag (from IP geolocation), and in-game stats per run
+- Filterable by night (N1–N6) and Custom Night; sortable columns
+- React `/leaderboard` route uses Apollo `useQuery` with 10-second polling
+- Standalone in-game `Leaderboard.html` with FNAF styling and the same data
+
+---
+
+## Project structure
 
 ```
-██████╗ ███╗   ██╗ █████╗ ███████╗
-██╔════╝████╗  ██║██╔══██╗██╔════╝
-█████╗  ██╔██╗ ██║███████║█████╗  
-██╔══╝  ██║╚██╗██║██╔══██║██╔══╝  
-██║     ██║ ╚████║██║  ██║██║     
-╚═╝     ╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝     
-```
-
-**A full-stack web recreation of Five Nights at Freddy's 1 — built with pure HTML, CSS, and JavaScript.**
-
----
-
-## 📋 Table of Contents
-
-- [About](#-about)
-- [Features](#-features)
-- [Animatronics](#-animatronics)
-- [Project Structure](#-project-structure)
-- [Getting Started](#-getting-started)
-- [Controls](#%EF%B8%8F-controls)
-- [Game Mechanics](#-game-mechanics)
-- [Tech Stack](#-tech-stack)
-
----
-
-## 🏚️ About
-
-You've just been hired as the new **night security guard** at Freddy Fazbear's Pizza. Your shift runs from **12 AM to 6 AM** — six long hours in a dark office, surrounded by animatronic animals that come to life after closing time.
-
-Use the security cameras, manage your power supply, and keep the doors and lights under control. **Don't let them in.**
-
-> ⚠️ *The animatronics are programmed to roam the facility at night. Management has advised that this is completely normal behavior.*
-
----
-
-## ✨ Features
-
-- 🎥 **Live security camera system** with a full minimap and room selector
-- 🚪 **Animated door controls** with authentic open/close animations
-- 💡 **Flickering hallway lights** to check the doors before closing them
-- 🔋 **Power management system** — every action drains power; run out and face the consequences
-- 🕐 **Time progression** from 12 AM to 6 AM across multiple nights (Nights 1–6)
-- 📺 **Tablet/camera overlay** with animated open/close transitions
-- 🦊 **Foxy's Pirate Cove** — watch him, or he runs
-- 💀 **Full jumpscare sequences** for all four animatronics + Golden Freddy
-- 🔌 **Power-out sequence** with Freddy's haunting music box and eye flicker
-- 🌅 **6 AM victory animation** with night progression
-
----
-
-## 🐻 Animatronics
-
-| Name | Starts At | Route | Threat |
-|------|-----------|-------|--------|
-| 🎩 **Freddy Fazbear** | Show Stage | Stage → Dining → Restrooms → Kitchen → East Hall → Corner | Enters via **right door**; immune to cameras when AI ≥ 10 |
-| 🎸 **Bonnie** | Show Stage | Stage → Dining/Backstage → West Hall → Corner/Supply → Office | Attacks the **left door** |
-| 🐣 **Chica** | Show Stage | Stage → Dining → Restrooms/Kitchen → East Hall → Corner → Office | Attacks the **right door** |
-| 🏴‍☠️ **Foxy** | Pirate's Cove | Cove (4 stages) → West Hall sprint → Office | Attacks the **left door**; watching him slows progression |
-
-> 💡 *Each animatronic has an AI level that scales with the night and the hour. The later it gets, the more aggressive they become.*
-
----
-
-## 📁 Project Structure
-
-```
-FiveNightsAtFreddyFullStackWeb/
+.
+├── index.html                  — React SPA entry
+├── vite.config.js
+├── vitest.config.js
+├── server/
+│   └── src/
+│       ├── index.js            — MongoDB connect + listen
+│       ├── app.js              — Express + Apollo setup (exported for tests)
+│       ├── auth/               — Passport strategy, JWT helpers
+│       ├── routes/auth.js      — REST: register, login, logout, forgot/reset password
+│       ├── models/
+│       │   ├── User.js
+│       │   └── Score.js
+│       ├── graphql/
+│       │   ├── typeDefs.js
+│       │   ├── resolvers.js
+│       │   └── context.js
+│       └── tests/
+│           ├── unit.password.test.js
+│           ├── unit.resolver.test.js
+│           └── integration.auth.test.js
 ├── src/
-│   ├── pages/
-│   │   ├── Warning.html        — Launch screen
-│   │   ├── Menu.html           — Main menu with animations
-│   │   └── MainRoom.html       — Core gameplay scene
-│   ├── engine/
-│   │   ├── gameState.js        — Power, time, night logic
-│   │   ├── jumpscare.js        — Jumpscare renderer
-│   │   └── animatronics/
-│   │       ├── Animatronic.js  — Base class + room helpers
-│   │       ├── Freddy.js
-│   │       ├── Bonnie.js
-│   │       ├── Chica.js
-│   │       └── Foxy.js
-│   ├── camera/
-│   │   └── minimap.js          — Camera minimap overlay
-│   ├── data/
-│   │   ├── animations.js       — All sprite/frame definitions
-│   │   └── rooms.js            — Room graph + camera system
-│   └── constants/
-│       └── nightConfig.js      — AI levels, timing, intervals
+│   ├── react/                  — SPA (login, register, leaderboard, play...)
+│   │   ├── App.jsx
+│   │   ├── pages/
+│   │   ├── components/
+│   │   ├── auth/
+│   │   ├── lib/apollo.js
+│   │   └── __tests__/
+│   ├── pages/                  — Standalone game HTML pages
+│   │   ├── Warning.html
+│   │   ├── Menu.html
+│   │   ├── MainRoom.html
+│   │   ├── CustomNight.html
+│   │   └── Leaderboard.html
+│   └── engine/                 — Game logic (vanilla JS)
+│       ├── gameState.js        — Time, power, stat tracking, score submission
+│       ├── animatronics/       — Freddy / Bonnie / Chica / Foxy AI
+│       └── ...
 └── assets/                     — Sprites, audio, fonts
 ```
 
 ---
 
-## 🚀 Getting Started
+## Getting started
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/Sebastian0211-vs/FiveNightsAtFreddyFullStackWeb.git
-   cd FiveNightsAtFreddyFullStackWeb
-   ```
+### Prerequisites
 
-2. **Install dependencies** *(optional — only needed for Three.js tooling)*
-   ```bash
-   npm install
-   ```
+- Node.js >= 18
+- MongoDB running locally (`mongodb://localhost:27017/fnaf`)
+- A [Resend](https://resend.com) API key with a verified sending domain
 
-3. **Serve the project** — open with a local HTTP server (required for audio and asset loading)
-   ```bash
-   # Using Python
-   python -m http.server 8080
+### Setup
 
-   # Using Node / npx
-   npx serve .
-   ```
+```bash
+git clone https://github.com/Sebastian0211-vs/FiveNightsAtFreddyFullStackWeb.git
+cd FiveNightsAtFreddyFullStackWeb
+npm install
+```
 
-4. **Open in browser**
-   ```
-   http://localhost:8080/src/pages/Warning.html
-   ```
+Create a `.env` file in the project root:
 
-> 🎧 **Headphones strongly recommended.** Press **F11** for fullscreen.
+```env
+# Backend
+PORT=3002
+MONGO_URI=mongodb://localhost:27017/fnaf
+JWT_SECRET=<random 64-char hex>
+CORS_ORIGIN=http://localhost:5173
+NODE_ENV=development
+
+# Email
+RESEND_API_KEY=re_...
+FRONTEND_URL=http://localhost:5173
+
+# Frontend (Vite)
+VITE_API_URL=http://localhost:3002
+VITE_GRAPHQL_URL=http://localhost:3002/graphql
+```
+
+### Run
+
+```bash
+# Terminal 1 — backend
+npm run dev:server
+
+# Terminal 2 — frontend
+npm run dev
+```
+
+Open `http://localhost:5173`. Register an account, then navigate to `/play` to start the game.
+
+### Test
+
+```bash
+npm test
+```
+
+Runs 5 test files (12 tests) with no live database or network required — MongoDB and Resend are mocked.
+
+### Build
+
+```bash
+npm run build
+```
 
 ---
 
-## 🕹️ Controls
+## GraphQL API
+
+**Queries**
+
+```graphql
+me: User
+leaderboard(night: Int, limit: Int): [Score!]!
+myScores: [Score!]!
+```
+
+**Mutations**
+
+```graphql
+updateProgress(night: Int!): User!
+resetProgress: User!
+submitScore(
+  night: Int!, survivedSeconds: Int!, outcome: Outcome!,
+  cameraFlicks: Int, doorCloses: Int, powerRemaining: Float,
+  isCustomNight: Boolean,
+  aiFreddy: Int, aiBonnie: Int, aiChica: Int, aiFoxy: Int
+): Score!
+```
+
+All mutations require an authenticated cookie. `submitScore` is called automatically by the game engine at the end of each night.
+
+---
+
+## Game controls
 
 | Action | Input |
-|--------|-------|
-| Look left / right | **Click & drag** the scene |
-| Toggle door | Click the **top half** of a door button |
-| Toggle light | Click the **bottom half** of a door button |
-| Open / close tablet | Move mouse to **bottom edge** of screen |
-| Select camera | Click a **room tile** on the minimap |
-| Toggle animatronic info | Press **M** |
-| Debug jumpscare | Press **J** *(dev mode)* |
+|---|---|
+| Look left / right | Click and drag the scene |
+| Toggle door | Upper half of door button |
+| Toggle hallway light | Lower half of door button |
+| Open / close tablet | Move mouse to bottom edge |
+| Select camera | Click a room tile on the minimap |
+
+> Headphones recommended. Designed for a 16:9 viewport.
 
 ---
 
-## ⚙️ Game Mechanics
+## Animatronics
 
-### 🔋 Power
-Power drains every second based on your current **usage level** (1–5):
+| | Starts | Path | Door |
+|---|---|---|---|
+| **Freddy** | Show Stage | Stage → Dining → Restrooms → Kitchen → East Hall → Corner | Right |
+| **Bonnie** | Show Stage | Stage → Backstage → West Hall → Corner | Left |
+| **Chica** | Show Stage | Stage → Dining → Restrooms → East Hall → Corner | Right |
+| **Foxy** | Pirate's Cove | Cove (4 stages) → sprint down West Hall | Left |
 
-| Active Item | Usage |
-|-------------|-------|
-| Base (always) | +1 |
-| Left door closed | +1 |
-| Right door closed | +1 |
-| Left light on | +1 |
-| Right light on | +1 |
-| Tablet open | +1 |
-
-When power hits **0%**, the lights go out, Freddy's music box plays, and you have roughly 20 seconds before he pays you a visit.
-
-### 🕐 Night Progression
-Each night lasts **535 seconds** (≈ 8.9 minutes). The clock runs from **12 AM → 6 AM** across 6 hours. Survive all 6 nights to complete the game.
-
-### 🤖 AI System
-Every animatronic has a **base AI level** (0–20) that increases with the night. A random roll each movement tick determines whether they move. Higher AI = more frequent, more aggressive behavior.
+AI levels scale with night number and hour. Custom Night lets you set each animatronic's level (0–20) manually.
 
 ---
 
-## 🛠️ Tech Stack
+## Credits
 
-- **Vanilla JavaScript** — no frameworks, no build tools required
-- **HTML5 Canvas** — all game rendering including jumpscares and 6AM animation
-- **CSS3** — HUD layout, transitions, and overlays
-- **Web Audio API** — spatial audio, looping ambience, SFX layering
-- **Three.js** *(dependency)* — available for future 3D features
-
----
-
-## 👾 Credits
-
-Fan-made recreation inspired by the original **Five Nights at Freddy's** by Scott Cawthon.  
-All original assets and audio belong to their respective owners.
-
----
-
-*"Good luck."*
-
-```
-[ CAMERA OFFLINE ]
-```
+Fan-made. All original assets, audio, and characters belong to Scott Cawthon / Steel Wool Studios.
