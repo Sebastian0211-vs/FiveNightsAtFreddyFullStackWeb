@@ -26,14 +26,14 @@ const STYLES = `
 .menu-white { z-index:3; }
 .menu-slide { position:fixed; top:5%; left:50%; transform:translateX(-50%); width:100%; opacity:0.5; z-index:5; animation:menuSlideDown 10s linear forwards; }
 .FNAFtitle  { position:absolute; top:10%; left:10%; width:15%; pointer-events:none; z-index:10; object-fit:contain; }
-.menu-buttons { position:absolute; top:46%; left:10%; width:15%; z-index:20; display:flex; flex-direction:column; gap:48%; }
+.menu-buttons { position:absolute; top:46%; left:10%; width:15%; z-index:20; display:flex; flex-direction:column; gap:20%; }
 .menu-selector { position:absolute; left:-25%; width:20%; transition:top 0.1s; pointer-events:none; }
-.menu-btn-text { font-family:'FNAF','Courier New',monospace; font-size:clamp(40px,8vw,112px); color:#fff; background:none; border:none; cursor:pointer; text-align:left; padding:0; letter-spacing:0.04em; text-shadow:2px 2px 8px rgba(0,0,0,0.95); white-space:nowrap; display:block; }
+.menu-btn-text { font-family:'FNAF','Courier New',monospace; font-size:clamp(18px,3.5vw,52px); color:#fff; background:none; border:none; cursor:pointer; text-align:left; padding:0; letter-spacing:0.04em; text-shadow:2px 2px 8px rgba(0,0,0,0.95); white-space:nowrap; display:block; }
 .menu-btn-text:hover { opacity:0.7; }
-.continue-row { display:flex; align-items:baseline; gap:12px; cursor:pointer; white-space:nowrap; }
+.continue-row { display:flex; align-items:baseline; gap:8px; cursor:pointer; white-space:nowrap; }
 .continue-row:hover { opacity:0.7; }
-.continue-night { font-family:'FNAF','Courier New',monospace; font-size:clamp(40px,8vw,112px); color:#fff; letter-spacing:0.04em; white-space:nowrap; text-shadow:2px 2px 8px rgba(0,0,0,0.95); }
-.menu-user { position:fixed; bottom:24px; left:24px; font-family:'FNAF','Courier New',monospace; font-size:clamp(13px,1.6vw,20px); color:#fff; letter-spacing:0.08em; text-shadow:2px 2px 6px rgba(0,0,0,0.9); z-index:20; pointer-events:none; }
+.continue-night { font-family:'FNAF','Courier New',monospace; font-size:clamp(18px,3.5vw,52px); color:#fff; letter-spacing:0.04em; white-space:nowrap; text-shadow:2px 2px 8px rgba(0,0,0,0.95); }
+.menu-user { position:absolute; bottom:3%; left:3%; font-family:'FNAF','Courier New',monospace; font-size:clamp(10px,1.2vw,18px); color:#fff; letter-spacing:0.08em; text-shadow:2px 2px 6px rgba(0,0,0,0.9); z-index:20; pointer-events:none; }
 @keyframes menuSlideDown { from { bottom:100%; } to { top:90%; } }
 `;
 
@@ -200,9 +200,9 @@ export default function Menu() {
                         Log Out
                     </button>
                 </div>
-            </div>
 
-            {username && <div className="menu-user">Connected as: {username}</div>}
+                {username && <div className="menu-user">Connected as: {username}</div>}
+            </div>
         </div>
     );
 }

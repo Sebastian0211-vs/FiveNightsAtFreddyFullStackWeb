@@ -16,7 +16,7 @@ const STYLES = `
 .cn-slide { position:fixed; top:5%; left:50%; transform:translateX(-50%); width:100%; opacity:0.5; z-index:22; animation:slideDown 10s linear forwards; }
 @keyframes slideDown { from { top:-100%; } to { top:90%; } }
 .cn-title { position:absolute; top:7%; left:50%; transform:translateX(-50%); z-index:25; font-family:'FNAF',monospace; font-size:4vw; color:#fff; text-shadow:2px 2px 12px rgba(0,0,0,0.95); white-space:nowrap; pointer-events:none; }
-.cn-back { position:fixed; top:24px; left:28px; z-index:30; font-family:'FNAF',monospace; font-size:clamp(12px,1.4vw,20px); color:#fff; background:none; border:none; cursor:pointer; letter-spacing:0.05em; text-shadow:1px 1px 6px rgba(0,0,0,0.9); white-space:nowrap; }
+.cn-back { position:absolute; top:3%; left:3%; z-index:30; font-family:'FNAF',monospace; font-size:clamp(12px,1.4vw,20px); color:#fff; background:none; border:none; cursor:pointer; letter-spacing:0.05em; text-shadow:1px 1px 6px rgba(0,0,0,0.9); white-space:nowrap; }
 .cn-back:hover { opacity:0.7; }
 .cn-main { position:absolute; top:17%; left:50%; transform:translateX(-50%); z-index:25; display:flex; flex-direction:column; align-items:flex-start; gap:clamp(10px,2vh,24px); }
 .cn-animatronics { display:flex; gap:clamp(20px,4vw,60px); align-items:flex-start; }
@@ -142,9 +142,9 @@ export default function CustomNight() {
                 </div>
 
                 <button className="cn-ready" onClick={startNight}>READY</button>
-            </div>
 
-            <button className="cn-back" onClick={goToMenu}>Back to Menu</button>
+                <button className="cn-back" onClick={goToMenu}>Back to Menu</button>
+            </div>
         </div>
     );
 }

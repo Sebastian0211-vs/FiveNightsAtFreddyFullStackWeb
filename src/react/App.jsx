@@ -34,7 +34,7 @@ export default function App() {
                     <Route path="/test"     element={<ProtectedRoute><FearDetector /></ProtectedRoute>} />
                     <Route path="*"         element={<Navigate to="/" replace />} />
                 </Routes>
-            </AuthProvider>
+                        </AuthProvider>
         </ApolloProvider>
     );
 }
