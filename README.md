@@ -1,6 +1,6 @@
 <div align="center">
 
-![Freddy Fazbear](assets/Menu/1.png)
+![Freddy Fazbear](readme-assets/banner.png)
 
 # Five Nights at Freddy's — Full-Stack Web Edition
 
@@ -18,7 +18,7 @@ A full-stack web recreation of Five Nights at Freddy's 1. The game runs entirely
 
 | Security Office | Show Stage (Cam 1A) |
 |---|---|
-| ![Office](assets/Main%20Room/126.png) | ![Show Stage](assets/Cam_views/show%20stage/Freddy_1.png) |
+| ![Office](readme-assets/office.png) | ![Show Stage](readme-assets/show-stage.png) |
 
 </div>
 
@@ -65,7 +65,7 @@ A full-stack web recreation of Five Nights at Freddy's 1. The game runs entirely
 
 <div align="center">
 
-| <img src="assets/Icons/527.png" width="80"/><br>**Freddy Fazbear** | <img src="assets/Icons/528.png" width="80"/><br>**Bonnie** | <img src="assets/Icons/529.png" width="80"/><br>**Chica** | <img src="assets/Icons/536.png" width="80"/><br>**Foxy** |
+| <img src="readme-assets/freddy.png" width="80"/><br>**Freddy Fazbear** | <img src="readme-assets/bonnie.png" width="80"/><br>**Bonnie** | <img src="readme-assets/chica.png" width="80"/><br>**Chica** | <img src="readme-assets/foxy.png" width="80"/><br>**Foxy** |
 |---|---|---|---|
 | Show Stage | Show Stage | Show Stage | Pirate's Cove |
 | Stage → Dining → Restrooms → Kitchen → East Hall → Corner | Stage → Backstage → West Hall → Corner | Stage → Dining → Restrooms → East Hall → Corner | Cove (4 stages) → sprint West Hall |
@@ -220,7 +220,7 @@ All mutations require an authenticated session cookie. `submitScore` is called a
 
 <div align="center">
 
-![Good job, sport!](assets/End%20Screen/210.png)
+![Good job, sport!](readme-assets/end-screen.png)
 
 *Fan-made recreation. All original assets, audio, and characters belong to Scott Cawthon / Steel Wool Studios.*
 
