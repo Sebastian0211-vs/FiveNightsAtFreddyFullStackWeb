@@ -13,8 +13,14 @@ function htmlRewrites() {
   return {
     name: 'html-rewrites',
     configureServer(server) {
+      const spaRoutes = ['/login', '/register', '/play', '/test'];
       server.middlewares.use((req, _res, next) => {
-        if (map[req.url]) req.url = map[req.url];
+        const url = req.url.split('?')[0]; // strip query string
+        if (map[url]) {
+          req.url = map[url];
+        } else if (spaRoutes.includes(url)) {
+          req.url = '/index.html';
+        }
         next();
       });
     }
