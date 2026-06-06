@@ -1,8 +1,26 @@
+<div align="center">
+
+![Freddy Fazbear](assets/Menu/1.png)
+
 # Five Nights at Freddy's — Full-Stack Web Edition
 
-> *"Hello? Hello, hello? Uh, I wanted to record a message for you to help you get settled in on your first night..."*
+*"Hello? Hello, hello? Uh, I wanted to record a message for you to help you get settled in on your first night..."*
+
+</div>
+
+---
 
 A full-stack web recreation of Five Nights at Freddy's 1. The game runs entirely in the browser; the backend handles authentication, a live leaderboard, and email-based password reset.
+
+## Screenshots
+
+<div align="center">
+
+| Security Office | Show Stage (Cam 1A) |
+|---|---|
+| ![Office](assets/Main%20Room/126.png) | ![Show Stage](assets/Cam_views/show%20stage/Freddy_1.png) |
+
+</div>
 
 ---
 
@@ -11,7 +29,7 @@ A full-stack web recreation of Five Nights at Freddy's 1. The game runs entirely
 | Layer | Tech |
 |---|---|
 | Game engine | Vanilla JS + HTML5 Canvas |
-| Frontend SPA | React 18 + React Router v6 + Vite |
+| Frontend SPA | React 18 · React Router v6 · Vite |
 | API | Apollo GraphQL (`@apollo/server` + `expressMiddleware`) |
 | Auth | Passport.js · JWT stored as HttpOnly cookie |
 | Database | MongoDB + Mongoose |
@@ -25,7 +43,7 @@ A full-stack web recreation of Five Nights at Freddy's 1. The game runs entirely
 
 **Game**
 - Nights 1–6 plus a fully configurable Custom Night
-- All four animatronics (Freddy, Bonnie, Chica, Foxy) with faithful AI movement
+- All four animatronics with faithful AI movement and aggression scaling
 - Power system, door/light controls, tablet camera with full minimap
 - Golden Freddy easter egg and complete jumpscare sequences
 - Per-session stat tracking: camera flicks, door closes, power remaining at 6 AM
@@ -43,6 +61,22 @@ A full-stack web recreation of Five Nights at Freddy's 1. The game runs entirely
 
 ---
 
+## Animatronics
+
+<div align="center">
+
+| <img src="assets/Icons/527.png" width="80"/><br>**Freddy Fazbear** | <img src="assets/Icons/528.png" width="80"/><br>**Bonnie** | <img src="assets/Icons/529.png" width="80"/><br>**Chica** | <img src="assets/Icons/536.png" width="80"/><br>**Foxy** |
+|---|---|---|---|
+| Show Stage | Show Stage | Show Stage | Pirate's Cove |
+| Stage → Dining → Restrooms → Kitchen → East Hall → Corner | Stage → Backstage → West Hall → Corner | Stage → Dining → Restrooms → East Hall → Corner | Cove (4 stages) → sprint West Hall |
+| **Right door** | **Left door** | **Right door** | **Left door** |
+
+</div>
+
+AI levels scale with night number and hour. Custom Night lets you set each animatronic's level (0–20) manually.
+
+---
+
 ## Project structure
 
 ```
@@ -56,17 +90,9 @@ A full-stack web recreation of Five Nights at Freddy's 1. The game runs entirely
 │       ├── app.js              — Express + Apollo setup (exported for tests)
 │       ├── auth/               — Passport strategy, JWT helpers
 │       ├── routes/auth.js      — REST: register, login, logout, forgot/reset password
-│       ├── models/
-│       │   ├── User.js
-│       │   └── Score.js
-│       ├── graphql/
-│       │   ├── typeDefs.js
-│       │   ├── resolvers.js
-│       │   └── context.js
-│       └── tests/
-│           ├── unit.password.test.js
-│           ├── unit.resolver.test.js
-│           └── integration.auth.test.js
+│       ├── models/             — User.js · Score.js
+│       ├── graphql/            — typeDefs · resolvers · context
+│       └── tests/              — unit + integration tests
 ├── src/
 │   ├── react/                  — SPA (login, register, leaderboard, play...)
 │   │   ├── App.jsx
@@ -83,7 +109,7 @@ A full-stack web recreation of Five Nights at Freddy's 1. The game runs entirely
 │   │   └── Leaderboard.html
 │   └── engine/                 — Game logic (vanilla JS)
 │       ├── gameState.js        — Time, power, stat tracking, score submission
-│       ├── animatronics/       — Freddy / Bonnie / Chica / Foxy AI
+│       ├── animatronics/       — AI for each character
 │       └── ...
 └── assets/                     — Sprites, audio, fonts
 ```
@@ -135,7 +161,7 @@ npm run dev:server
 npm run dev
 ```
 
-Open `http://localhost:5173`. Register an account, then navigate to `/play` to start the game.
+Open `http://localhost:5173`. Register an account, then navigate to `/play` to start your shift.
 
 ### Test
 
@@ -143,7 +169,7 @@ Open `http://localhost:5173`. Register an account, then navigate to `/play` to s
 npm test
 ```
 
-Runs 5 test files (12 tests) with no live database or network required — MongoDB and Resend are mocked.
+5 test files · 12 tests · no live database or network required (MongoDB and Resend are mocked).
 
 ### Build
 
@@ -156,7 +182,6 @@ npm run build
 ## GraphQL API
 
 **Queries**
-
 ```graphql
 me: User
 leaderboard(night: Int, limit: Int): [Score!]!
@@ -164,7 +189,6 @@ myScores: [Score!]!
 ```
 
 **Mutations**
-
 ```graphql
 updateProgress(night: Int!): User!
 resetProgress: User!
@@ -176,7 +200,7 @@ submitScore(
 ): Score!
 ```
 
-All mutations require an authenticated cookie. `submitScore` is called automatically by the game engine at the end of each night.
+All mutations require an authenticated session cookie. `submitScore` is called automatically by the game engine at the end of each night.
 
 ---
 
@@ -194,19 +218,10 @@ All mutations require an authenticated cookie. `submitScore` is called automatic
 
 ---
 
-## Animatronics
+<div align="center">
 
-| | Starts | Path | Door |
-|---|---|---|---|
-| **Freddy** | Show Stage | Stage → Dining → Restrooms → Kitchen → East Hall → Corner | Right |
-| **Bonnie** | Show Stage | Stage → Backstage → West Hall → Corner | Left |
-| **Chica** | Show Stage | Stage → Dining → Restrooms → East Hall → Corner | Right |
-| **Foxy** | Pirate's Cove | Cove (4 stages) → sprint down West Hall | Left |
+![Good job, sport!](assets/End%20Screen/210.png)
 
-AI levels scale with night number and hour. Custom Night lets you set each animatronic's level (0–20) manually.
+*Fan-made recreation. All original assets, audio, and characters belong to Scott Cawthon / Steel Wool Studios.*
 
----
-
-## Credits
-
-Fan-made. All original assets, audio, and characters belong to Scott Cawthon / Steel Wool Studios.
+</div>
