@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import React, { useEffect, useState, useRef } from 'react';
+import { useAuth } from '../auth/AuthContext.jsx';
 import overlay      from '../../../assets/FNaF 6/night_assets/986.png';
 import light_bulb   from '../../../assets/FNaF 6/night_assets/1009.png';
 import frame_969c   from '../../../assets/FNaF 6/night_assets/Baby/table_baby/969_cleared.png';
@@ -133,20 +134,18 @@ export default function Login() {
 
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [error, setError]       = useState('');
+    const { login } = useAuth();
 
     async function handleLogin() {
-        const res = await fetch('https://fnaf.sy-baubau.ch:3001/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password }),
-        });
-        const data = await res.json();
-        if (!res.ok) return alert(data.error);
-
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('username', data.username);
-        setFading(true);
-        setTimeout(() => { window.location.href = '/warning'; }, 1200);
+        setError('');
+        try {
+            await login(username, password); // sets HttpOnly cookie server-side
+            setFading(true);
+            setTimeout(() => { navigate('/', { replace: true }); }, 1200);
+        } catch (err) {
+            setError(err.message || 'Erreur de connexion');
+        }
     }
 
     function goToRegister() {
@@ -407,6 +406,7 @@ export default function Login() {
                         <input className="tw-input" type="password" placeholder="* * * * * * *"
                                value={password} onChange={e => setPassword(e.target.value)} />
                     </div>
+                    {error ? <div style={{ color: '#c33', fontSize: 'var(--form-font-small)', textAlign: 'center' }}>{error}</div> : null}
                     <button className="tw-btn" onClick={handleLogin}>[ Connect ]</button>
                     <hr className="tw-divider" />
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(4px, 0.5vh, 8px)' }}>

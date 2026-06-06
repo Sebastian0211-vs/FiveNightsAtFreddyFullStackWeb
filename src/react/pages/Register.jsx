@@ -657,8 +657,10 @@ export default function Register() {
         if (!submitReady) return;
 
         try {
-            const res = await fetch('https://sy-baubau.ch:3001/api/auth/register', {
+            const BASE = import.meta.env.VITE_API_URL || 'http://localhost:3002';
+            const res = await fetch(`${BASE}/api/auth/register`, {
                 method: 'POST',
+                credentials: 'include', // receive the HttpOnly auth cookie
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username: username.value, email: email.value, password: password.value }),
             });
