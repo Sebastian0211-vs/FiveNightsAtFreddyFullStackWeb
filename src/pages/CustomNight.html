@@ -306,6 +306,7 @@
 
 <script>
     const levels = { freddy: 0, bonnie: 0, chica: 0, foxy: 0 };
+    const bgAudio = [];
 
     function change(name, delta) {
         levels[name] = Math.max(0, Math.min(20, levels[name] + delta));
@@ -335,8 +336,53 @@
 
     function goToMenu()   { tvStaticTo('/menu'); }
     function startNight() {
+        // 1-9-8-7 Easter egg — Golden Freddy
+        if (levels.freddy === 1 && levels.bonnie === 9 && levels.chica === 8 && levels.foxy === 7) {
+            triggerGoldenFreddy();
+            return;
+        }
         sessionStorage.setItem('__customNight', JSON.stringify(levels));
         tvStaticTo('/mainroom');
+    }
+
+    function triggerGoldenFreddy() {
+        // Silence background audio
+        bgAudio.forEach(a => { a.pause(); a.currentTime = 0; });
+
+        const canvas = document.createElement('canvas');
+        canvas.style.cssText = 'position:fixed;inset:0;width:100%;height:100%;z-index:9999;';
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+        document.body.appendChild(canvas);
+
+        const ctx = canvas.getContext('2d');
+        const W = canvas.width, H = canvas.height;
+
+        const sfx = new Audio('../../assets/FNaF 1 Audio/XSCREAM2.wav');
+        sfx.play().catch(() => {});
+
+        const frames = goldenFreddyJumpscare.frames.map(src => {
+            const img = new Image(); img.src = src; return img;
+        });
+        const msPerFrame = 1000 / goldenFreddyJumpscare.fps;
+        let frameIdx = 0;
+
+        function nextFrame() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, W, H);
+            const img = frames[frameIdx];
+            if (img.naturalWidth) {
+                const sc = Math.max(W / img.naturalWidth, H / img.naturalHeight);
+                const dw = img.naturalWidth * sc, dh = img.naturalHeight * sc;
+                ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+            }
+            frameIdx++;
+            if (frameIdx < frames.length) setTimeout(nextFrame, msPerFrame);
+        }
+        nextFrame();
+
+        // Redirect to menu after 2s
+        setTimeout(() => { window.location.href = '/menu'; }, 2000);
     }
 
     window.onload = () => {
@@ -347,10 +393,12 @@
         const sfxStatic = new Audio('../../assets/FNaF 1 Audio/static2.wav');
         sfxStatic.loop = true;
         sfxStatic.play().catch(() => {});
+        bgAudio.push(sfxStatic);
 
-        const music = new Audio('../../assets/Custom/une vie.mp3');
+        const music = new Audio('../../assets/Custom/Unraveled - Feldup.mp3');
         music.loop = true;
         music.play().catch(() => {});
+        bgAudio.push(music);
 
         playNoise(document.getElementById('animNoise'), noiseMenu, 0.4);
         playNoise(document.getElementById('animNoise'), noiseMenu);
