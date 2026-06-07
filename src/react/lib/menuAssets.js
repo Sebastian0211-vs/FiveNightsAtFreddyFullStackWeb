@@ -14,6 +14,7 @@ const goldenImgs = import.meta.glob('../../../assets/Golden Freddy/*.png', { eag
 const customAll  = import.meta.glob('../../../assets/Custom/*',            { eager: true, query: '?url', import: 'default' });
 const iconImgs   = import.meta.glob('../../../assets/Icons/*.png',         { eager: true, query: '?url', import: 'default' });
 const audio1     = import.meta.glob('../../../assets/FNaF 1 Audio/*',      { eager: true, query: '?url', import: 'default' });
+const textImgs   = import.meta.glob('../../../assets/Text_Assets/*.png',   { eager: true, query: '?url', import: 'default' });
 const fontMap    = import.meta.glob('../../../assets/Fonts/*.otf',         { eager: true, query: '?url', import: 'default' });
 
 // Look up a globbed asset by its file name (case-insensitive).
@@ -29,6 +30,7 @@ const golden = (n) => pick(goldenImgs, n);
 const custom = (n) => pick(customAll, n);
 const icon   = (n) => pick(iconImgs, n);
 const aud    = (n) => pick(audio1, n);
+const text   = (n) => pick(textImgs, n);
 
 // ── Static images ────────────────────────────────────────────
 export const IMG = {
@@ -43,6 +45,7 @@ export const IMG = {
     warning:      menu('warning_trans.png'),
     staticNoise1: menu('staticNoise1.png'),
     whiteNoise1:  menu('whiteNoise1.png'),
+    star:         text('432.png'),
     goldenFreddy: golden('573.png'),
     bonnieMenu:   custom('Bonnie_Menu.jpg'),
     chicaMenu:    custom('Chica_menu.png'),

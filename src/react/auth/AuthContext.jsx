@@ -15,6 +15,8 @@ const ME_QUERY = gql`
       username
       email
       furthestNight
+      bestNight
+      customNightBeaten
     }
   }
 `;
@@ -47,7 +49,7 @@ export function AuthProvider({ children }) {
 
     const register = useCallback(async (username, email, password) => {
         const data = await api('/api/auth/register', { method: 'POST', body: { username, email, password } });
-        setUser({ username: data.username, furthestNight: 0 });
+        setUser({ username: data.username, furthestNight: 0, bestNight: 0, customNightBeaten: false });
         return data;
     }, []);
 

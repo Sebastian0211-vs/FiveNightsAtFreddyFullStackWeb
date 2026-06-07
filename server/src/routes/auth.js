@@ -69,7 +69,12 @@ router.post('/login', async (req, res) => {
 
     const token = signToken(user._id);
     res.cookie(COOKIE_NAME, token, cookieOptions);
-    res.json({ username: user.username, furthestNight: user.furthestNight });
+    res.json({
+        username: user.username,
+        furthestNight: user.furthestNight,
+        bestNight: user.bestNight,
+        customNightBeaten: user.customNightBeaten,
+    });
 });
 
 // LOGOUT
@@ -79,11 +84,43 @@ router.post('/logout', (req, res) => {
 });
 
 // ME — info on the connected user
-router.get('/me', requireAuth, (req, res) => {
+router.get('/me', requireAuth, async (req, res) => {
+    const user = req.user;
+    // Backfill bestNight for accounts created before it existed.
+    if ((user.bestNight ?? 0) < (user.furthestNight ?? 0)) {
+        user.bestNight = user.furthestNight;
+        await user.save().catch(() => {});
+    }
     res.json({
-        username: req.user.username,
-        furthestNight: req.user.furthestNight,
+        username: user.username,
+        furthestNight: user.furthestNight,
+        bestNight: user.bestNight,
+        customNightBeaten: user.customNightBeaten,
     });
+});
+
+// PROGRESS — record a cleared night. Bumps the resettable furthestNight and
+// the permanent bestNight (used for the Custom Night unlock + menu stars).
+router.put('/progress', requireAuth, async (req, res) => {
+    try {
+        const night = parseInt(req.body?.night, 10);
+        if (isNaN(night) || night < 0 || night > 7) {
+            return res.status(400).json({ error: 'Night invalide' });
+        }
+        const user = req.user;
+        let changed = false;
+        if (night > user.furthestNight) { user.furthestNight = night; changed = true; }
+        if (night > user.bestNight)     { user.bestNight     = night; changed = true; }
+        if (changed) await user.save();
+        res.json({
+            furthestNight: user.furthestNight,
+            bestNight: user.bestNight,
+            customNightBeaten: user.customNightBeaten,
+        });
+    } catch (err) {
+        console.error('progress error:', err);
+        res.status(500).json({ error: 'Erreur serveur' });
+    }
 });
 
 // FORGOT PASSWORD — send reset email

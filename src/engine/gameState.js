@@ -35,6 +35,35 @@ const GameState = {
     cameraFlicks: 0,
     doorCloses:   0,
     _scoreSent:   false, // guard: only submit once per night outcome
+    _sessionId:   null,  // server-issued single-use token for this night
+
+    // ── Ask the server for a fresh night-session token ────────
+    async _startNightSession() {
+        this._sessionId = null;
+        const customLevels = window.__customAILevels || null;
+        try {
+            const res = await fetch(`${API_BASE}/graphql`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    query: `mutation($night:Int!,$isCustomNight:Boolean,$aiFreddy:Int,$aiBonnie:Int,$aiChica:Int,$aiFoxy:Int){
+                        startNight(night:$night,isCustomNight:$isCustomNight,aiFreddy:$aiFreddy,aiBonnie:$aiBonnie,aiChica:$aiChica,aiFoxy:$aiFoxy){ sessionId }
+                    }`,
+                    variables: {
+                        night:         this.night,
+                        isCustomNight: !!customLevels,
+                        aiFreddy:  customLevels?.Freddy ?? null,
+                        aiBonnie:  customLevels?.Bonnie ?? null,
+                        aiChica:   customLevels?.Chica  ?? null,
+                        aiFoxy:    customLevels?.Foxy   ?? null,
+                    },
+                }),
+            });
+            const json = await res.json();
+            this._sessionId = json?.data?.startNight?.sessionId ?? null;
+        } catch { /* non-blocking */ }
+    },
 
     // ── Submit score to GraphQL ──────────────────────────────
     async _submitScore(outcome) {
@@ -49,10 +78,11 @@ const GameState = {
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    query: `mutation($night:Int!,$survivedSeconds:Int!,$outcome:Outcome!,$cameraFlicks:Int,$doorCloses:Int,$powerRemaining:Float,$isCustomNight:Boolean,$aiFreddy:Int,$aiBonnie:Int,$aiChica:Int,$aiFoxy:Int){
-                        submitScore(night:$night,survivedSeconds:$survivedSeconds,outcome:$outcome,cameraFlicks:$cameraFlicks,doorCloses:$doorCloses,powerRemaining:$powerRemaining,isCustomNight:$isCustomNight,aiFreddy:$aiFreddy,aiBonnie:$aiBonnie,aiChica:$aiChica,aiFoxy:$aiFoxy){ id }
+                    query: `mutation($sessionId:ID!,$night:Int!,$survivedSeconds:Int!,$outcome:Outcome!,$cameraFlicks:Int,$doorCloses:Int,$powerRemaining:Float,$isCustomNight:Boolean,$aiFreddy:Int,$aiBonnie:Int,$aiChica:Int,$aiFoxy:Int){
+                        submitScore(sessionId:$sessionId,night:$night,survivedSeconds:$survivedSeconds,outcome:$outcome,cameraFlicks:$cameraFlicks,doorCloses:$doorCloses,powerRemaining:$powerRemaining,isCustomNight:$isCustomNight,aiFreddy:$aiFreddy,aiBonnie:$aiBonnie,aiChica:$aiChica,aiFoxy:$aiFoxy){ id }
                     }`,
                     variables: {
+                        sessionId:       this._sessionId,
                         night:           this.night,
                         survivedSeconds: this.secondsElapsed,
                         outcome,
@@ -84,6 +114,9 @@ const GameState = {
 
     // ── Called every second ──────────────────────────────────
     tick() {
+        // Frozen while a night-intro title card is showing.
+        if (this._introActive) return;
+
         // Always drain power and advance time first so 6AM can fire even if
         // power runs out on the same tick (or during the power-out sequence).
 
@@ -133,6 +166,66 @@ const GameState = {
         document.getElementById('hud-battery-img').src = `../../assets/Battery/${batteryMap[usage] || '212'}.png`;
     },
 
+    // ── Freeze every animatronic (cancel in-flight attack timers) ──
+    _cancelAllAnimatronicTimers() {
+        const foxyInst = (typeof ANIMATRONICS !== 'undefined') ? ANIMATRONICS.find(a => a instanceof Foxy) : null;
+        if (foxyInst) {
+            if (foxyInst.sprintTimer)  { clearTimeout(foxyInst.sprintTimer);  foxyInst.sprintTimer  = null; }
+            if (foxyInst._runSfxTimer) { clearTimeout(foxyInst._runSfxTimer); foxyInst._runSfxTimer = null; }
+            if (foxyInst.lockTimer)    { clearTimeout(foxyInst.lockTimer);    foxyInst.lockTimer    = null; }
+            foxyInst.locked = false;
+        }
+        window.foxyRunning             = false;
+        window.foxyRunAnimDone         = false;
+        window._foxyRunCamSfxTriggered = false;
+        if (typeof ANIMATRONICS !== 'undefined') {
+            ANIMATRONICS.forEach(a => {
+                if (a._doorTimer) { clearTimeout(a._doorTimer); a._doorTimer = null; }
+            });
+        }
+    },
+
+    // ── Night intro: "12:00 AM / Nth Night" ──────────────────────
+    // Plays the camera-switch blip and fades a centred black title card in
+    // and out (full-screen DOM overlay), then calls onDone. The game stays
+    // frozen (see _introActive) while the card is up.
+    _showNightIntro(nextNight, onDone) {
+        try { new Audio('../../assets/FNaF 1 Audio/blip3.wav').play().catch(() => {}); } catch (e) {}
+
+        const ordinal = (n) => {
+            const s = ['th', 'st', 'nd', 'rd'], v = n % 100;
+            return n + (s[(v - 20) % 10] || s[v] || s[0]);
+        };
+
+        const FADE = 900, HOLD = 1600;
+
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position:fixed; inset:0; z-index:1200; background:#000;
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            gap:2vh; opacity:0; transition:opacity ${FADE}ms ease; pointer-events:none;
+            font-family:'FNAF','Courier New',monospace; color:#fff; text-align:center;
+        `;
+        const l1 = document.createElement('div');
+        l1.textContent = '12:00 AM';
+        l1.style.cssText = 'font-size:clamp(28px,6vw,90px); letter-spacing:0.05em;';
+        const l2 = document.createElement('div');
+        l2.textContent = ordinal(nextNight) + ' Night';
+        l2.style.cssText = 'font-size:clamp(20px,4vw,60px); letter-spacing:0.05em;';
+        overlay.appendChild(l1);
+        overlay.appendChild(l2);
+        document.body.appendChild(overlay);
+
+        requestAnimationFrame(() => { overlay.style.opacity = '1'; }); // fade in
+        setTimeout(() => {
+            overlay.style.opacity = '0';                                // fade out
+            setTimeout(() => {
+                overlay.remove();
+                if (onDone) onDone();
+            }, FADE);
+        }, FADE + HOLD);
+    },
+
     // ── Power out sequence ───────────────────────────────────
     onPowerOut() {
         if (this._powerOutTriggered) return;
@@ -146,6 +239,9 @@ const GameState = {
         powerOut = true;
         window._powerOutEyeFrame = '304';
 
+        // Snap the camera tablet down first (before we hide the controls below).
+        if (typeof window.forceTabletDown === 'function') window.forceTabletDown();
+
         // Hide HUD and interactive elements
         document.getElementById('hud-top-right').style.display = 'none';
         document.getElementById('hud-power').style.display     = 'none';
@@ -153,12 +249,18 @@ const GameState = {
         document.getElementById('tablet-bar').style.display    = 'none';
         document.querySelectorAll('.btn-zone').forEach(z => z.style.display = 'none');
 
-        // Kill all audio
+        // Silence every non-sequence sound so only the blackout sequence plays.
+        if (typeof window.stopAllAudio === 'function') window.stopAllAudio();
         [sfxFan, sfxPhone, sfxLight, sfxCameraLoop, camAudio].forEach(a => {
+            if (!a) return;
             a.pause();
             a.currentTime = 0;
         });
         stopCamVideo();
+
+        // Freeze the animatronics: cancel every in-flight attack timer so no
+        // one else can move or jumpscare during the blackout (incl. Foxy's run).
+        this._cancelAllAnimatronicTimers();
 
         // Open both doors
         ['left', 'right'].forEach(side => {
@@ -293,6 +395,7 @@ const GameState = {
                                 steps4.volume = 1;
                                 steps4.play().catch(() => {});
                                 steps4.addEventListener('ended', () => {
+                                    if (GameState._6amTriggered) return; // 6 AM is absolute
                                     window._powerOutEyeFrame = 'jumpscare';
                                     GameState._submitScore('jumpscare');
                                     playPowerOutJumpscare();
@@ -314,6 +417,13 @@ const GameState = {
         this._6amTriggered = true;
         console.log('6 AM — night complete');
         this._submitScore('win');
+
+        // 6 AM is absolute: instantly stop everything — all audio, the camera
+        // tablet, and every animatronic timer (this overrides the power-out
+        // sequence too).
+        if (typeof window.stopAllAudio === 'function') window.stopAllAudio();
+        if (typeof window.forceTabletDown === 'function') window.forceTabletDown();
+        this._cancelAllAnimatronicTimers();
 
         // ── Cancel every pending power-out timer ─────────────
         if (this._powerOutTimers) {
@@ -342,6 +452,7 @@ const GameState = {
 
         // Kill all audio
         [sfxFan, sfxPhone, sfxLight, sfxCameraLoop, camAudio].forEach(a => {
+            if (!a) return;
             a.pause(); a.currentTime = 0;
         });
         stopCamVideo();
@@ -459,6 +570,7 @@ const GameState = {
                             this.cameraFlicks   = 0;
                             this.doorCloses     = 0;
                             this._scoreSent     = false;
+                            this._startNightSession(); // fresh anti-cheat token for the new night
 
                             ANIMATRONICS.forEach(a => {
                                 //set ai level back to base for each animatronic and reset boost flag so they can get the boost again on the next hour
@@ -471,6 +583,9 @@ const GameState = {
                                     a.bangCount = 0;
                                     window.foxyRunning     = false;
                                     window.foxyRunAnimDone = false;
+                                }
+                                if (a instanceof Freddy) {
+                                    a._resetOfficeState();
                                 }
                                 if (a instanceof Bonnie) {
                                     a._resetOfficeState();
@@ -486,14 +601,20 @@ const GameState = {
                                 }
                             });
 
-                            renderPaused = false;
-                            this.render();
-                            document.getElementById('hud-top-right').style.display = '';
-                            document.getElementById('hud-power').style.display     = '';
-                            document.getElementById('hud-usage').style.display     = '';
-                            document.getElementById('tablet-bar').style.display    = 'flex';
-                            document.querySelectorAll('.btn-zone').forEach(z => z.style.display = 'block');
-                            sfxFan.play().catch(() => {});
+                            // Show the "12:00 AM / Nth Night" intro, then reveal the room.
+                            this._introActive = true;
+                            this._showNightIntro(this.night, () => {
+                                this._introActive = false;
+                                renderPaused = false;
+                                this.render();
+                                document.getElementById('hud-top-right').style.display = '';
+                                document.getElementById('hud-power').style.display     = '';
+                                document.getElementById('hud-usage').style.display     = '';
+                                document.getElementById('tablet-bar').style.display    = 'flex';
+                                document.querySelectorAll('.btn-zone').forEach(z => z.style.display = 'block');
+                                sfxFan.play().catch(() => {});
+                                if (typeof window.restartAmbience === 'function') window.restartAmbience();
+                            });
                         });
                     }, HOLD2_MS);
                 });
@@ -540,6 +661,12 @@ setInterval(() => {
     _bonnieWHCornerRoll = Math.floor(Math.random() * 30) + 1;
 }, 50);
 
+// West Hall (CAM 2A) light flicker — random, weighted toward lit
+let _westHallLit = true;
+setInterval(() => {
+    _westHallLit = Math.random() < 0.72;
+}, 70);
+
 
 function getCamImagePath(room) {
     const who       = (ROOMS[room] && ROOMS[room].who) ? ROOMS[room].who : [];
@@ -573,8 +700,9 @@ function getCamImagePath(room) {
         }
 
         case 'west_hall':
-            if (hasBonnie) return CAM_BASE + 'West Hall/Bonnie.png';
-            return CAM_BASE + 'West Hall/empty_lightson.png';
+            // Flicker also applies with Bonnie: toggle between Bonnie (lit) and dark.
+            if (hasBonnie) return CAM_BASE + 'West Hall/' + (_westHallLit ? 'Bonnie.png' : 'empty_lightsoff.png');
+            return CAM_BASE + 'West Hall/' + (_westHallLit ? 'empty_lightson.png' : 'empty_lightsoff.png');
 
         case 'west_hall_corner':
             if (GameState.night >= 3){
@@ -658,6 +786,7 @@ _kitchenAudio4 = new Audio('../../assets/FNaF 1 Audio/OVEN-DRAWE_GEN-HDF18122.wa
 function initGameLogic() {
     setInterval(() => GameState.tick(), 1000);
     GameState.render();
+    GameState._startNightSession(); // anti-cheat token for the starting night
 
     // ── Stat tracking: poll at 100 ms to catch all camera/door toggles ──
     let _prevTabletOpen  = false;
@@ -675,10 +804,13 @@ function initGameLogic() {
         _prevRightDoor = state.right.door;
     }, 100);
 
-    setInterval(() => { if (freddy.valid) freddy.tryMove(); }, ANIM_INTERVALS.freddy);
-    setInterval(() => { if (bonnie.valid) bonnie.tryMove(); }, ANIM_INTERVALS.bonnie);
-    setInterval(() => { if (chica.valid)  chica.tryMove();  }, ANIM_INTERVALS.chica);
-    setInterval(() => { if (foxy.valid)   foxy.tryMove();   }, ANIM_INTERVALS.foxy);
+    // Movement is frozen during the power-out blackout, at 6 AM, and while a
+    // night-intro card is showing.
+    const _frozen = () => GameState._6amTriggered || GameState._powerOutTriggered || GameState._introActive;
+    setInterval(() => { if (freddy.valid && !_frozen()) freddy.tryMove(); }, ANIM_INTERVALS.freddy);
+    setInterval(() => { if (bonnie.valid && !_frozen()) bonnie.tryMove(); }, ANIM_INTERVALS.bonnie);
+    setInterval(() => { if (chica.valid  && !_frozen()) chica.tryMove();  }, ANIM_INTERVALS.chica);
+    setInterval(() => { if (foxy.valid   && !_frozen()) foxy.tryMove();   }, ANIM_INTERVALS.foxy);
 
     window.foxyRunning    = false;
     window.bonnieAtDoor   = false;
@@ -690,7 +822,7 @@ function initGameLogic() {
 
     let _chicaKitchenSound = 0;
     setInterval(() => {
-        if (ROOMS['kitchen'].who.includes('Chica') && (!GameState._6amTriggered || !GameState._powerOutTriggered)) {
+        if (ROOMS['kitchen'].who.includes('Chica') && !GameState._6amTriggered && !GameState._powerOutTriggered) {
             //console.log("SOUND CHICA KITCHEN")
             _chicaKitchenSound = Math.floor(Math.random() * 30) + 1;
             switch (_chicaKitchenSound) {

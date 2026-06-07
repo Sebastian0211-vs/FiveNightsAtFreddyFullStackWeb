@@ -32,6 +32,19 @@ const userSchema = new mongoose.Schema(
             min: 0,
             max: 7,
         },
+        // Highest night ever completed — persists through "New Game" so the
+        // Custom Night unlock (>=5) and the menu stars are never lost.
+        bestNight: {
+            type: Number,
+            default: 0,
+            min: 0,
+            max: 7,
+        },
+        // Beat Custom Night on 4/20 mode (all AI at 20) — 3rd menu star.
+        customNightBeaten: {
+            type: Boolean,
+            default: false,
+        },
         resetToken: {
             type: String,
             default: null,

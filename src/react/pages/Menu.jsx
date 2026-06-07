@@ -7,7 +7,7 @@ import {
     IMG, AUDIO, FRED_MENU, NOISE_MENU, WHITE_MENU, ensureFnafFont,
 } from '../lib/menuAssets.js';
 import {
-    runFreddyMenu, runNoise, runAnimation, useFramePlayer, useSlideLoop,
+    runFreddyMenu, runNoise, runAnimation, useFramePlayer,
     useLoopAudio, tvStatic,
 } from '../lib/fnafFx.jsx';
 
@@ -24,7 +24,9 @@ const STYLES = `
 .menu-anim  { z-index:1; }
 .menu-noise { z-index:2; }
 .menu-white { z-index:3; }
-.menu-slide { position:fixed; top:5%; left:50%; transform:translateX(-50%); width:100%; opacity:0.5; z-index:5; animation:menuSlideDown 10s linear forwards; }
+.menu-slide { position:fixed; left:50%; transform:translateX(-50%); width:100%; opacity:0.5; z-index:5; animation:menuSlideDown 10s linear infinite; }
+.menu-stars { position:absolute; top:40%; left:10%; z-index:20; display:flex; gap:clamp(10px,1.4vw,22px); pointer-events:none; }
+.menu-star { width:clamp(26px,3vw,48px); height:auto; image-rendering:pixelated; }
 .FNAFtitle  { position:absolute; top:10%; left:10%; width:15%; pointer-events:none; z-index:10; object-fit:contain; }
 .menu-buttons { position:absolute; top:46%; left:10%; width:15%; z-index:20; display:flex; flex-direction:column; gap:20%; }
 .menu-selector { position:absolute; left:-25%; width:20%; transition:top 0.1s; pointer-events:none; }
@@ -34,7 +36,7 @@ const STYLES = `
 .continue-row:hover { opacity:0.7; }
 .continue-night { font-family:'FNAF','Courier New',monospace; font-size:clamp(18px,3.5vw,52px); color:#fff; letter-spacing:0.04em; white-space:nowrap; text-shadow:2px 2px 8px rgba(0,0,0,0.95); }
 .menu-user { position:absolute; bottom:3%; left:3%; font-family:'FNAF','Courier New',monospace; font-size:clamp(10px,1.2vw,18px); color:#fff; letter-spacing:0.08em; text-shadow:2px 2px 6px rgba(0,0,0,0.9); z-index:20; pointer-events:none; }
-@keyframes menuSlideDown { from { bottom:100%; } to { top:90%; } }
+@keyframes menuSlideDown { 0% { top:-15%; } 60% { top:100%; } 100% { top:100%; } }
 `;
 
 export default function Menu() {
@@ -50,17 +52,22 @@ export default function Menu() {
     const { user, loading, logout } = useAuth();
     const [visible, setVisible] = useState(false);
     const furthestNight = user?.furthestNight ?? 0;
+    const bestNight = user?.bestNight ?? 0;
+    const customNightBeaten = user?.customNightBeaten ?? false;
     const username = user?.username ?? null;
 
     const showContinue = furthestNight > 0;
-    const showCustom = furthestNight >= 5;
+    // Custom Night unlock persists through New Game (uses permanent bestNight).
+    const showCustom = bestNight >= 5;
     const nextNight = Math.min(furthestNight + 1, 6);
+
+    // Menu stars: 1 = beat Night 5, 2 = beat Night 6, 3 = beat Custom Night 4/20
+    const starCount = [bestNight >= 5, bestNight >= 6, customNightBeaten].filter(Boolean).length;
 
     // ── Sprite animations ─────────────────────────────────────
     useFramePlayer(animRef, runFreddyMenu, FRED_MENU);
     useFramePlayer(noiseRef, runNoise, NOISE_MENU);
     useFramePlayer(whiteRef, runAnimation, WHITE_MENU, 0.4);
-    useSlideLoop(slideRef);
 
     // ── Background audio ──────────────────────────────────────
     useLoopAudio([AUDIO.static2, AUDIO.darkness]);
@@ -200,6 +207,14 @@ export default function Menu() {
                         Log Out
                     </button>
                 </div>
+
+                {starCount > 0 && (
+                    <div className="menu-stars">
+                        {Array.from({ length: starCount }).map((_, i) => (
+                            <img key={i} className="menu-star" src={IMG.star} alt="star" />
+                        ))}
+                    </div>
+                )}
 
                 {username && <div className="menu-user">Connected as: {username}</div>}
             </div>

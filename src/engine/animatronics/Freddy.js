@@ -146,11 +146,10 @@ class Freddy extends Animatronic {
     // ── Reset complet (utilisé aussi par on6AM) ───────────────
     _resetOfficeState() {
         if (this._doorTimer) { clearTimeout(this._doorTimer); this._doorTimer = null; }
-        this._atDoor          = false;
-        this.inOffice         = false;
-        this._tabletWasOpen   = false;
-        window.bonnieAtDoor   = false;
-        window.bonnieInOffice = false;
+        this._atDoor        = false;
+        this.inOffice       = false;
+        this._tabletWasOpen = false;
+        this.phase2         = false;
     }
 
     canAttack() { return false; } // attaque gérée en interne
