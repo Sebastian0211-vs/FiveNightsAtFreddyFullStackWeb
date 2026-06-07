@@ -45,7 +45,7 @@ export const IMG = {
     warning:      menu('warning_trans.png'),
     staticNoise1: menu('staticNoise1.png'),
     whiteNoise1:  menu('whiteNoise1.png'),
-    rotateImg:    menu('rotateImg.png'),
+    rotateImg:    menu('screen_rotate.png'),
     star:         text('432.png'),
     goldenFreddy: golden('573.png'),
     bonnieMenu:   custom('Bonnie_Menu.jpg'),

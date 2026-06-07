@@ -3,7 +3,7 @@ import { gql, useQuery } from '@apollo/client';
 import { useNavigate } from 'react-router-dom';
 import { IMG, AUDIO, NOISE_MENU, WHITE_MENU, ensureFnafFont } from '../lib/menuAssets.js';
 import { runNoise, runAnimation, useFramePlayer, useSlideLoop, useLoopAudio, tvStatic } from '../lib/fnafFx.jsx';
-
+import rotateImg from '../../../assets/menu/screen_rotate.png'
 // FNAF-themed Security Log — ported from src/pages/Leaderboard.html.
 const LEADERBOARD_QUERY = gql`
   query Leaderboard {
@@ -237,7 +237,7 @@ export default function Leaderboard() {
                 <button className="lb-back" onClick={goToMenu}>Back to Menu</button>
             </div>
             <div id="rotate-hint">
-                <img src={TON_IMAGE} style={{ width: '60%', maxWidth: '280px', height: 'auto' }} />
+                <img src={rotateImg} style={{ width: '60%', maxWidth: '280px', height: 'auto' }} />
                 <p style={{
                     color: 'rgba(255,255,255,0.7)',
                     fontFamily: "'FNAF','Courier New',monospace",
