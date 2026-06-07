@@ -70,6 +70,20 @@ const STYLES = `
 .lb-stat { color:rgba(255,220,100,0.9); }
 .lb-win  { color:rgba(100,255,140,0.9); }
 .lb-dead { color:rgba(255,80,80,0.85); }
+#rotate-hint {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #000;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: all;
+}
+@media (max-width: 768px) and (orientation: portrait) {
+    #rotate-hint { display: flex; }
+}
 `;
 
 export default function Leaderboard() {
@@ -221,6 +235,20 @@ export default function Leaderboard() {
                     </table>
                 </div>
                 <button className="lb-back" onClick={goToMenu}>Back to Menu</button>
+            </div>
+            <div id="rotate-hint">
+                <img src={TON_IMAGE} style={{ width: '60%', maxWidth: '280px', height: 'auto' }} />
+                <p style={{
+                    color: 'rgba(255,255,255,0.7)',
+                    fontFamily: "'FNAF','Courier New',monospace",
+                    fontSize: '14px',
+                    letterSpacing: '0.15em',
+                    textTransform: 'uppercase',
+                    marginTop: '24px',
+                    textAlign: 'center',
+                }}>
+                    Please rotate your device
+                </p>
             </div>
         </div>
     );

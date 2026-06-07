@@ -10,6 +10,7 @@ import {
     runFreddyMenu, runNoise, runAnimation, useFramePlayer,
     useLoopAudio, tvStatic,
 } from '../lib/fnafFx.jsx';
+import rotateImg from '../../../assets/Menu/screen_rotate.png';
 
 const RESET_PROGRESS = gql`
   mutation ResetProgress {
@@ -37,6 +38,21 @@ const STYLES = `
 .continue-night { font-family:'FNAF','Courier New',monospace; font-size:clamp(18px,3.5vw,52px); color:#fff; letter-spacing:0.04em; white-space:nowrap; text-shadow:2px 2px 8px rgba(0,0,0,0.95); }
 .menu-user { position:absolute; bottom:3%; left:3%; font-family:'FNAF','Courier New',monospace; font-size:clamp(10px,1.2vw,18px); color:#fff; letter-spacing:0.08em; text-shadow:2px 2px 6px rgba(0,0,0,0.9); z-index:20; pointer-events:none; }
 @keyframes menuSlideDown { 0% { top:-15%; } 60% { top:100%; } 100% { top:100%; } }
+#rotate-hint {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #000;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: all;
+}
+@media (max-width: 768px) and (orientation: portrait) {
+    #rotate-hint { display: flex; }
+}
+
 `;
 
 export default function Menu() {
@@ -217,6 +233,22 @@ export default function Menu() {
                 )}
 
                 {username && <div className="menu-user">Connected as: {username}</div>}
+            </div>
+
+            {/* Rotate hint — mobile portrait uniquement */}
+            <div id="rotate-hint">
+                <img src={IMG.rotateImg} style={{ width: '60%', maxWidth: '280px', height: 'auto' }} />
+                <p style={{
+                    color: 'rgba(255,255,255,0.7)',
+                    fontFamily: "'FNAF','Courier New',monospace",
+                    fontSize: '14px',
+                    letterSpacing: '0.15em',
+                    textTransform: 'uppercase',
+                    marginTop: '24px',
+                    textAlign: 'center',
+                }}>
+                    Please rotate your device
+                </p>
             </div>
         </div>
     );
