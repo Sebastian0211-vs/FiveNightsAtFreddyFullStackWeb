@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { IMG, AUDIO, NOISE_MENU, WHITE_MENU, ensureFnafFont } from '../lib/menuAssets.js';
 import { runNoise, runAnimation, useFramePlayer, useSlideLoop, useLoopAudio, tvStatic } from '../lib/fnafFx.jsx';
 import rotateImg from '../../../assets/menu/screen_rotate.png'
+import {useAuth} from "../auth/AuthContext.jsx";
 // FNAF-themed Security Log — ported from src/pages/Leaderboard.html.
 const LEADERBOARD_QUERY = gql`
   query Leaderboard {
@@ -96,10 +97,16 @@ export default function Leaderboard() {
     const [sortCol, setSortCol] = useState(null);
     const [sortAsc, setSortAsc] = useState(true);
 
+    const { user, load, logout } = useAuth();
+
     useFramePlayer(noiseRef, runNoise, NOISE_MENU);
     useFramePlayer(whiteRef, runAnimation, WHITE_MENU, 0.4);
     useSlideLoop(slideRef);
     useLoopAudio([AUDIO.static2, AUDIO.bonniesLullaby]);
+
+    useEffect(() => {
+        if (!load && !user) navigate('/unauthorized');
+    }, [load, user, navigate]);
 
     useEffect(() => {
         ensureFnafFont();

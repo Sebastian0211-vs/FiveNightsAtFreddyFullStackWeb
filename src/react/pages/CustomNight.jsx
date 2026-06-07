@@ -6,6 +6,7 @@ import {
 import {
     runNoise, runAnimation, useFramePlayer, useSlideLoop, useLoopAudio, tvStatic,
 } from '../lib/fnafFx.jsx';
+import {useAuth} from "../auth/AuthContext.jsx";
 
 const STYLES = `
 .cn-root { background:#000; margin:0; height:100vh; width:100vw; position:relative; overflow:hidden; }
@@ -47,11 +48,16 @@ export default function CustomNight() {
     const slideRef = useRef(null);
     const [visible, setVisible] = useState(false);
     const [levels, setLevels] = useState({ freddy: 0, bonnie: 0, chica: 0, foxy: 0 });
+    const { user, loading, logout } = useAuth();
 
     useFramePlayer(noiseRef, runNoise, NOISE_MENU);
     useFramePlayer(whiteRef, runAnimation, WHITE_MENU, 0.4);
     useSlideLoop(slideRef);
     const audioRef = useLoopAudio([AUDIO.static2, AUDIO.unraveled]);
+
+    useEffect(() => {
+        if (!loading && !user) navigate('/unauthorized');
+    }, [loading, user, navigate]);
 
     useEffect(() => {
         ensureFnafFont();
