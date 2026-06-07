@@ -18,22 +18,22 @@ class Freddy extends Animatronic {
         const current = getRoom(this.name);
 
         if (current === 'east_hall_corner') {
-            console.log("FREDDY INTO PHASE 2")
+            //console.log("FREDDY INTO PHASE 2")
             this.phase2 = true;
             this._atDoor = true;        // ← bloque les tryMove suivants
-            console.log("FREDDY IS IN THE CORNER PLANIFIY ATTACK")
+            //console.log("FREDDY IS IN THE CORNER PLANIFIY ATTACK")
             this._scheduleAttack();
             return;
         }
 
-        console.log("Is cam active ? ", window.isTabletOpen)
-        console.log("ACTIVE CAM : ", window.activeCam, " FREDDY'S ROOM : ", current)
+        //console.log("Is cam active ? ", window.isTabletOpen)
+        //console.log("ACTIVE CAM : ", window.activeCam, " FREDDY'S ROOM : ", current)
         if (window.isTabletOpen && window.activeCam === current && ((this.ai_level < 10 && !this.phase2) || (this.phase2)))  { //&& ((this.ai_level < 10 && !this.phase2) || (this.phase2)))
-            console.log('[Freddy] being watched — no move', this.phase2);
+            //console.log('[Freddy] being watched — no move', this.phase2);
             return;
         }
 
-        console.log('[FREDDY] tries to move — AI:', this.ai_level);
+        //console.log('[FREDDY] tries to move — AI:', this.ai_level);
         if (Math.random() * 20 > this.ai_level) return; // jet raté
 
         const possibleMoves = FreddyRooms[current]?.connections ?? [];
@@ -41,7 +41,7 @@ class Freddy extends Animatronic {
         const isInKitchen = current === 'kitchen';
 
         const nextRoom = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-        console.log(`Freddy : ${current} → ${nextRoom}`);
+        //console.log(`Freddy : ${current} → ${nextRoom}`);
 
 
         const SOUNDS = [
@@ -59,7 +59,7 @@ class Freddy extends Animatronic {
         if (!ROOMS[nextRoom] || ROOMS[nextRoom].who.length === 0 || ROOMS[nextRoom].who.includes('Chica')) {
             moveToRoom(this.name, nextRoom);
             if (isInKitchen) {
-                console.log('[Freddy] is in kitchen - playing sound')
+                //console.log('[Freddy] is in kitchen - playing sound')
                 const laugh2 = new Audio('../../assets/FNaF 1 Audio/Laugh_Giggle_Girl_2d.wav')
                 laugh2.volume = 0.4;
                 laugh2.play().catch(() => {
@@ -87,21 +87,21 @@ class Freddy extends Animatronic {
                 });
             }
         } else {
-            console.log(`${nextRoom} NOT empty — stay`);
+            //console.log(`${nextRoom} NOT empty — stay`);
         }
     }
 
     _scheduleAttack() {
-        console.log("FREDDY'S SCHEDULING")
+        //console.log("FREDDY'S SCHEDULING")
         if (this._doorTimer) clearTimeout(this._doorTimer);
         this._doorTimer = setTimeout(() => this._tryEnterOffice(), ANIM_INTERVALS.freddy);
     }
 
     _tryEnterOffice() {
-        console.log("FREDDY TRY TO ENTER THE OFFICE")
+        //console.log("FREDDY TRY TO ENTER THE OFFICE")
 
         if (window.isTabletOpen && window.activeCam === 'east_hall_corner') {
-            console.log('[Freddy] being watched at door — retry later');
+            //console.log('[Freddy] being watched at door — retry later');
             this._scheduleAttack();
             return;
         }
@@ -109,18 +109,18 @@ class Freddy extends Animatronic {
             this._atDoor = false;
             this.room = 'east_hall';
             moveToRoom(this.name, this.room);
-            console.log('[Freddy] door closed, retreats to', this.room);
+            //console.log('[Freddy] door closed, retreats to', this.room);
             return;
         }
 
         // Porte ouverte → AI roll
         if (Math.random() * 20 >= this.ai_level) {
-            console.log('[Freddy] AI fail, stays at door');
+            //console.log('[Freddy] AI fail, stays at door');
             this._scheduleAttack()
             return;
         }
 
-        console.log('[Freddy] is in -> JUMPSCARE')
+        //console.log('[Freddy] is in -> JUMPSCARE')
         GameState._submitScore('jumpscare');
         playFreddyJumpscare();
 
@@ -128,12 +128,12 @@ class Freddy extends Animatronic {
         /*
         const rightlift = state.right.light === 'on';
         if (rightlift) {
-            console.log('[Chica] caught in light — jumpscare!');
+            //console.log('[Chica] caught in light — jumpscare!');
             this._atDoor = false;
             window.chicaAtDoor = false;
             playChicaJumpscare();
         } else {
-            console.log('[Chica] silent entry');
+            //console.log('[Chica] silent entry');
             this._atDoor  = false;
             this.inOffice = true;
             window.chicaAtDoor  = false;

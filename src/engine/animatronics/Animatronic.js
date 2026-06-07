@@ -26,7 +26,7 @@ class Animatronic {
         }
         if (boost > 0 && !this._boostApplied) {
             this._boostApplied = true;
-            console.log(`[${this.name}] AI boost applied: +${boost} (hour: ${HOURS[GameState.getCurrentHour()]})`);
+            //console.log(`[${this.name}] AI boost applied: +${boost} (hour: ${HOURS[GameState.getCurrentHour()]})`);
             this.level += boost;
         }
         return this.level;

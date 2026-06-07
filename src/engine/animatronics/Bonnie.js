@@ -33,7 +33,7 @@ class Bonnie extends Animatronic {
 
         if (this._atDoor || this.inOffice) return;
 
-        console.log('[Bonnie] tries to move — AI:', this.ai_level);
+        //console.log('[Bonnie] tries to move — AI:', this.ai_level);
         if (Math.random() * 20 > this.ai_level) return; // jet raté
 
         const current       = getRoom(this.name);
@@ -42,7 +42,7 @@ class Bonnie extends Animatronic {
         if (!possibleMoves.length) return;
 
         const nextRoom = possibleMoves[Math.floor(Math.random() * possibleMoves.length)];
-        console.log(`Bonnie: ${current} → ${nextRoom}`);
+        //console.log(`Bonnie: ${current} → ${nextRoom}`);
 
         // Arrivée devant la porte gauche
         if (nextRoom === 'office_left') {
@@ -50,10 +50,10 @@ class Bonnie extends Animatronic {
                 moveToRoom(this.name, nextRoom);
                 this._atDoor = true;
                 window.bonnieAtDoor = true;
-                console.log('[Bonnie] AT THE DOOR — waiting to attack');
+                //console.log('[Bonnie] AT THE DOOR — waiting to attack');
                 this._scheduleAttack();
             } else {
-                console.log(`${nextRoom} NOT empty — stay`);
+                //console.log(`${nextRoom} NOT empty — stay`);
             }
             return;
         }
@@ -62,13 +62,13 @@ class Bonnie extends Animatronic {
         if (!ROOMS[nextRoom] || ROOMS[nextRoom].who.length === 0 && !this.inOffice) {
             moveToRoom(this.name, nextRoom);
             if (inCloseSector) {
-                console.log('[Bonnie] entered close sector — chance to head to door');
+                //console.log('[Bonnie] entered close sector — chance to head to door');
                 const stepssfx = new Audio('../../assets/FNaF 1 Audio/deep steps.wav');
                 stepssfx.volume = 1;
                 stepssfx.play().catch(() => {});
             }
         } else {
-            console.log(`${nextRoom} NOT empty — stay`);
+            //console.log(`${nextRoom} NOT empty — stay`);
         }
 
     }
@@ -91,12 +91,12 @@ class Bonnie extends Animatronic {
             window.bonnieAtDoor = false;
             this.room = Math.random() < 0.5 ? 'dining_area' : 'west_hall';
             moveToRoom(this.name, this.room);
-            console.log('[Bonnie] door closed, retreats to', this.room);
+            //console.log('[Bonnie] door closed, retreats to', this.room);
             return;
         }
 
         if (Math.random() * 20 >= this.ai_level) {
-            console.log('[Bonnie] AI fail, stays at door — retrying');
+            //console.log('[Bonnie] AI fail, stays at door — retrying');
             this._scheduleAttack();
             return;
         }
@@ -104,13 +104,13 @@ class Bonnie extends Animatronic {
         // Succès → lumière allumée = screamer immédiat, sinon entrée silencieuse
         const leftLit = state.left.light === 'on';
         if (leftLit) {
-            console.log('[Bonnie] caught in light — jumpscare!');
+            //console.log('[Bonnie] caught in light — jumpscare!');
             this._atDoor = false;
             window.bonnieAtDoor = false;
             GameState._submitScore('jumpscare');
             playBonnieJumpscare();
         } else {
-            console.log('[Bonnie] silent entry');
+            //console.log('[Bonnie] silent entry');
             this._atDoor  = false;
             this.inOffice = true;
             window.bonnieAtDoor  = false;
@@ -124,14 +124,14 @@ class Bonnie extends Animatronic {
     onTabletOpen() {
         if (this.inOffice) {
             this._tabletWasOpen = true;
-            console.log('[Bonnie] Tablet opened while in office — will strike on close');
+            //console.log('[Bonnie] Tablet opened while in office — will strike on close');
         }
     }
 
     // ── Appelé par mainroom quand la tablette est REFERMÉE ────
     onTabletClose() {
         if (this.inOffice && this._tabletWasOpen) {
-            console.log('[Bonnie] Tablet closed — JUMPSCARE');
+            //console.log('[Bonnie] Tablet closed — JUMPSCARE');
             this._tabletWasOpen   = false;
             this.inOffice         = false;
             window.bonnieInOffice = false;

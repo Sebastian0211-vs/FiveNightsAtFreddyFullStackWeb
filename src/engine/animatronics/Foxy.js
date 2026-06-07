@@ -17,7 +17,7 @@ class Foxy extends Animatronic {
         this.locked = true;
         if (this.lockTimer) clearTimeout(this.lockTimer);
         this.lockTimer = setTimeout(() => { this.locked = false; }, lockMs);
-        console.log(`[Foxy] locked for ${(lockMs / 1000).toFixed(2)}s`);
+        //console.log(`[Foxy] locked for ${(lockMs / 1000).toFixed(2)}s`);
     }
 
     // ── Called every 5.01 s ──────────────────────────────────────
@@ -27,16 +27,16 @@ class Foxy extends Animatronic {
         if (this._powerOutTriggered) return; // power out → auto-fail
         if (this.locked)          return;          // post-tablet lock → auto-fail
         if (window.isTabletOpen)  return;          // tablet open → auto-fail
-        console.log("[Foxy] tries to move with an AI level of " + this.ai_level);
+        //console.log("[Foxy] tries to move with an AI level of " + this.ai_level);
         if (Math.random() * 20 >= this.ai_level) return; // normal AI roll
 
         this.stage++;
-        console.log(`[Foxy] stage → ${this.stage}`);
+        //console.log(`[Foxy] stage → ${this.stage}`);
         if (this.stage === 4) this._startSprint();
     }
 
     _startSprint() {
-        console.log('[Foxy] RUNNING — 25 s to attack');
+        //console.log('[Foxy] RUNNING — 25 s to attack');
         window.foxyRunning     = true;
         window.foxyRunAnimDone = false;
         this._runSfxPlayed     = false;
@@ -66,7 +66,7 @@ class Foxy extends Animatronic {
         this._playRunSfx();
         if (this.sprintTimer)  { clearTimeout(this.sprintTimer);  this.sprintTimer  = null; }
         if (this._runSfxTimer) { clearTimeout(this._runSfxTimer); this._runSfxTimer = null; }
-        console.log('[Foxy] Seen running — 3 s to close door');
+        //console.log('[Foxy] Seen running — 3 s to close door');
         this.sprintTimer = setTimeout(() => {
             if (this._6amTriggered) return;
             this._attack();
@@ -92,7 +92,7 @@ class Foxy extends Animatronic {
         GameState.rawPower = Math.max(0, GameState.rawPower - rawDrain);
         this.bangCount++;
         this.stage = Math.random() < 0.5 ? 1 : 2;
-        console.log(`[Foxy] banged door! −${pct}% power. Retreats to stage ${this.stage}`);
+        //console.log(`[Foxy] banged door! −${pct}% power. Retreats to stage ${this.stage}`);
         const bangSfx = new Audio('../../assets/FNaF 1 Audio/knock2.wav');
         bangSfx.volume = 0.8;
         bangSfx.play().catch(() => {});

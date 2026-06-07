@@ -5,7 +5,7 @@
     <link rel="icon" href="/favicon.ico?v=2" sizes="any" />
     <link rel="apple-touch-icon" href="/favicon.png?v=2" />
     <base href="/src/pages/">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>FNAF Viewer</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -196,6 +196,10 @@
             line-height: 1.5;
             font-size: clamp(16px, 2.2vw, 40px);
         }
+
+        @media (max-width: 768px) and (orientation: portrait) {
+            #rotate-hint { display: flex !important; }
+        }
     </style>
 </head>
 <body>
@@ -275,6 +279,15 @@
     }
     resize();
     window.addEventListener('resize', resize);
+    window.addEventListener('wheel', (e) => {
+        if (e.ctrlKey) e.preventDefault();
+    }, { passive: false });
+
+    window.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '0')) {
+            e.preventDefault();
+        }
+    });
 
     // --- Audio ---
     const audioBase = '../../assets/FNaF 1 Audio/';
@@ -1161,5 +1174,27 @@
 
 </script>
 <script src="../camera/minimap.js"></script>
+<div id="rotate-hint" style="
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: #000;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: all;
+">
+    <img src="../../Assets/Menu/screen_rotate.png" style="width: 60%; max-width: 280px; height: auto;" />
+    <p style="
+        color: rgba(255,255,255,0.7);
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-top: 24px;
+        text-align: center;
+    ">Please rotate your device</p>
+</div>
 </body>
 </html>
