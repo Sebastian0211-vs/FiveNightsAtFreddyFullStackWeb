@@ -14,7 +14,7 @@
 // ============================================================
 const API_BASE = window.location.hostname === 'localhost'
     ? `http://localhost:3002`
-    : `https://fnaf.sy-baubau.ch:3001`;
+    : window.location.origin;
 
 async function saveProgress(night) {
     await fetch(`${API_BASE}/api/auth/progress`, {

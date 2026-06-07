@@ -329,7 +329,7 @@
         if (sfxPhone) sfxPhone.play().catch(() => {});
         playAmbienceLoop();
     }
-    const API = '%VITE_API_URL%';
+    const API = window.location.hostname === 'localhost' ? 'http://localhost:3002' : window.location.origin;
 
     window.onload = async () => {
         // Guard
