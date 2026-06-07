@@ -8,6 +8,7 @@
     "dev:server": "nodemon server/src/index.js",
     "start": "node server/src/index.js",
     "seed:debug": "node server/src/scripts/seedDebugUser.js",
+    "manifest": "node server/src/scripts/buildPreloadManifest.js",
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
