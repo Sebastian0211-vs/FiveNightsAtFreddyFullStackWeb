@@ -15,8 +15,22 @@ import Warning from './pages/Warning.jsx';
 import Unauthorized from './pages/Unauthorized.jsx';
 import CustomNight from './pages/CustomNight.jsx';
 import ResetPassword from './pages/ResetPassword.jsx'
+import {useEffect} from "react";
 
 export default function App() {
+    useEffect(() => {
+        const blockZoom = (e) => { if (e.ctrlKey) e.preventDefault(); };
+        const blockKeys = (e) => {
+            if (e.ctrlKey && (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '0'))
+                e.preventDefault();
+        };
+        window.addEventListener('wheel', blockZoom, { passive: false });
+        window.addEventListener('keydown', blockKeys);
+        return () => {
+            window.removeEventListener('wheel', blockZoom);
+            window.removeEventListener('keydown', blockKeys);
+        };
+    }, []);
     return (
         <ApolloProvider client={apolloClient}>
             <AuthProvider>
@@ -37,4 +51,5 @@ export default function App() {
                         </AuthProvider>
         </ApolloProvider>
     );
+
 }
