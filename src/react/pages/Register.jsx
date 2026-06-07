@@ -301,6 +301,11 @@ const STYLES = `
     .taser-ready { animation: taserPulse 1.2s ease-in-out infinite; cursor: pointer; pointer-events: auto; }
     .taser-empty { opacity: 0.25; cursor: not-allowed; filter: grayscale(1); pointer-events: auto; }
 
+    @keyframes infoFade {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+    }
+
     @keyframes failedFadeIn {
         from { opacity: 0; letter-spacing: 0.35em; }
         to   { opacity: 1; letter-spacing: 0.18em; }
@@ -372,6 +377,7 @@ export default function Register() {
     const [isFlicker,   setIsFlicker]   = useState(false);
     const [isDead,      setIsDead]      = useState(false);
     const [deathScreen, setDeathScreen] = useState('none');
+    const [showInfo,    setShowInfo]    = useState(false);
 
     const windowsRef    = useRef(rollWindows());
     const accumRef      = useRef(0);
@@ -904,24 +910,102 @@ export default function Register() {
                 </div>
             )}
 
-            {/* Step indicator */}
-            <div style={{
-                position: 'fixed', top: 'clamp(10px, 1.5vh, 20px)', left: 'clamp(10px, 1.5vw, 20px)',
-                zIndex: 30, display: 'flex', gap: 'clamp(4px, 0.5vw, 8px)', pointerEvents: 'none',
-            }}>
-                {[1,2,3,4].map(s => (
-                    <div key={s} style={{
-                        width: 'clamp(8px, 0.9vw, 13px)', height: 'clamp(8px, 0.9vw, 13px)',
+            {/* Info button — top-right, away from taser & form */}
+            {!isDead && (
+                <button
+                    onClick={() => setShowInfo(true)}
+                    aria-label="How to play"
+                    style={{
+                        position: 'fixed',
+                        top:   'clamp(12px, 1.8vh, 24px)',
+                        right: 'clamp(12px, 1.8vw, 24px)',
+                        width:  'clamp(28px, 2.6vw, 40px)',
+                        height: 'clamp(28px, 2.6vw, 40px)',
                         borderRadius: '50%',
-                        background: animStep >= s
-                            ? (s === 4 ? '#cc2200' : 'rgba(255,220,100,0.9)')
-                            : 'rgba(255,255,255,0.1)',
-                        border: '1px solid rgba(255,255,255,0.2)',
-                        boxShadow: animStep >= s ? `0 0 5px ${s === 4 ? '#cc2200' : '#ffd060'}` : 'none',
-                        transition: 'background 0.3s, box-shadow 0.3s',
-                    }} />
-                ))}
-            </div>
+                        background: 'rgba(20,10,3,0.45)',
+                        border: '1px solid rgba(255,220,150,0.45)',
+                        color: 'rgba(255,225,160,0.85)',
+                        fontFamily: '"Courier New", Courier, monospace',
+                        fontSize: 'clamp(14px, 1.4vw, 20px)',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        zIndex: 40,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        textShadow: '0 0 8px rgba(255,200,120,0.5)',
+                        transition: 'background 0.2s, box-shadow 0.2s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(40,20,5,0.7)'; e.currentTarget.style.boxShadow = '0 0 12px rgba(255,200,120,0.4)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(20,10,3,0.45)'; e.currentTarget.style.boxShadow = 'none'; }}
+                >?</button>
+            )}
+
+            {/* How-to-play overlay */}
+            {showInfo && (
+                <div
+                    onClick={() => setShowInfo(false)}
+                    style={{
+                        position: 'fixed', inset: 0, zIndex: 950,
+                        background: 'rgba(0,0,0,0.78)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        padding: 'clamp(16px, 4vw, 48px)',
+                        animation: 'infoFade 0.25s ease',
+                    }}
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        style={{
+                            position: 'relative',
+                            width: 'clamp(280px, 90vw, 540px)',
+                            maxHeight: '86vh', overflowY: 'auto',
+                            background: 'rgba(226,212,182,0.97)',
+                            border: '1px solid rgba(40,20,5,0.4)',
+                            boxShadow: '0 0 40px rgba(0,0,0,0.6)',
+                            borderRadius: 'var(--rf-radius)',
+                            padding: 'clamp(18px, 3vw, 34px)',
+                            fontFamily: '"Courier New", Courier, monospace',
+                            color: 'rgba(30,15,3,0.92)',
+                        }}
+                    >
+                        <button
+                            onClick={() => setShowInfo(false)}
+                            aria-label="Close"
+                            style={{
+                                position: 'absolute', top: 'clamp(8px,1.2vw,14px)', right: 'clamp(10px,1.2vw,16px)',
+                                background: 'none', border: 'none', cursor: 'pointer',
+                                fontFamily: '"Courier New", Courier, monospace',
+                                fontSize: 'clamp(16px,1.6vw,22px)', color: 'rgba(40,20,5,0.65)', lineHeight: 1,
+                            }}
+                        >✕</button>
+
+                        <h2 style={{
+                            margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: '0.16em',
+                            fontSize: 'clamp(15px, 1.7vw, 22px)',
+                        }}>Night Shift Sign-Up</h2>
+                        <p style={{ margin: '0 0 14px', fontSize: 'var(--rf-hint)', opacity: 0.7, letterSpacing: '0.06em' }}>
+                            Fill out the form without getting dragged into the dark.
+                        </p>
+
+                        <ol style={{ margin: 0, paddingLeft: '1.4em', fontSize: 'var(--rf-label)', lineHeight: 1.7, letterSpacing: '0.03em' }}>
+                            <li><strong>Open the slip.</strong> Hover or click the tab at the bottom to raise the paper and type your details.</li>
+                            <li><strong>It only moves while the paper is up.</strong> Something creeps closer the whole time the form is open. Drop the paper to freeze it in place.</li>
+                            <li><strong>Listen for its movements.</strong> When the low pulse kicks in, it is one step from lunging, drop the paper <em>now</em>.</li>
+                            <li><strong>Tase it back.</strong> With the paper down, click the taser (or press <strong>Ctrl</strong>) to shock it back to the shadows. You have <strong>3 charges only</strong>, so spend them wisely.</li>
+                            <li><strong>Do not get caught.</strong> If it reaches you, it jumps and your sign-up fails. Back to the login door.</li>
+                            <li><strong>Finish the form.</strong> </li>
+                        </ol>
+
+                        <p style={{ margin: '14px 0 0', fontSize: 'var(--rf-hint)', opacity: 0.65, letterSpacing: '0.05em' }}>
+                            Tip: type a little, drop and tase, repeat. Typing is deliberately slow and pasting is disabled.
+                        </p>
+
+                        <button
+                            onClick={() => setShowInfo(false)}
+                            className="tw-btn"
+                            style={{ marginTop: 'clamp(14px,2vh,22px)' }}
+                        >[ Got it ]</button>
+                    </div>
+                </div>
+            )}
 
             {/* Back button */}
             <button onClick={goBack} style={{
