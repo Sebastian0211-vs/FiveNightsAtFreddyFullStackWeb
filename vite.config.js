@@ -29,6 +29,9 @@ function htmlRewrites() {
 export default defineConfig({
   plugins: [react(), htmlRewrites()],
   build: {
+    // Keep hashed bundle output under /bundle so it doesn't collide with the
+    // raw game asset folder served at /assets in production (see DEPLOYMENT.md).
+    assetsDir: 'bundle',
     rollupOptions: {
       input: {
         main:     resolve(__dirname, 'index.html'),
