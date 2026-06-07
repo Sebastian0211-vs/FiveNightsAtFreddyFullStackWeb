@@ -415,7 +415,7 @@ const GameState = {
     on6AM() {
         if (this._6amTriggered) return;
         this._6amTriggered = true;
-        console.log('6 AM — night complete');
+        //console.log('6 AM - night complete');
         this._submitScore('win');
 
         // 6 AM is absolute: instantly stop everything — all audio, the camera
