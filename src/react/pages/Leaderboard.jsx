@@ -97,7 +97,7 @@ export default function Leaderboard() {
     const [sortCol, setSortCol] = useState(null);
     const [sortAsc, setSortAsc] = useState(true);
 
-    const { user, load, logout } = useAuth();
+    const { user, loading: authLoading, logout } = useAuth();
 
     useFramePlayer(noiseRef, runNoise, NOISE_MENU);
     useFramePlayer(whiteRef, runAnimation, WHITE_MENU, 0.4);
@@ -105,8 +105,8 @@ export default function Leaderboard() {
     useLoopAudio([AUDIO.static2, AUDIO.bonniesLullaby]);
 
     useEffect(() => {
-        if (!load && !user) navigate('/unauthorized');
-    }, [load, user, navigate]);
+        if (!authLoading && !user) navigate('/unauthorized');
+    }, [authLoading, user, navigate]);
 
     useEffect(() => {
         ensureFnafFont();
