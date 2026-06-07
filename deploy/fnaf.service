@@ -1,0 +1,22 @@
+# /etc/systemd/system/fnaf.service
+# Runs the Express + Apollo API. Keep User/Group matching the owner of
+# /var/www/fnaf (the old setup runs as `ubuntu`).
+
+[Unit]
+Description=FNaF full-stack API
+After=network.target mongod.service
+Wants=mongod.service
+
+[Service]
+Type=simple
+WorkingDirectory=/var/www/fnaf
+ExecStart=/usr/bin/node server/src/index.js
+EnvironmentFile=/var/www/fnaf/.env
+Restart=on-failure
+RestartSec=3
+User=ubuntu
+Group=ubuntu
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
