@@ -863,14 +863,17 @@ export default function Register() {
             <img
                 src={isOpen ? hint_close : hint_open}
                 onMouseEnter={onHintHover}
+                onClick={onHintHover}
                 style={{
                     position: 'fixed', bottom: 0, left: '50%',
                     transform: 'translateX(-50%)',
-                    width: '40%', height: 'auto',
+                    width: 'clamp(150px, 40%, 400px)',
+                    height: 'auto',
                     zIndex: 10, cursor: 'pointer', opacity: 0.85,
                     display: isDead ? 'none' : 'block',
                 }}
             />
+
 
             {/* Taser — responsive: scales with viewport */}
             {showTaser && (
