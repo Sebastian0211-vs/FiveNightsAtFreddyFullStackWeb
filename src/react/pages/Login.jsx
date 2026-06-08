@@ -56,11 +56,6 @@ const SWIPE_THRESHOLD = 40;
 
 TABLE_FRAMES.slice(0, -1).forEach(src => { const i = new Image(); i.src = src; });
 
-// ─────────────────────────────────────────────────────────────────────────────
-// STYLES — fully responsive using clamp() with sensible min/max
-// Key fix: max values were too small (e.g. 14px, 18px).
-// Now using viewport-relative values that scale properly on all screen sizes.
-// ─────────────────────────────────────────────────────────────────────────────
 const STYLES = `
     /* ── Responsive base ── */
 
@@ -230,13 +225,13 @@ export default function Login() {
         tapeCtxRef.current = ctx;
         const source = ctx.createMediaElementSource(audio);
 
-        // Highpass — remove sub-bass (tape rolls off below ~200Hz)
+        // Highpass - remove sub-bass (tape rolls off below ~200Hz)
         const hp = ctx.createBiquadFilter();
         hp.type = 'highpass';
         hp.frequency.value = 220;
         hp.Q.value = 0.7;
 
-        // Lowpass — cut crisp highs (cassette bandwidth ~8kHz)
+        // Lowpass - cut crisp highs (cassette bandwidth ~8kHz)
         const lp = ctx.createBiquadFilter();
         lp.type = 'lowpass';
         lp.frequency.value = 4000;
@@ -264,7 +259,6 @@ export default function Login() {
         mid.connect(gain);
         gain.connect(ctx.destination);
 
-        // Wow & flutter — slow playback rate wobble like worn tape
         wowTimerRef.current = setInterval(() => {
             if (!tapeRef.current) return;
             tapeRef.current.playbackRate = 1 + (Math.random() - 0.5) * 0.012;
@@ -437,10 +431,6 @@ export default function Login() {
         };
     }, []);
 
-    // ── Responsive form position
-    // Uses vw/vh percentages so it scales with any resolution.
-    // The form width is 18vw (capped at 320px, min 200px) and positioned
-    // relative to the paper image which is centred on screen.
     const formStyle = {
         position: 'absolute',
         top: '50%',
@@ -460,7 +450,7 @@ export default function Login() {
         <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden', background: '#000' }}>
             <style>{STYLES}</style>
 
-            {/* z-index 0 — table frame */}
+            {/* z-index 0 - table frame */}
             <img src={TABLE_FRAMES[frameIndex]} style={{
                 position: 'absolute', inset: 0,
                 width: '100%', height: '100%',
@@ -468,7 +458,7 @@ export default function Login() {
                 zIndex: 0, pointerEvents: 'none',
             }} />
 
-            {/* z-index 0 — Baby look-up rare event (replaces frame 0 only) */}
+            {/* z-index 0 - Baby look-up rare event (replaces frame 0 only) */}
             {lookUpFrame && (
                 <img src={lookUpFrame} style={{
                     position: 'absolute', inset: 0,
@@ -478,7 +468,7 @@ export default function Login() {
                 }} />
             )}
 
-            {/* z-index 1 — light bulb sliding up */}
+            {/* z-index 1 - light bulb sliding up */}
             <img src={light_bulb} style={{
                 position: 'absolute',
                 top: 0, left: '50%',
@@ -488,7 +478,7 @@ export default function Login() {
                 zIndex: 1, pointerEvents: 'none',
             }} />
 
-            {/* z-index 2 — flickering 986 overlay */}
+            {/* z-index 2 - flickering 986 overlay */}
             <img src={overlay} style={{
                 position: 'absolute', inset: 0,
                 width: '100%', height: '100%',
@@ -499,7 +489,7 @@ export default function Login() {
 
 
 
-            {/* Tape player clickable hotspot — visible only when form is open */}
+            {/* Tape player clickable hotspot - visible only when form is open */}
             {formVisible && (
                 <div onClick={toggleTape} title={tapePlaying ? 'Stop tape' : 'Play tape'} style={{
                     position: 'absolute',
@@ -512,11 +502,11 @@ export default function Login() {
                 }} />
             )}
 
-            {/* z-index 10 — login / forgot-password form on the paper */}
+            {/* z-index 10 - login / forgot-password form on the paper */}
             {formVisible && (
                 <div style={formStyle}>
                     {forgotMode ? (
-                        // ── Forgot password view ──
+                        //Forgot password view
                         forgotStatus === 'sent' ? (
                             <>
                                 <div style={{ fontSize: 'var(--form-font-small)', color: 'rgba(180,255,173,0.9)', textAlign: 'center', lineHeight: 1.5 }}>
@@ -548,7 +538,7 @@ export default function Login() {
                             </>
                         )
                     ) : (
-                        // ── Normal login view ──
+                        //Normal login view 
                         <>
                             <div>
                                 <div className="tw-label">Username</div>

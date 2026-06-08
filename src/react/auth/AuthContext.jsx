@@ -5,7 +5,7 @@ import { apolloClient } from '../lib/apollo.js';
 
 const AuthContext = createContext(null);
 
-// Session/profile data is fetched via GraphQL (requirement 8.2 — all data
+// Session/profile data is fetched via GraphQL (requirement 8.2, all data
 // retrieved through GraphQL). Login/register/logout stay on the Passport
 // REST endpoints (requirement 7.4) since they set/clear the HttpOnly cookie.
 const ME_QUERY = gql`

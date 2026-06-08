@@ -198,11 +198,6 @@ function useSlowInput(initialValue = '') {
     return { value, onChange, onKeyDown, onPaste, reset };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// STYLES — fully responsive
-// Core fix: replace all clamp(Xpx, Y.Yvw, Zpx) where Z was too small.
-// Now fonts scale from ~12px (mobile) up to ~22px (1440p+) smoothly.
-// ─────────────────────────────────────────────────────────────────────────────
 const STYLES = `
     :root {
         --rf-base:   clamp(13px, 1.35vw, 22px);   /* main input / button text  */
@@ -746,7 +741,7 @@ export default function Register() {
                 }}
             />
 
-            {/* ── Form — responsive width & font via CSS vars ── */}
+            {/* Form — responsive width & font via CSS vars ── */}
             {paperSettled && (
                 <div style={{
                     position: 'absolute',
@@ -876,8 +871,6 @@ export default function Register() {
                 }}
             />
 
-
-            {/* Taser — responsive: scales with viewport */}
             {showTaser && (
                 <div style={{
                     position: 'fixed',
@@ -906,7 +899,7 @@ export default function Register() {
                 </div>
             )}
 
-            {/* Info button — top-right, away from taser & form */}
+            {/* Info button - top-right, away from taser & form */}
             {!isDead && (
                 <button
                     onClick={() => setShowInfo(true)}

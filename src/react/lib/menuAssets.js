@@ -1,5 +1,5 @@
 // ============================================================
-//  menuAssets.js — bundled asset URLs + animation frame data
+//  menuAssets.js, bundled asset URLs + animation frame data
 //  for the React-migrated menu-family pages (Menu, Leaderboard,
 //  CustomNight, Unauthorized, Warning).
 //

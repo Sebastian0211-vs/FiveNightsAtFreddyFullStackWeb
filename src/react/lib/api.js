@@ -1,4 +1,4 @@
-// Thin REST helper — every call sends the auth cookie.
+// Thin REST helper, every call sends the auth cookie.
 const BASE = import.meta.env.VITE_API_URL || 'http://localhost:3002';
 
 export async function api(path, { method = 'GET', body } = {}) {

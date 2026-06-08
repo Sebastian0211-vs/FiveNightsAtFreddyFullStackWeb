@@ -1,16 +1,16 @@
 // ============================================================
-//  gamelogic.js  —  Game state, power, animatronic AI, jumpscares
+//  gamelogic.js ,  Game state, power, animatronic AI, jumpscares
 //
 //  Depends on:  animations.js  (animation defs)
 //  Expects these globals from mainroom.html (renderer):
-//    state            — door/light state object  { left, right }
-//    powerOut         — boolean flag (set here, read by renderer)
-//    window._powerOutEyeFrame — string flag read by renderer draw()
+//    state           , door/light state object  { left, right }
+//    powerOut        , boolean flag (set here, read by renderer)
+//    window._powerOutEyeFrame, string flag read by renderer draw()
 //    sfxFan, sfxPhone, sfxLight, sfxCameraLoop, camAudio
 //    stopCamVideo()
 //    startDoorAnim(side, direction)
-//    renderPaused     — boolean, pauses the canvas render loop
-//    ctx, W, H        — canvas context + dimensions
+//    renderPaused    , boolean, pauses the canvas render loop
+//    ctx, W, H       , canvas context + dimensions
 // ============================================================
 const API_BASE = window.location.hostname === 'localhost'
     ? `http://localhost:3002`
@@ -142,7 +142,7 @@ const GameState = {
             return;
         }
 
-        // Power out — kick off the sequence once, then keep returning each tick
+        // Power out, kick off the sequence once, then keep returning each tick
         if (this.rawPower <= 0) {
             this.render();
             this.onPowerOut();
@@ -275,7 +275,7 @@ const GameState = {
 
         // ── Freddy approaches ────────────────────────────────
         this._powerOutTimers.push(setTimeout(() => {
-            if(this._6amTriggered) return; // night over → abort sequence
+            if(this._6amTriggered) return; // night over -> abort sequence
             const steps1 = new Audio('../../assets/FNaF 1 Audio/deep steps.wav');
             steps1.volume = 0.15;
             steps1.play().catch(() => {});
@@ -286,7 +286,7 @@ const GameState = {
                 steps2.play().catch(() => {});
 
                 setTimeout(() => {
-                    if(this._6amTriggered) return; // night over → abort sequence
+                    if(this._6amTriggered) return; // night over -> abort sequence
                     const steps3 = new Audio('../../assets/FNaF 1 Audio/deep steps.wav');
                     steps3.volume = 0.85;
                     steps3.play().catch(() => {});
@@ -358,7 +358,7 @@ const GameState = {
 
                         // ── After ~20 s: Freddy jumpscare ────────────────
                         this._powerOutTimers.push(setTimeout(() => {
-                            if(this._6amTriggered) return; // night over → abort sequence
+                            if(this._6amTriggered) return; // night over -> abort sequence
                             musicBox.pause();
                             window._powerOutEyeFrame = 'black';
 
@@ -374,7 +374,7 @@ const GameState = {
                             let ft = 0;
                             flickSeq.forEach(({ play, duration }) => {
                                 this._powerOutTimers.push(setTimeout(() => {
-                                    if(this._6amTriggered) return; // night over → abort sequence
+                                    if(this._6amTriggered) return; // night over -> abort sequence
                                     if (play) {
                                         const buzz = new Audio('../../assets/FNaF 1 Audio/Buzz_Fan_Florescent2.wav');
                                         buzz.volume = 1;
@@ -389,7 +389,7 @@ const GameState = {
                             });
 
                             this._powerOutTimers.push(setTimeout(() => {
-                                if(this._6amTriggered) return; // night over → abort sequence
+                                if(this._6amTriggered) return; // night over -> abort sequence
                                 window._powerOutEyeFrame = 'black';
                                 const steps4 = new Audio('../../assets/FNaF 1 Audio/deep steps.wav');
                                 steps4.volume = 1;
@@ -418,7 +418,7 @@ const GameState = {
         //console.log('6 AM - night complete');
         this._submitScore('win');
 
-        // 6 AM is absolute: instantly stop everything — all audio, the camera
+        // 6 AM is absolute: instantly stop everything, all audio, the camera
         // tablet, and every animatronic timer (this overrides the power-out
         // sequence too).
         if (typeof window.stopAllAudio === 'function') window.stopAllAudio();
@@ -661,7 +661,7 @@ setInterval(() => {
     _bonnieWHCornerRoll = Math.floor(Math.random() * 30) + 1;
 }, 50);
 
-// West Hall (CAM 2A) light flicker — random, weighted toward lit
+// West Hall (CAM 2A) light flicker, random, weighted toward lit
 let _westHallLit = true;
 setInterval(() => {
     _westHallLit = Math.random() < 0.72;
@@ -797,7 +797,7 @@ function initGameLogic() {
         if (window.isTabletOpen && !_prevTabletOpen) GameState.cameraFlicks++;
         _prevTabletOpen = !!window.isTabletOpen;
 
-        // Door close: rising edge of door → 'closed'
+        // Door close: rising edge of door -> 'closed'
         if (state.left.door  === 'closed' && _prevLeftDoor  !== 'closed') GameState.doorCloses++;
         if (state.right.door === 'closed' && _prevRightDoor !== 'closed') GameState.doorCloses++;
         _prevLeftDoor  = state.left.door;

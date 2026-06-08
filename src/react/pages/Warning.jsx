@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { IMG, ensureFnafFont } from '../lib/menuAssets.js';
 
-// Ported from src/pages/Warning.html — click-to-continue splash.
+// Ported from src/pages/Warning.html - click-to-continue splash.
 export default function Warning() {
     const navigate = useNavigate();
     const [visible, setVisible] = useState(false);

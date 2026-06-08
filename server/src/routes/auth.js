@@ -24,7 +24,7 @@ async function containsProfanity(text) {
         const body = await res.text();
         return body.trim() === 'true';
     } catch {
-        return false; // fail open — don't block registration if API is down
+        return false; // fail open, don't block registration if API is down
     }
 }
 
@@ -83,7 +83,7 @@ router.post('/logout', (req, res) => {
     res.json({ success: true });
 });
 
-// ME — info on the connected user
+// ME - info on the connected user
 router.get('/me', requireAuth, async (req, res) => {
     const user = req.user;
     // Backfill bestNight for accounts created before it existed.
@@ -99,7 +99,7 @@ router.get('/me', requireAuth, async (req, res) => {
     });
 });
 
-// PROGRESS — record a cleared night. Bumps the resettable furthestNight and
+// PROGRESS,  record a cleared night. Bumps the resettable furthestNight and
 // the permanent bestNight (used for the Custom Night unlock + menu stars).
 router.put('/progress', requireAuth, async (req, res) => {
     try {
@@ -123,7 +123,7 @@ router.put('/progress', requireAuth, async (req, res) => {
     }
 });
 
-// FORGOT PASSWORD — send reset email
+// FORGOT PASSWORD, send reset email
 router.post('/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
@@ -164,7 +164,7 @@ router.post('/forgot-password', async (req, res) => {
     }
 });
 
-// RESET PASSWORD — consume token, set new password
+// RESET PASSWORD, consume token, set new password
 router.post('/reset-password', async (req, res) => {
     try {
         const { token, password } = req.body;

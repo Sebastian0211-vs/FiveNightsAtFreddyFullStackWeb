@@ -62,7 +62,7 @@ beforeAll(async () => {
     app = await buildApp();
 });
 
-// INTEGRATION TEST #1 — REST register + login flow sets HttpOnly cookie
+// INTEGRATION TEST #1 - REST register + login flow sets HttpOnly cookie
 describe('POST /api/auth/register + /login', () => {
     it('registers a user, sets HttpOnly cookie, allows /me', async () => {
         const reg = await request(app)
@@ -85,7 +85,7 @@ describe('POST /api/auth/register + /login', () => {
     });
 });
 
-// INTEGRATION TEST #2 — GraphQL me query is gated by the same cookie
+// INTEGRATION TEST #2 - GraphQL me query is gated by the same cookie
 describe('GraphQL /graphql', () => {
     it('returns null me when unauthenticated', async () => {
         const res = await request(app)

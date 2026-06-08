@@ -17,7 +17,7 @@ class Chica extends Animatronic {
         // Immobile si elle attend devant la porte ou qu'elle est déjà dans le bureau
         if (this._atDoor || this.inOffice) return;
 
-        //console.log('[CHICA] tries to move — AI:', this.ai_level);
+        //console.log('[CHICA] tries to move, AI:', this.ai_level);
         if (Math.random() * 20 > this.ai_level) return; // jet raté
 
         const current       = getRoom(this.name);
@@ -35,10 +35,10 @@ class Chica extends Animatronic {
                 moveToRoom(this.name, nextRoom);
                 this._atDoor = true;
                 window.chicaAtDoor = true;
-                //console.log('[CHICA] AT THE DOOR — waiting to attack');
+                //console.log('[CHICA] AT THE DOOR, waiting to attack');
                 this._scheduleAttack();
             } else {
-                //console.log(`${nextRoom} NOT empty — stay`);
+                //console.log(`${nextRoom} NOT empty, stay`);
             }
             return;
         }
@@ -47,7 +47,7 @@ class Chica extends Animatronic {
         if (!ROOMS[nextRoom] || ROOMS[nextRoom].who.length === 0 || ROOMS[nextRoom].who.includes('Freddy')) {
             moveToRoom(this.name, nextRoom);
             if (inCloseSector) {
-                //console.log('[Chica] entered close sector — chance to head to door');
+                //console.log('[Chica] entered close sector, chance to head to door');
                 const stepssfx = new Audio('../../assets/FNaF 1 Audio/deep steps.wav');
                 stepssfx.volume = 1;
                 stepssfx.play().catch(() => {});
@@ -74,17 +74,17 @@ class Chica extends Animatronic {
             return;
         }
 
-        // Porte ouverte → AI roll
+        // Porte ouverte -> AI roll
         if (Math.random() * 20 >= this.ai_level) {
             //console.log('[Chica] AI fail, stays at door');
             this._scheduleAttack();
             return;
         }
 
-        // Succès → lumière allumée = screamer immédiat, sinon entrée silencieuse
+        // Succès -> lumière allumée = screamer immédiat, sinon entrée silencieuse
         const rightlift = state.right.light === 'on';
         if (rightlift) {
-            //console.log('[Chica] caught in light — jumpscare!');
+            //console.log('[Chica] caught in light, jumpscare!');
             this._atDoor = false;
             window.chicaAtDoor = false;
             GameState._submitScore('jumpscare');
@@ -102,7 +102,7 @@ class Chica extends Animatronic {
     onTabletOpen() {
         if (this.inOffice) {
             this._tabletWasOpen = true;
-            //console.log('[Chica] Tablet opened while in office — will strike on close');
+            //console.log('[Chica] Tablet opened while in office, will strike on close');
         }
     }
 

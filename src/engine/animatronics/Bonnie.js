@@ -50,10 +50,10 @@ class Bonnie extends Animatronic {
                 moveToRoom(this.name, nextRoom);
                 this._atDoor = true;
                 window.bonnieAtDoor = true;
-                //console.log('[Bonnie] AT THE DOOR — waiting to attack');
+                //console.log('[Bonnie] AT THE DOOR, waiting to attack');
                 this._scheduleAttack();
             } else {
-                //console.log(`${nextRoom} NOT empty — stay`);
+                //console.log(`${nextRoom} NOT empty, stay`);
             }
             return;
         }

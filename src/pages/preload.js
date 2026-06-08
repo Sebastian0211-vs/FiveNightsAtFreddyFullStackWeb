@@ -1,10 +1,10 @@
 // ============================================================
-//  preload.js — gameplay asset preloader + loading screen
+//  preload.js, gameplay asset preloader + loading screen
 //
 //  Warms the browser's HTTP cache for the gameplay assets BEFORE the night
 //  starts, so camera views / sprites / sounds never pop in mid-game. Uses
 //  fetch() (cache-warm only) rather than holding decoded images, so memory
-//  stays low — the game decodes them lazily from cache as it already does.
+//  stays low, the game decodes them lazily from cache as it already does.
 //
 //  Exposes window.__preloadThenStart(startFn):
 //    shows a loading overlay, fetches every URL in
@@ -79,7 +79,7 @@
                 await warm(list, (done) => setProgress(done, list.length));
             }
         } catch (e) {
-            /* no manifest / offline — start anyway */
+            /* no manifest / offline, start anyway */
         }
 
         clearTimeout(safety);

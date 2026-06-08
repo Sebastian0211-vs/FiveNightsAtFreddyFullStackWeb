@@ -235,7 +235,7 @@ export default function Menu() {
                 {username && <div className="menu-user">Connected as: {username}</div>}
             </div>
 
-            {/* Rotate hint — mobile portrait uniquement */}
+            {/* Rotate hint, mobile portrait uniquement */}
             <div id="rotate-hint">
                 <img src={IMG.rotateImg} style={{ width: '60%', maxWidth: '280px', height: 'auto' }} />
                 <p style={{

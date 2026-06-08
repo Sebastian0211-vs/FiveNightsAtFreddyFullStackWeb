@@ -1,4 +1,4 @@
-// GraphQL schema — shared contract between Person A (server) and Person B (client)
+// GraphQL schema, shared contract between Person A (server) and Person B (client)
 export const typeDefs = `#graphql
   type User {
     id: ID!

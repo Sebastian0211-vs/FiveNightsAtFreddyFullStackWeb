@@ -35,7 +35,7 @@
         body.dragging { cursor: grabbing; }
         canvas { display: block; position: absolute; top: 0; left: 0; }
 
-        /* ── HUD — fully responsive ──────────────────────────────── */
+        /* ── HUD, fully responsive ──────────────────────────────── */
 
         /*
          * All positions now use clamp() or vw/vh.
@@ -111,7 +111,7 @@
         }
 
         #hud-battery-img {
-            /* was hardcoded 28-52px — now scales with font size */
+            /* was hardcoded 28-52px, now scales with font size */
             height: clamp(24px, 3.2vw, 56px);
             width: auto;
             image-rendering: pixelated;
@@ -155,7 +155,7 @@
             opacity: 0.7;
         }
 
-        /* ── Cam label overlay — big, responsive, sits over the map ─ */
+        /* ── Cam label overlay, big, responsive, sits over the map ─ */
         #cam-label-overlay {
             display: none;
             position: fixed;
@@ -237,7 +237,7 @@
        style="display:none;position:absolute;pointer-events:none;"></video>
 
 <script>
-    // Read ?night=X from URL — must run before gameState.js loads
+    // Read ?night=X from URL, must run before gameState.js loads
     const __urlNight = parseInt(new URLSearchParams(window.location.search).get('night'));
     window.__startNight = (!isNaN(__urlNight) && __urlNight >= 1 && __urlNight <= 6) ? __urlNight : 1;
 
@@ -1000,7 +1000,7 @@
         }
 
         // Camera pan: drift left/right, but pause now and then and resume in
-        // either direction — more like a real panning security camera.
+        // either direction, more like a real panning security camera.
         if (camPanNextPauseAt === 0) camPanNextPauseAt = timestamp + 1500 + Math.random() * 2500;
         if (timestamp >= camPanPauseUntil) {
             camPan += camPanDir * CAM_PAN_SPEED * delta;
@@ -1109,7 +1109,7 @@
         requestAnimationFrame(animateTablet);
     }
 
-    // Instantly snap the tablet down (no animation) — used by jumpscares so
+    // Instantly snap the tablet down (no animation), used by jumpscares so
     // the scare on the main canvas isn't hidden behind the camera feed.
     function forceTabletDown() {
         if (tabletState === 'closed') return;

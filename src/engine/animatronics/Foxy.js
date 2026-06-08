@@ -23,10 +23,10 @@ class Foxy extends Animatronic {
     // ── Called every 5.01 s ──────────────────────────────────────
     tryMove() {
         if (this.stage >= 4) return;              // already running, no more ticks needed
-        if (this._6amTriggered) return; // night over → auto-fail
-        if (this._powerOutTriggered) return; // power out → auto-fail
-        if (this.locked)          return;          // post-tablet lock → auto-fail
-        if (window.isTabletOpen)  return;          // tablet open → auto-fail
+        if (this._6amTriggered) return; // night over -> auto-fail
+        if (this._powerOutTriggered) return; // power out -> auto-fail
+        if (this.locked)          return;          // post-tablet lock -> auto-fail
+        if (window.isTabletOpen)  return;          // tablet open -> auto-fail
         //console.log("[Foxy] tries to move with an AI level of " + this.ai_level);
         if (Math.random() * 20 >= this.ai_level) return; // normal AI roll
 
@@ -36,7 +36,7 @@ class Foxy extends Animatronic {
     }
 
     _startSprint() {
-        //console.log('[Foxy] RUNNING — 25 s to attack');
+        //console.log('[Foxy] RUNNING, 25 s to attack');
         window.foxyRunning     = true;
         window.foxyRunAnimDone = false;
         this._runSfxPlayed     = false;

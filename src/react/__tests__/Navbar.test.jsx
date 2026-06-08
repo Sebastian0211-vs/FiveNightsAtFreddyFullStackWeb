@@ -28,7 +28,7 @@ describe('Navbar (logged out)', () => {
 });
 
 describe('Navbar (logged in)', () => {
-    it('shows username, Play, Logout — hides Login/Register', () => {
+    it('shows username, Play, Logout, hides Login/Register', () => {
         ctl.user = { username: 'mike', furthestNight: 3 };
         renderNav();
         expect(screen.getByText('mike')).toBeInTheDocument();

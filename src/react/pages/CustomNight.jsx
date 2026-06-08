@@ -74,7 +74,7 @@ export default function CustomNight() {
     }
 
     function startNight() {
-        // 1-9-8-7 easter egg — Golden Freddy
+        // 1-9-8-7 easter egg - Golden Freddy
         if (levels.freddy === 1 && levels.bonnie === 9 && levels.chica === 8 && levels.foxy === 7) {
             triggerGoldenFreddy();
             return;

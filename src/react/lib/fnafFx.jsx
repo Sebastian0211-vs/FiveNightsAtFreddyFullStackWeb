@@ -1,5 +1,5 @@
 // ============================================================
-//  fnafFx.jsx — shared visual/audio effects for the migrated
+//  fnafFx.jsx, shared visual/audio effects for the migrated
 //  menu-family pages. React-idiomatic ports of the helpers that
 //  used to live in src/pages/player.js plus the inline scripts.
 // ============================================================

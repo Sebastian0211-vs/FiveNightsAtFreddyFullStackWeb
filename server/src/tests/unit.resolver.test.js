@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { resolvers } from '../graphql/resolvers.js';
 
-// UNIT TEST #2 — resolver logic (no DB, no network)
+// UNIT TEST #2 - resolver logic (no DB, no network)
 describe('updateProgress resolver', () => {
     it('throws when called unauthenticated', async () => {
         await expect(

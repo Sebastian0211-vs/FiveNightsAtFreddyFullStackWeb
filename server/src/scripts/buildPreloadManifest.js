@@ -40,7 +40,7 @@ const EXTS = new Set([
 async function walk(dir, out) {
     let entries;
     try { entries = await fs.readdir(dir, { withFileTypes: true }); }
-    catch { return; } // folder absent — skip silently
+    catch { return; } // folder absent, skip silently
     for (const e of entries) {
         const full = path.join(dir, e.name);
         if (e.isDirectory()) {

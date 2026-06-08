@@ -10,7 +10,7 @@ import { typeDefs } from './graphql/typeDefs.js';
 import { resolvers } from './graphql/resolvers.js';
 import { buildContext } from './graphql/context.js';
 
-// Build the Express app (no listen, no Mongo connect — for testability)
+// Build the Express app (no listen, no Mongo connect, for testability)
 export async function buildApp() {
     const app = express();
 

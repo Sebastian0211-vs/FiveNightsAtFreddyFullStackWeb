@@ -5,7 +5,7 @@ import { IMG, AUDIO, GOLDEN_FREDDY_JUMPSCARE, ensureFnafFont } from '../lib/menu
 const SCARE_AT = 7000;
 const REDIRECT_AT = 10000;
 
-// Ported from src/pages/Unauthorized.html — golden-freddy scare then redirect.
+// Ported from src/pages/Unauthorized.html - golden-freddy scare then redirect.
 export default function Unauthorized() {
     const navigate = useNavigate();
     const canvasRef = useRef(null);
