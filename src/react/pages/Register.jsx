@@ -104,7 +104,6 @@ import shock_sfx     from '../../../assets/FNaF 6 Audio/shock.mp3';
 import jumpscare_sfx from '../../../assets/FNaF 6 Audio/Jumpscare 9B.wav';
 import complete_sfx  from '../../../assets/FNaF 6 Audio/complete.mp3';
 import stop4_sfx     from '../../../assets/FNaF 6 Audio/stop4.mp3';
-import { useJumpscareCapture } from '../../hooks/useJumpscareCapture.jsx';
 import typewriter_sfx from '../../../assets/audio/typewrite.mp3';
 
 // ── Animatronic definitions ───────────────────────────────────
@@ -391,7 +390,6 @@ export default function Register() {
     const heartbeatRef  = useRef(null);
 
     const navigate = useNavigate();
-    const { capture } = useJumpscareCapture();
     const hintLock = useRef(false);
 
     const allFilled = username.value.trim().length > 0
@@ -486,11 +484,9 @@ export default function Register() {
             setTimeout(() => {
                 setPaperState('closed');
                 paperStateRef.current = 'closed';
-                capture({ animatronicName: CHOSEN.name });
                 playJumpscare();
             }, SLIDE_MS);
         } else {
-            capture({ animatronicName: CHOSEN.name });
             playJumpscare();
         }
     }

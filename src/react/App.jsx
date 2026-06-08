@@ -7,7 +7,6 @@ import ProtectedRoute from './components/ProtectedRoute.jsx';
 
 import Login       from './pages/Login.jsx';
 import Register    from './pages/Register.jsx';
-import FearDetector from './pages/FearDetector.jsx';
 import Play from './pages/Play.jsx';
 import Leaderboard from './pages/Leaderboard.jsx';
 import Menu from './pages/Menu.jsx';
@@ -45,7 +44,6 @@ export default function App() {
                     <Route path="/leaderboard"    element={<Leaderboard />} />
                     <Route path="/unauthorized"   element={<Unauthorized />} />
                     <Route path="/play"     element={<ProtectedRoute><Play /></ProtectedRoute>} />
-                    <Route path="/test"     element={<ProtectedRoute><FearDetector /></ProtectedRoute>} />
                     <Route path="*"         element={<Navigate to="/" replace />} />
                 </Routes>
                         </AuthProvider>

@@ -27,7 +27,6 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
-    "face-api.js": "^0.22.2",
     "graphql": "^16.9.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^9.5.0",
