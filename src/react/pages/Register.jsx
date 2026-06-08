@@ -857,7 +857,7 @@ export default function Register() {
                     </button>
 
                     <hr className="tw-divider" />
-                    <button className="tw-link" onClick={goBack}>← back to login</button>
+                    <button className="tw-link" onClick={goBack}>Back to login</button>
                 </div>
             )}
 
@@ -1010,7 +1010,7 @@ export default function Register() {
                 left:   'clamp(14px, 2vw, 28px)',
                 background: 'none', border: 'none',
                 fontFamily: '"Courier New", Courier, monospace',
-                fontSize: 'clamp(11px, 1vw, 15px)',
+                fontSize: 'clamp(12px,2vw,80px)',
                 color: 'rgba(255,255,255,0.35)',
                 letterSpacing: '0.12em', cursor: 'pointer',
                 zIndex: 20, transition: 'color 0.2s',
@@ -1018,7 +1018,7 @@ export default function Register() {
             }}
                     onMouseEnter={e => e.target.style.color = 'rgba(255,255,255,0.8)'}
                     onMouseLeave={e => e.target.style.color = 'rgba(255,255,255,0.35)'}
-            >← back</button>
+            >Back</button>
 
             {/* Death overlay */}
             {deathScreen !== 'none' && (

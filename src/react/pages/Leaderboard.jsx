@@ -51,7 +51,7 @@ const STYLES = `
 .lb-slide { position:fixed; top:5%; left:50%; transform:translateX(-50%); width:100%; opacity:0.5; z-index:22; animation:slideDown 10s linear forwards; }
 @keyframes slideDown { from { top:-100%; } to { top:90%; } }
 .lb-title { position:absolute; top:8%; left:50%; transform:translateX(-50%); z-index:20; font-family:'FNAF','Courier New',monospace; font-size:4vw; color:#fff; text-shadow:2px 2px 12px rgba(0,0,0,0.95); white-space:nowrap; pointer-events:none; }
-.lb-back { position:absolute; top:3%; left:3%; z-index:30; font-family:'FNAF','Courier New',monospace; font-size:clamp(12px,1.4vw,20px); color:#fff; background:none; border:none; cursor:pointer; letter-spacing:0.05em; text-shadow:1px 1px 6px rgba(0,0,0,0.9); white-space:nowrap; }
+.lb-back { position:absolute; top:3%; left:3%; z-index:30; font-family:'FNAF','Courier New',monospace; font-size:clamp(12px,2vw,80px); color:#fff; padding:2%;background:none; border:none; cursor:pointer; letter-spacing:0.05em; text-shadow:1px 1px 6px rgba(0,0,0,0.9); white-space:nowrap; }
 .lb-back:hover { opacity:0.7; }
 .lb-tabs { position:absolute; top:13%; left:50%; transform:translateX(-50%); z-index:20; display:flex; gap:1vw; }
 .lb-tab { font-family:'FNAF','Courier New',monospace; font-size:clamp(14px,1.8vw,26px); color:rgba(255,255,255,0.45); background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.15); padding:0.5% 1.4%; cursor:pointer; letter-spacing:0.12em; transition:color 0.15s,border-color 0.15s; white-space:nowrap; }

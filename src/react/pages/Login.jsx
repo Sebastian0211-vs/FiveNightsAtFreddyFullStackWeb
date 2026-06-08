@@ -75,23 +75,23 @@ const STYLES = `
     .tw-input {
         background: transparent;
         border: none;
-        border-bottom: 1px solid rgba(60,30,10,0.55);
+        border-bottom: 1px solid rgba(200,185,173,0.55);
         outline: none;
         font-family: "Courier New", Courier, monospace;
         font-size: var(--form-font-base);
-        color: rgba(30, 15, 3, 0.95);
+        color: rgba(200,185,173,0.95);
         width: 100%;
         padding: var(--form-input-pad) 0;
-        caret-color: rgba(40,20,5,0.9);
+        caret-color: color: rgba(210,185,173,0.9);
         pointer-events: auto;
         position: relative;
         z-index: 20;
     }
-    .tw-input::placeholder { color: rgba(60,30,10,0.35); }
+    .tw-input::placeholder { color: rgba(200,185,173,0.35); }
 
     .tw-label {
         font-size: var(--form-font-label);
-        color: rgba(30,15,3,0.7);
+        color: rgba(200,185,173,0.7);
         letter-spacing: 0.14em;
         text-transform: uppercase;
         margin-bottom: 0.2em;
@@ -99,10 +99,10 @@ const STYLES = `
 
     .tw-btn {
         background: transparent;
-        border: 1px solid rgba(40,20,5,0.5);
+        border: 1px solid rgba(200,185,173,0.9);
         font-family: "Courier New", Courier, monospace;
         font-size: var(--form-font-base);
-        color: rgba(30,15,3,0.9);
+        color: rgba(200,185,173,0.9);
         letter-spacing: 0.15em;
         text-transform: uppercase;
         padding: clamp(6px, 0.7vh, 12px) 0;
@@ -116,7 +116,7 @@ const STYLES = `
 
     .tw-link {
         font-size: var(--form-font-small);
-        color: rgba(40,20,5,0.55);
+        color: rgba(210,185,173,0.55);
         letter-spacing: 0.08em;
         text-align: center;
         cursor: pointer;
@@ -127,9 +127,9 @@ const STYLES = `
         pointer-events: auto;
     }
     .tw-link:hover { color: rgba(40,20,5,0.9); }
-    .tw-link.register { color: rgba(140,20,10,0.8); }
+    .tw-link.register { color: rgba(255,185,173,0.7);}
     .tw-link.register:hover { color: rgba(190,30,10,1); }
-    .tw-divider { border: none; border-top: 1px solid rgba(40,20,5,0.18); margin: clamp(4px, 0.4vh, 8px) 0; }
+    .tw-divider { border: none; border-top: 1px solid color: rgba(200,185,173,0.18); margin: clamp(4px, 0.4vh, 8px) 0; }
     
     @keyframes hintFloat {
         0%, 100% { transform: translateX(-50%) translateY(0);    }
@@ -519,7 +519,7 @@ export default function Login() {
                         // ── Forgot password view ──
                         forgotStatus === 'sent' ? (
                             <>
-                                <div style={{ fontSize: 'var(--form-font-small)', color: 'rgba(30,80,10,0.9)', textAlign: 'center', lineHeight: 1.5 }}>
+                                <div style={{ fontSize: 'var(--form-font-small)', color: 'rgba(180,255,173,0.9)', textAlign: 'center', lineHeight: 1.5 }}>
                                     If that email is registered, a reset link has been sent.
                                 </div>
                                 <button className="tw-link" onClick={() => { setForgotMode(false); setForgotStatus(''); setForgotEmail(''); }}>

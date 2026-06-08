@@ -36,7 +36,7 @@ const STYLES = `
 .continue-row { display:flex; align-items:baseline; gap:8px; cursor:pointer; white-space:nowrap; }
 .continue-row:hover { opacity:0.7; }
 .continue-night { font-family:'FNAF','Courier New',monospace; font-size:clamp(18px,3.5vw,52px); color:#fff; letter-spacing:0.04em; white-space:nowrap; text-shadow:2px 2px 8px rgba(0,0,0,0.95); }
-.menu-user { position:absolute; bottom:3%; left:3%; font-family:'FNAF','Courier New',monospace; font-size:clamp(10px,1.2vw,18px); color:#fff; letter-spacing:0.08em; text-shadow:2px 2px 6px rgba(0,0,0,0.9); z-index:20; pointer-events:none; }
+.menu-user { position:absolute; bottom:3%; left:3%; font-family:'FNAF','Courier New',monospace; font-size:clamp(10px,2vw,80px); color:#fff; padding:2%;letter-spacing:0.08em; text-shadow:2px 2px 6px rgba(0,0,0,0.9); z-index:20; pointer-events:none; }
 @keyframes menuSlideDown { 0% { top:-15%; } 60% { top:100%; } 100% { top:100%; } }
 #rotate-hint {
     display: none;
