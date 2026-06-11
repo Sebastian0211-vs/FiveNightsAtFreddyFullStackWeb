@@ -12,7 +12,7 @@ class Animatronic {
         this.room   = startRoom;
         this.moving = false;
         this.valid  = false;
-        this.level = window.__customAILevels?.[this.name] ?? base_ai_level[GameState.night]?.[this.name] ?? 0
+        this.level = GameState.baseLevelFor(this.name);
         this.currentHour = GameState.getCurrentHour();
         this._boostApplied = false;
     }

@@ -36,6 +36,7 @@ const GameState = {
     doorCloses:   0,
     _scoreSent:   false, // guard: only submit once per night outcome
     _sessionId:   null,  // server-issued single-use token for this night
+    _night4Variant: null,
 
     // ── Ask the server for a fresh night-session token ────────
     async _startNightSession() {
@@ -98,6 +99,20 @@ const GameState = {
                 }),
             });
         } catch { /* non-blocking */ }
+    },
+
+    _aiConfigNight() {
+        if (this.night !== 4) return this.night;
+        if (this._night4Variant == null) {
+            this._night4Variant = Math.random() >= 0.5 ? 41 : 42;
+        }
+        return this._night4Variant;
+    },
+
+    baseLevelFor(name) {
+        return window.__customAILevels?.[name]
+            ?? base_ai_level[this._aiConfigNight()]?.[name]
+            ?? 0;
     },
 
     // ── Power usage ──────────────────────────────────────────
@@ -563,6 +578,7 @@ const GameState = {
                             }
                             saveProgress(this.night);
                             this.night++;
+                            this._night4Variant = null;
                             this.rawPower       = 999;
                             this.secondsElapsed = 0;
                             this.passiveAccum   = 0;
@@ -574,7 +590,7 @@ const GameState = {
 
                             ANIMATRONICS.forEach(a => {
                                 //set ai level back to base for each animatronic and reset boost flag so they can get the boost again on the next hour
-                                a.level = window.__customAILevels?.[a.name] ?? base_ai_level[this.night]?.[a.name] ?? 0;
+                                a.level = GameState.baseLevelFor(a.name);
                                 a._boostApplied = false;
 
 
