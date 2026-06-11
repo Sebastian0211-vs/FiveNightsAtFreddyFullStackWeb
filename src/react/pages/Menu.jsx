@@ -4,7 +4,7 @@ import { gql } from '@apollo/client';
 import { useAuth } from '../auth/AuthContext.jsx';
 import { apolloClient } from '../lib/apollo.js';
 import {
-    IMG, AUDIO, FRED_MENU, NOISE_MENU, WHITE_MENU, ensureFnafFont,
+    IMG, AUDIO, FRED_MENU, NOISE_MENU, WHITE_MENU, ensureFnafFont, LETTRY_MENU
 } from '../lib/menuAssets.js';
 import {
     runFreddyMenu, runNoise, runAnimation, useFramePlayer,
@@ -81,7 +81,7 @@ export default function Menu() {
     const starCount = [bestNight >= 5, bestNight >= 6, customNightBeaten].filter(Boolean).length;
 
     // ── Sprite animations ─────────────────────────────────────
-    useFramePlayer(animRef, runFreddyMenu, FRED_MENU);
+    useFramePlayer(animRef, runFreddyMenu, LETTRY_MENU);
     useFramePlayer(noiseRef, runNoise, NOISE_MENU);
     useFramePlayer(whiteRef, runAnimation, WHITE_MENU, 0.4);
 

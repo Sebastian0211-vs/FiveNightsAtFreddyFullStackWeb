@@ -68,6 +68,7 @@ export const AUDIO = {
 
 // ── Animation frame arrays (ported from src/data/animations.js) ─
 export const FRED_MENU = [menu('1.png'), menu('2.png'), menu('3.png'), menu('4.png')];
+export const LETTRY_MENU = [menu('lettry 1.png'), menu('lettry 2.png'), menu('lettry 3.png'), menu('4.png')];
 
 export const NOISE_MENU = {
     fps: 30,
