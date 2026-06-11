@@ -81,7 +81,7 @@ export default function Menu() {
     const starCount = [bestNight >= 5, bestNight >= 6, customNightBeaten].filter(Boolean).length;
 
     // ── Sprite animations ─────────────────────────────────────
-    useFramePlayer(animRef, runFreddyMenu, LETTRY_MENU);
+    useFramePlayer(animRef, runFreddyMenu, FRED_MENU);
     useFramePlayer(noiseRef, runNoise, NOISE_MENU);
     useFramePlayer(whiteRef, runAnimation, WHITE_MENU, 0.4);
 
