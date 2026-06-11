@@ -40,8 +40,8 @@ export function runFreddyMenu(imgEl, frames) {
     if (!imgEl) return () => {};
     const [f1, f2, f3, f4] = frames;
     const id = setInterval(() => {
-        const roll = Math.floor(Math.random() * 100);
-        imgEl.src = roll === 97 ? f2 : roll === 98 ? f3 : roll === 99 ? f4 : f1;
+        const roll = Math.floor(Math.random() * 20);
+        imgEl.src = roll === 7 ? f2 : roll === 8 ? f3 : roll === 9 ? f4 : f1;
     }, 100);
     return () => clearInterval(id);
 }
